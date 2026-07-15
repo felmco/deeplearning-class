@@ -22,6 +22,7 @@ import numpy as np
 from .estilo import (
     AMARILLO,
     AZUL,
+    CELESTE,
     GRIS,
     MORADO,
     NARANJA,
@@ -37,6 +38,92 @@ DESTINO = Path(__file__).resolve().parents[2] / "docs" / "assets" / "figuras"
 # ────────────────────────────────────────────────────────────────────
 # Sesión 1 — Fundamentos
 # ────────────────────────────────────────────────────────────────────
+
+def fig_tensores() -> None:
+    """La evolución escalar → vector → matriz → tensor 3D.
+
+    Cada paso agrega UN eje: esa es toda la historia. Se dibuja con celdas
+    2D y capas desplazadas en diagonal (2.5D) para el tensor, con el shape
+    y un ejemplo del curso bajo cada etapa.
+    """
+    from matplotlib.patches import FancyArrowPatch, Rectangle
+
+    fig, ax = plt.subplots(figsize=(13.5, 5.2))
+    ax.set_xlim(0, 27)
+    ax.set_ylim(0, 10)
+    ax.axis("off")
+    ax.grid(False)
+
+    LADO = 0.85          # lado de cada celda
+    y_base = 4.4         # base vertical de los dibujos
+
+    def celda(x, y, color=CELESTE, alpha=0.55, texto=None, zorder=3):
+        ax.add_patch(Rectangle((x, y), LADO, LADO, facecolor=color, alpha=alpha,
+                               edgecolor=AZUL, linewidth=1.4, zorder=zorder))
+        if texto is not None:
+            ax.text(x + LADO / 2, y + LADO / 2, texto, ha="center", va="center",
+                    fontsize=9, zorder=zorder + 1)
+
+    def rotulo(xc, nombre, shape, ejemplo):
+        ax.text(xc, 2.6, nombre, ha="center", fontsize=13, fontweight="bold")
+        ax.text(xc, 1.9, shape, ha="center", fontsize=11, family="monospace",
+                color=AZUL, fontweight="bold")
+        ax.text(xc, 1.15, ejemplo, ha="center", fontsize=9, color=GRIS,
+                style="italic")
+
+    def flecha(x0, x1):
+        ax.add_patch(FancyArrowPatch((x0, y_base + 1.2), (x1, y_base + 1.2),
+                                     arrowstyle="->", mutation_scale=16,
+                                     color=NARANJA, linewidth=2.2))
+        ax.text((x0 + x1) / 2, y_base + 1.75, "+1 eje", ha="center",
+                fontsize=10, color=NARANJA, fontweight="bold")
+
+    # ── Escalar: un solo número ──
+    celda(1.6, y_base + 0.8, texto="3.7")
+    rotulo(2.0, "Escalar", "()", "una loss: 0.693")
+
+    flecha(3.2, 4.6)
+
+    # ── Vector: fila de números (1 eje) ──
+    for j in range(5):
+        celda(5.0 + j * LADO, y_base + 0.8, texto=f"{0.2 * (j + 1):.1f}")
+    rotulo(7.1, "Vector", "(5,)", "un embedding")
+
+    flecha(9.9, 11.3)
+
+    # ── Matriz: cuadrícula (2 ejes) ──
+    for i in range(4):
+        for j in range(5):
+            celda(11.7 + j * LADO, y_base - 0.9 + (3 - i) * LADO)
+    rotulo(13.8, "Matriz", "(4, 5)", "batch de 4 muestras\ncon 5 features")
+
+    flecha(16.6, 18.0)
+
+    # ── Tensor 3D: capas apiladas en diagonal (3 ejes) ──
+    DX, DY = 0.42, 0.34            # desplazamiento diagonal por capa
+    colores_capa = ["#BBDEF5", "#A7D9C9", "#E5C7DB"]   # frontal, media, trasera
+    for k in range(2, -1, -1):     # capa trasera primero; las frontales la tapan
+        ox, oy = 18.4 + k * DX, y_base - 0.9 + k * DY
+        for i in range(4):
+            for j in range(5):
+                celda(ox + j * LADO, oy + (3 - i) * LADO,
+                      color=colores_capa[k], alpha=1.0, zorder=3 + (2 - k))
+    ax.text(23.9, y_base + 2.4, "3 capas\n(canales, tiempo, …)",
+            fontsize=9, color=GRIS, ha="left", va="center")
+    rotulo(20.9, "Tensor 3D", "(3, 4, 5)", "3 canales de una imagen,\no 3 pasos de una secuencia")
+
+    ax.text(13.5, 9.4,
+            "Cada paso agrega UN eje — un tensor es solo la generalización: "
+            "una caja de números con tantos ejes como necesites",
+            ha="center", fontsize=12.5, fontweight="bold")
+    ax.text(13.5, 8.55,
+            "El shape cuenta cuántos elementos hay por eje; leerlo en voz alta "
+            "es entender el dato   ·   (3, 4, 5) = \"3 capas de 4 filas × 5 columnas\"",
+            ha="center", fontsize=10, color=GRIS)
+
+    fig.savefig(DESTINO / "tensores_evolucion.png")
+    plt.close(fig)
+
 
 def fig_activaciones() -> None:
     """Funciones de activación y sus derivadas, lado a lado.
@@ -736,7 +823,7 @@ def main() -> None:
     aplicar_estilo()
     DESTINO.mkdir(parents=True, exist_ok=True)
     tareas = [
-        fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
+        fig_tensores, fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
         fig_learning_rate, fig_moons_frontera, fig_kernels, fig_padding_stride,
         fig_receptive_field, fig_rnn_gradientes, fig_atencion,
         fig_positional_encoding, fig_embeddings_2d, fig_complejidad,

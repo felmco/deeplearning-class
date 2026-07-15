@@ -71,8 +71,14 @@ son detalles de *cómo*.
 
 ## 2. Tensores: el idioma de los datos
 
-**Intuición.** Un tensor es una caja de números con ejes etiquetados. Todo lo que entra o
-sale de una red es un tensor, y **el shape es un contrato**: si no cuadra, nada funciona.
+![La evolución escalar → vector → matriz → tensor 3D: cada paso agrega un eje](../docs/assets/figuras/tensores_evolucion.png)
+
+**Intuición.** Un tensor es una caja de números con ejes etiquetados, y la figura cuenta
+toda la historia: un **escalar** es un solo número (cero ejes); ponlo en fila y tienes un
+**vector** (1 eje); apila filas y tienes una **matriz** (2 ejes); apila matrices en capas
+y tienes un **tensor 3D** — y puedes seguir agregando ejes cuantas veces necesites. Todo
+lo que entra o sale de una red es un tensor, y **el shape es un contrato**: si no cuadra,
+nada funciona.
 
 | Objeto | Shape | Ejemplo |
 |---|---|---|
