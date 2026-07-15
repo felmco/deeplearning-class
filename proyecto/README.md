@@ -21,8 +21,10 @@ baseline**, y debe documentar límites, errores y condiciones de uso.
 clasificación binaria de sentimiento, tamaño manejable, splits listos, clases balanceadas.
 
 **Alternativas** (verificar disponibilidad, licencia y costo antes):
-`ag_news` (multiclase, más cómputo), un subconjunto en español de `amazon_reviews_multi`,
-o un dataset institucional anonimizado **solo** con autorización y control de privacidad.
+`ag_news` (multiclase, más cómputo), un dataset de reseñas en español del Hub que el
+docente valide ese semestre (`amazon_reviews_multi` fue retirado del Hub — no contar con
+él), o un dataset institucional anonimizado **solo** con autorización y control de
+privacidad.
 
 ## Modelos mínimos (los tres son obligatorios)
 
@@ -40,8 +42,10 @@ flowchart LR
 
 ## Hipótesis sugeridas
 
-- El Transformer superará al baseline en macro-F1, especialmente en frases contextuales.
-- El baseline será mucho más barato y competitivo en ejemplos lexicalmente simples.
+- El Transformer superará al baseline en macro-F1, especialmente en frases contextuales
+  (donde el sentido depende del orden: *"not bad at all"*).
+- El baseline será mucho más barato y competitivo en ejemplos lexicalmente simples
+  (donde una sola palabra decide: *"terrible movie"*).
 - El Transformer cometerá errores de alta confianza en ironía y frases fuera de dominio.
 - Dynamic padding reducirá los tokens procesados frente a padding global.
 
@@ -49,7 +53,7 @@ flowchart LR
 
 | Rol | Responsabilidad |
 |---|---|
-| **Data/experiment lead** | splits, EDA, baseline, reproducibilidad |
+| **Data/experiment lead** | splits, EDA (*Exploratory Data Analysis*: mirar los datos antes de modelar — distribuciones, longitudes, ejemplos raros), baseline, reproducibilidad |
 | **Model lead** | arquitectura neuronal y Transformer |
 | **Evaluation lead** | métricas, errores, visualizaciones, riesgos |
 | **Delivery lead** | GitHub, README, app, pitch, model card |
@@ -59,7 +63,7 @@ En equipos de tres, combinar evaluación y entrega.
 ## Milestones
 
 ### M0 — Repositorio listo
-README inicial · entorno documentado · branch por integrante · issue por milestone · smoke test de imports.
+README inicial · entorno documentado · branch por integrante · issue por milestone · smoke test de imports (un script o test que importa las librerías del entorno y corre un forward con datos falsos; p. ej. `pytest tests/ -k smoke` o `python -c "import torch, transformers, datasets"`).
 
 ### M1 — Problema y datos
 Definición de entrada/salida · dataset, licencia y splits · distribución de labels y longitudes · riesgos de leakage y representatividad.
@@ -68,7 +72,7 @@ Definición de entrada/salida · dataset, licencia y splits · distribución de 
 Majority-class · TF-IDF + Logistic Regression · accuracy, macro-F1 y matriz de confusión · tiempos aproximados.
 
 ### M3 — Modelo neuronal propio
-Tokenización/vocabulario · Embedding + pooling/MLP o LSTM · curvas train/validation · una ablación (hidden size, dropout o LR).
+Tokenización/vocabulario · Embedding + pooling/MLP o LSTM · curvas train/validation · una ablación (cambiar **una sola cosa** — hidden size, dropout o LR —, reentrenar y comparar, para saber qué aporta cada pieza).
 
 ### M4 — Transformer
 Justificación del checkpoint · tokenizer y dynamic padding · fine-tuning reproducible · mejor checkpoint elegido con validation.
@@ -88,17 +92,19 @@ App Gradio local o notebook de inferencia · README completo · [model card](mod
 | Embedding + MLP/LSTM | | | | | | | |
 | DistilBERT fine-tuned | | | | | | | |
 
-> No comparar tiempos obtenidos en hardware diferente sin declararlo.
+> **Protocolo de latencia:** ms por ejemplo, batch=1, en CPU, promediando sobre 1000
+> ejemplos; declarar el hardware. No comparar tiempos obtenidos en hardware diferente
+> sin declararlo.
 
 ## Rúbrica — 100 puntos
 
 | Dimensión | Puntos | Criterios |
 |---|---:|---|
 | Definición del problema y datos | 10 | objetivo, labels, splits, licencia, EDA, leakage |
-| Baseline y diseño experimental | 12 | baseline válido, hipótesis, variables controladas |
+| Baseline y diseño experimental | 12 | baseline entrenado solo con train y evaluado en el mismo test que los demás; hipótesis escritas ANTES de ver resultados; los tres modelos comparten splits, métrica y protocolo |
 | Modelo neuronal propio | 13 | implementación correcta, training loop, curvas, ablation |
 | Transformer y fine-tuning | 15 | selección justificada, tokenización, configuración, checkpoint |
-| Evaluación | 15 | métricas adecuadas, comparación justa, test protegido |
+| Evaluación | 15 | métricas adecuadas; comparación justa = mismos splits y misma métrica para los tres modelos; test protegido = usado UNA sola vez al final (toda iteración va contra validation) |
 | Análisis de errores | 10 | taxonomía, ejemplos, causas probables, acciones |
 | Reproducibilidad y GitHub | 10 | README, entorno, config, commits, PR, ejecución clara |
 | Riesgos y model card | 7 | sesgo, privacidad, licencia, usos, límites |
@@ -113,7 +119,7 @@ App Gradio local o notebook de inferencia · README completo · [model card](mod
 | Repositorio no ejecutable o sin instrucciones | −10 |
 | Reportar solo accuracy en un caso desbalanceado | −5 |
 | Subir secretos, datos sensibles o artifacts sin autorización | −5 |
-| Resultados no reproducibles o inventados | hasta −15 |
+| Resultados no reproducibles o inventados | hasta −15 (−5 por métrica no reproducible; −15 si hay evidencia de fabricación) |
 
 ## Presentación final — 7 minutos + 3 de preguntas
 

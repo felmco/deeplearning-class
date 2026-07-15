@@ -30,6 +30,8 @@ lenguaje una sola vez (costo enorme, lo pagan pocos); el fine-tuning las especia
 tarea con pocos datos y poco cómputo. Los **modelos fundacionales** extienden esto a
 visión, audio y multimodalidad.
 
+> 🎥 El paradigma con figuras: [The Illustrated BERT, de Jay Alammar](https://jalammar.github.io/illustrated-bert/).
+
 ## 2. El ecosistema Hugging Face
 
 | Pieza | Qué resuelve |
@@ -40,8 +42,12 @@ visión, audio y multimodalidad.
 | **Tokenizers** | tokenización subword rápida |
 | **Evaluate** | métricas estandarizadas |
 | **Accelerate** | mismo código en CPU/GPU/multi-GPU |
-| **PEFT** | fine-tuning eficiente (LoRA y compañía) |
+| **PEFT** | *Parameter-Efficient Fine-Tuning*: ajustar solo una fracción diminuta de los parámetros (LoRA y compañía, ver §6) |
 | **Spaces** | hospedar demos (Gradio) |
+
+> 📖 **checkpoint**, en el Hub, significa "modelo preentrenado publicado con sus pesos"
+> — no confundir con el checkpoint de los Labs 2-3 (el mejor modelo guardado *durante tu
+> entrenamiento*). Misma palabra, dos costumbres.
 
 ### La model card: leer antes de usar
 
@@ -157,7 +163,9 @@ el logging. **No** automatiza el diseño experimental: splits, baseline, métric
 de errores siguen siendo tu trabajo.
 
 > ⚙️ **Compatibilidad:** esta guía usa `processing_class=` y `eval_strategy=`, coherentes
-> con Transformers 5.x. Ejecutar un smoke test y congelar versiones antes de cada cohorte.
+> con Transformers 5.x. Ejecutar un smoke test (prueba mínima de "¿enciende sin
+> explotar?": importar librerías y correr un batch) y congelar versiones antes de cada
+> cohorte.
 
 ### Guardar, cargar, publicar
 
@@ -173,14 +181,30 @@ autenticación, privacidad, licencia y model card.
 
 Sin baseline no hay evidencia de valor: la escalera del proyecto es
 **majority class → TF-IDF + Logistic Regression → red propia → Transformer**.
+
+Los dos peldaños intermedios, en una frase cada uno: **TF-IDF** (*Term
+Frequency–Inverse Document Frequency*) representa cada texto contando sus palabras, con
+más peso a las poco comunes; **Logistic Regression** es un clasificador lineal clásico —
+la misma idea de logits + sigmoid de la Sesión 1, sin capas ocultas. Es tu Sesión 1
+antes del deep learning.
+
 Si DistilBERT no supera con claridad al TF-IDF, esa *también* es una conclusión valiosa.
+(*DistilBERT* es un BERT **destilado**: un modelo pequeño — *student* — entrenado para
+imitar las salidas de uno grande — *teacher* —; 40% más chico a cambio de ~3% de
+desempeño.)
 
 ### Métricas
 
+Recuerda de la Sesión 1: **precision** = de lo que marqué positivo, ¿cuánto era verdad?;
+**recall** = de lo positivo real, ¿cuánto encontré?; **F1** = su promedio armónico.
+
 - **Accuracy**: engañosa con desbalance (95/5 → predecir siempre la mayoría da 95%).
-- **Macro-F1**: promedia el F1 de cada clase por igual — la métrica principal del curso.
+- **Macro-F1**: calcula el F1 de cada clase y los promedia por igual, sin importar
+  cuántos ejemplos tiene cada clase — la métrica principal del curso.
 - **Matriz de confusión**: dónde exactamente se equivoca.
-- **Validation ajusta, test reporta — una sola vez.** Iterar contra test = benchmark overfitting.
+- **Validation ajusta, test reporta — una sola vez.** Iterar contra test = **benchmark
+  overfitting**: tu "récord" ya no mide generalización, mide cuántas veces miraste la
+  respuesta.
 
 ### Taxonomía de errores del curso
 
@@ -201,13 +225,19 @@ La conclusión debe recomendar UNA acción para la categoría dominante.
 
 ## 6. Eficiencia: PEFT/LoRA y cuantización
 
-### LoRA: fine-tuning de bajo rango
+### LoRA (Low-Rank Adaptation): fine-tuning de bajo rango
 
 En lugar de actualizar la matriz completa $W$, se aprende una corrección de **rango bajo**:
 
 $$
 W'=W+\Delta W,\qquad \Delta W\approx BA \quad\text{con } B\in\mathbb{R}^{d\times r},\; A\in\mathbb{R}^{r\times k},\; r\ll d
 $$
+
+**Intuición.** En vez de corregir la matriz gigante celda por celda, la corrección se
+aprende como el producto de dos matrices flacas ($d\times r$ y $r\times k$; el símbolo
+$\ll$ significa "muchísimo menor que"). Con $r=8$ describes el cambio completo con muy
+pocos números — como comprimir una foto. "Rango bajo" quiere decir exactamente eso: el
+cambio cabe en pocas direcciones independientes.
 
 ```python
 from peft import LoraConfig, TaskType, get_peft_model
@@ -229,6 +259,10 @@ peft_model.print_trainable_parameters()  # típicamente <1% de los parámetros
 
 ### Cuantización y otras palancas
 
+**Cuantizar** = guardar los pesos con menos bits: INT8 usa enteros de 8 bits en lugar de
+decimales de 32 — un cuarto de la memoria a cambio de perder finura. BF16/FP16 son
+formatos decimales de 16 bits ("media precisión").
+
 | Técnica | Beneficio | Costo |
 |---|---|---|
 | Mixed precision (BF16/FP16) | ~2× memoria y velocidad | detalles numéricos |
@@ -243,10 +277,13 @@ peft_model.print_trainable_parameters()  # típicamente <1% de los parámetros
 
 - **Sesgo y representatividad:** los datos y etiquetas heredan sesgos; evaluar por
   subgrupos/slices cuando sea posible y documentar a quién podría dañar un error.
-- **Privacidad y seguridad:** no subir PII ni secretos; los modelos pueden memorizar datos
-  de entrenamiento; cuidado con dependencias y supply chain.
+- **Privacidad y seguridad:** no subir PII (*Personally Identifiable Information*: datos
+  que identifican a una persona) ni secretos; los modelos pueden memorizar datos
+  de entrenamiento; cuidado con dependencias y supply chain (ataques que llegan a través
+  de los paquetes que instalas).
 - **Licencias:** revisar model card y dataset card; restricciones comerciales y atribución.
-- **Explicabilidad:** attention maps, saliency y perturbaciones son **evidencia parcial**,
+- **Explicabilidad:** attention maps, saliency (mapas de qué partes de la entrada
+  influyeron más en la salida) y perturbaciones son **evidencia parcial**,
   no explicación causal.
 
 ### Checklist de reproducibilidad de la entrega

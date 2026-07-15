@@ -3,6 +3,16 @@
 **Regla del curso: sin baseline no hay evidencia de valor.** Este es el código de partida
 del milestone M2 — completo, ejecutable y deliberadamente simple.
 
+Las dos piezas, en una frase cada una:
+
+- **TF-IDF** representa cada texto contando sus **n-gramas** (secuencias de n palabras
+  seguidas: *unigrama* = palabra suelta, *bigrama* = par como "not good" — los bigramas
+  capturan la negación que la bolsa de palabras suelta pierde), dando más peso a los
+  términos poco comunes.
+- **Logistic Regression** (regresión logística) es la neurona de la Sesión 1 — pesos +
+  sigmoid — sin capas ocultas; scikit-learn la entrena por ti.
+  ([guía oficial de scikit-learn](https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression))
+
 ```python
 """Baseline no neuronal del proyecto final.
 
@@ -59,8 +69,8 @@ print(classification_report(y_test, test_pred, digits=3))
 - Macro-F1 y accuracy en test.
 - Tiempo de entrenamiento (segundos: sí, segundos).
 - Tiempo de inferencia por 1000 ejemplos.
-- Los 10 errores de mayor confianza (`predict_proba`) — te sorprenderá
-  cuántos comparte con el Transformer.
+- Los 10 errores de mayor confianza ("confianza" = la probabilidad que `predict_proba`
+  asigna a su propia predicción) — te sorprenderá cuántos comparte con el Transformer.
 
 ## Preguntas para el reporte
 

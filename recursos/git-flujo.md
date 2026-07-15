@@ -54,7 +54,7 @@ solo por el estilo.
 
 - Tokens, credenciales, archivos `.env`.
 - Datos personales o sensibles.
-- Checkpoints grandes (`*.pt`, `*.safetensors`) — usa Git LFS o el HF Hub si hace falta.
+- Checkpoints grandes (`*.pt`, `*.safetensors`) — usa Git LFS (*Large File Storage*, extensión de git para archivos grandes: https://git-lfs.com) o el HF Hub si hace falta.
 - La carpeta `data/` cruda y los `artifacts/` de entrenamiento (ya están en
   [`.gitignore`](../.gitignore)).
 

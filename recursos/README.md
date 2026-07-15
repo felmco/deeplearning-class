@@ -27,6 +27,8 @@ de las sesiones. Curado y verificado para esta edición del curso.
 | [Distill.pub](https://distill.pub/) | artículos visuales de referencia (momentum, interpretabilidad…) |
 | [The Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/) | la explicación ilustrada más citada de la arquitectura |
 | [Neural Network Playground de Karpathy — micrograd](https://github.com/karpathy/micrograd) | autograd en ~100 líneas, para leer completo |
+| [Serie Neural Networks de 3Blue1Brown](https://www.3blue1brown.com/topics/neural-networks) | la mejor intuición visual de redes, gradiente y backprop (subtítulos en español); los capítulos 5-7 cubren GPT y attention |
+| [Understanding LSTM Networks (Chris Olah)](https://colah.github.io/posts/2015-08-Understanding-LSTMs/) | las compuertas de la LSTM con diagramas, paso a paso (Sesión 3) |
 
 ## 📚 Documentación oficial
 

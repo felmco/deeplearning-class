@@ -22,7 +22,7 @@
       <select id="dataset" style="padding:.4rem; border-radius:8px; border:1px solid var(--borde);">
         <option value="moons">Two moons (el del Lab 1)</option>
         <option value="circles">Círculos concéntricos</option>
-        <option value="xor">XOR (el que venció al perceptrón)</option>
+        <option value="xor">XOR (no separable con una línea recta)</option>
       </select>
     </div>
     <div class="control">
@@ -73,10 +73,12 @@
 </div>
 
 <div class="explica">
+  <strong>Leyenda:</strong> puntos azules = clase 1 · puntos naranjas = clase 0; el fondo muestra la predicción del modelo en cada zona.<br>
   <strong>Lo que corre por dentro:</strong> una MLP <code>2 → h×L → 1</code> con tanh en las capas
   ocultas y sigmoid+BCE en la salida, entrenada con full-batch gradient descent. El forward y el
   backward están escritos a mano en el código fuente de esta página (Ver código fuente) — el mismo
-  algoritmo que implementarás en PyTorch en el
+  algoritmo que implementarás en PyTorch en el Lab 02 (aquí con tanh en las ocultas; en el lab
+  usarás ReLU — mismo algoritmo, activación distinta, fronteras con esquinas distintas). Ver
   <a href="https://github.com/felmco/deeplearning-class/blob/main/notebooks/02_mlp_training.ipynb">Lab 02</a>.
 </div>
 </main>

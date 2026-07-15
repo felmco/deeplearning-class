@@ -53,9 +53,19 @@ $$
 | $f_\theta$ | modelo | una función con **parámetros** $\theta$ ajustables |
 | $\hat{y}$ | predicción | lo que el modelo cree |
 | $\mathcal{L}$ | loss | qué tan mal está la predicción (un número) |
+| $\sum_{i=1}^{N}$ | sumatoria | "suma esto para cada ejemplo, del 1 al N" |
+| $e^z$, $\log$ | exponencial y logaritmo | aparecen dentro de las losses; abajo hay una caja que explica lo único que necesitas saber de ellos |
 
 Entrenar = encontrar los $\theta$ que minimizan la loss promedio sobre los datos
-(**riesgo empírico**). Todo lo demás son detalles de *cómo*.
+(los estadísticos llaman a esto **riesgo empírico**: "riesgo" = pérdida esperada,
+"empírico" = medido sobre tus datos y no sobre una fórmula ideal). Todo lo demás
+son detalles de *cómo*.
+
+> 📐 **Matemática mínima del curso.** Este curso NO asume cálculo, álgebra lineal ni
+> estadística. Cada símbolo se explica cuando aparece, en cajas como esta. Si quieres
+> nivelarte con calma: [derivadas en Khan Academy (español)](https://es.khanacademy.org/math/differential-calculus),
+> [vectores y producto punto](https://es.khanacademy.org/math/linear-algebra) y la serie
+> [Essence of linear algebra de 3Blue1Brown](https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab).
 
 ---
 
@@ -67,17 +77,18 @@ sale de una red es un tensor, y **el shape es un contrato**: si no cuadra, nada 
 | Objeto | Shape | Ejemplo |
 |---|---|---|
 | Escalar | `()` | una loss: `0.693` |
-| Vector | `(d,)` | un embedding de 768 dims |
-| Matriz | `(n, d)` | batch de 32 muestras con 10 features: `(32, 10)` |
+| Vector | `(d,)` | un embedding de 768 dims (*embedding*: representar algo — una palabra, una imagen — como lista de números; lo veremos a fondo en la Sesión 3) |
+| Matriz | `(n, d)` | batch de 32 muestras con 10 features: `(32, 10)` (*batch*: grupo de muestras que se procesan juntas de un solo golpe) |
 | Tensor 4D | `(B, C, H, W)` | batch de imágenes: `(32, 3, 224, 224)` |
 
 > 🧩 **Ejercicio mental.** `(32, 3, 224, 224)` se lee: *32 imágenes por batch, 3 canales
-> (RGB), 224 píxeles de alto, 224 de ancho.* Si puedes leer un shape en voz alta, ya
-> entiendes la mitad de los errores que verás este curso.
+> (RGB: rojo-verde-azul), 224 píxeles de alto, 224 de ancho.* Si puedes leer un shape en
+> voz alta, ya entiendes la mitad de los errores que verás este curso.
 
 ### Vectorización y broadcasting
 
-Las GPUs son rápidas haciendo **la misma operación sobre muchos datos a la vez**. Por eso
+Las GPUs (procesadores gráficos, especializados en operar miles de números en paralelo)
+son rápidas haciendo **la misma operación sobre muchos datos a la vez**. Por eso
 nunca recorremos muestras con un `for`: operamos sobre el batch completo.
 
 ```python
@@ -95,6 +106,13 @@ logits = x @ w + b                    # @ = producto matricial
                                       # (2,3) @ (3,) → (2,)  y  b se "broadcast"
 print(logits)                         # tensor([1.8000, 3.6000])
 ```
+
+> 📖 **Dos palabras nuevas.** Un **logit** es el puntaje crudo que sale del modelo:
+> cualquier número real, todavía sin convertir en probabilidad — piénsalo como "evidencia
+> acumulada" a favor de una clase. Y `@` multiplica matrices: para cada fila de `x`,
+> multiplica cada feature por su peso y suma todo. Esa operación de "multiplicar
+> pareja a pareja y sumar" se llama **producto punto** y la reencontrarás en cada
+> rincón de este curso.
 
 **Broadcasting**: PyTorch estira automáticamente dimensiones compatibles (aquí el escalar
 `b` se suma a cada elemento). Poderoso, pero también fuente de bugs silenciosos: verificar
@@ -118,6 +136,10 @@ En el repo esto ya está encapsulado: [`src/utils.py → detectar_dispositivo()`
 
 ## 3. La neurona y la MLP
 
+Una **MLP** (*Multi-Layer Perceptron*, perceptrón multicapa) es la red neuronal más
+simple: varias capas de neuronas apiladas, donde cada capa transforma la salida de la
+anterior. Empecemos por su pieza básica.
+
 ### Neurona lineal
 
 ![Anatomía comparada: neurona biológica vs perceptrón, con sus componentes y fórmulas](../docs/assets/figuras/neurona_vs_perceptron.png)
@@ -137,10 +159,20 @@ $$
 z = \mathbf{w}^\top \mathbf{x} + b
 $$
 
+**Cómo leer la fórmula.** $\mathbf{w}^\top \mathbf{x}$ es el **producto punto** que ya
+viste: multiplicar cada feature por su peso y sumar todo, $w_1x_1 + w_2x_2 + \dots$
+El símbolo $\top$ (transpuesta) solo "acuesta" el vector para que la multiplicación
+cuadre — no cambia sus números.
+
 **Intuición.** Cada peso $w_j$ dice *cuánto importa* la feature $x_j$; el bias $b$ desplaza
-el umbral de decisión. Geométricamente, $z = 0$ define un **hiperplano**: la neurona separa
-el espacio en dos mitades. Eso es todo lo que puede hacer una neurona sola — y por eso el
-perceptrón nunca pudo con XOR.
+el umbral de decisión. Geométricamente, $z = 0$ define un **hiperplano** (en 2D es una
+línea, en 3D un plano): la neurona separa el espacio en dos mitades. Eso es todo lo que
+puede hacer una neurona sola — y por eso el perceptrón nunca pudo con XOR.
+
+> 🧩 **¿Qué es XOR?** El "o exclusivo": clase 1 si *exactamente una* de las dos entradas
+> está activa. Sus cuatro puntos — (0,0)→0, (1,1)→0, (0,1)→1, (1,0)→1 — no pueden
+> separarse con ninguna línea recta. Pruébalo en el
+> [MLP Playground](https://felmco.github.io/deeplearning-class/interactivos/mlp-playground.html).
 
 ### Capa densa (muchas neuronas en paralelo)
 
@@ -148,6 +180,10 @@ $$
 \mathbf{Z}^{(l)} = \mathbf{H}^{(l-1)}\mathbf{W}^{(l)} + \mathbf{b}^{(l)} \qquad
 \mathbf{H}^{(l)} = \phi\left(\mathbf{Z}^{(l)}\right)
 $$
+
+**Cómo leerla.** El superíndice $(l)$ numera la capa. Cada **columna** de $W$ es una
+neurona; la multiplicación matricial calcula *todas las neuronas para todas las muestras
+del batch* de un solo golpe — por eso es tan rápida en GPU.
 
 **Contrato de shapes** (batch-first): si $H$ es `(B, d_in)` y $W$ es `(d_in, d_out)`,
 la salida es `(B, d_out)`.
@@ -164,6 +200,10 @@ $$
 \tanh(z)=\frac{e^z-e^{-z}}{e^z+e^{-z}} \qquad
 \mathrm{ReLU}(z)=\max(0,z)
 $$
+
+**En palabras:** sigmoid ($\sigma$) aplasta cualquier número al rango (0, 1); tanh lo
+aplasta a (−1, 1); ReLU deja pasar lo positivo tal cual y anula lo negativo. (La $e$ es
+el número de Euler ≈ 2.718; $e^{-z}$ solo es una forma suave de "decaer hacia cero".)
 
 ![Funciones de activación y sus derivadas](../docs/assets/figuras/activaciones.png)
 
@@ -188,10 +228,15 @@ $$
 p_k = \frac{e^{z_k}}{\sum_{j=1}^{K}e^{z_j}}
 $$
 
+**En palabras:** exponenciar vuelve todos los puntajes positivos y agranda las
+diferencias; dividir por la suma obliga a que el total sea 1. De puntajes sueltos a
+"porciones de una torta": una **distribución de probabilidad** (lista de números ≥ 0
+que suman exactamente 1, uno por clase).
+
 En implementación se resta $\max(z)$ antes de exponenciar (estabilidad numérica); softmax es
 invariante a esa traslación.
 
-🕹️ **Simulador:** [Softmax y temperatura](https://felmco.github.io/deeplearning-class/interactivos/softmax-temperatura.html) — ajusta los logits y la temperatura y observa la distribución.
+🕹️ **Simulador:** [Softmax y temperatura](https://felmco.github.io/deeplearning-class/interactivos/softmax-temperatura.html) — ajusta los logits y la temperatura y observa la distribución. (*Temperatura*: divide los logits antes del softmax — T alta aplana la distribución, T baja la afila. La usarás para generar texto en la Sesión 3.)
 
 ![Softmax y temperatura](../docs/assets/figuras/softmax_temperatura.png)
 
@@ -203,19 +248,30 @@ invariante a esa traslación.
 aprendizaje**, la brújula diferenciable que le dice al optimizador hacia dónde moverse.
 Métrica = tablero de resultados; loss = brújula.
 
-### MSE (regresión)
+### MSE — Mean Squared Error (regresión)
 
 $$
 \mathcal{L}_{MSE}=\frac{1}{N}\sum_{i=1}^{N}(y_i-\hat y_i)^2
 $$
 
-Penalización cuadrática: errores grandes duelen desproporcionadamente (sensible a outliers).
+El error cuadrático medio: para cada ejemplo, la diferencia entre lo real y lo predicho,
+al cuadrado, promediada. Penalización cuadrática: errores grandes duelen
+desproporcionadamente (sensible a outliers — valores atípicos o extremos).
 
-### Binary cross-entropy (clasificación binaria)
+### Binary cross-entropy — BCE (clasificación binaria)
+
+> 📐 **Lo único que necesitas saber del logaritmo aquí:** $-\log(p)$ es casi 0 cuando
+> $p \approx 1$ y **explota hacia infinito** cuando $p \to 0$. Es un castigo que crece
+> brutalmente cuanto menos probabilidad le diste a la respuesta correcta: estar confiado
+> y equivocado sale carísimo. ([logaritmos en Khan Academy](https://es.khanacademy.org/math/algebra2/x2ec2f6f830c9fb89:logs), por si quieres la base completa.)
 
 $$
 \mathcal{L}_{BCE}=-\frac{1}{N}\sum_i \left[y_i\log p_i+(1-y_i)\log(1-p_i)\right]
 $$
+
+**Cómo leerla:** si el label es 1, solo sobrevive el término $-\log p_i$ (castiga que $p$
+sea baja); si es 0, solo $-\log(1-p_i)$. Un solo término se activa por ejemplo — es el
+"castigo por no creer en la respuesta correcta".
 
 > ⚠️ **En PyTorch usar siempre `BCEWithLogitsLoss`** (recibe logits crudos): combina
 > sigmoid + BCE de forma numéricamente estable.
@@ -226,8 +282,13 @@ $$
 \mathcal{L}_{CE}=-\frac{1}{N}\sum_i \log p(y_i\mid x_i)
 $$
 
-Es la **máxima verosimilitud** disfrazada: maximizar la probabilidad del label correcto =
-minimizar $-\log p$.
+**En palabras:** mira únicamente la probabilidad que el modelo le dio a la clase
+*correcta* y cobra $-\log$ de ella; ignorar el resto es deliberado. Premiar al modelo por
+asignar probabilidad alta a la respuesta correcta es lo que los estadísticos llaman
+**máxima verosimilitud** — mismo principio, otro nombre.
+
+> 🎥 Si quieres la historia completa de por qué el logaritmo:
+> [StatQuest — Cross Entropy claramente explicado](https://www.youtube.com/watch?v=6ArSys5qHAU).
 
 > ⚠️ **Error clásico #1 del curso:** `CrossEntropyLoss` recibe **logits**, no probabilidades.
 > Aplicar softmax antes de la loss es un bug que *casi* funciona — el modelo aprende, pero
@@ -237,6 +298,26 @@ minimizar $-\log p$.
 
 ## 5. Gradiente, regla de la cadena y backpropagation
 
+### 5.0 — ¿Qué es una derivada? (2 minutos)
+
+La **derivada** responde una sola pregunta: *si muevo la entrada un poquito, ¿cuánto
+cambia la salida?* Es la pendiente de la curva en ese punto.
+
+Ejemplo numérico: si subo $w$ de 3.00 a 3.01 y la loss baja de 9.00 a 8.88 (cambió
+−0.12 al mover 0.01), la derivada es ≈ −12. Signo negativo = "subir $w$ baja la loss".
+
+- **Derivada parcial** ($\partial$, la "d curvada"): lo mismo, pero moviendo *solo una*
+  variable y dejando el resto quieto. $\partial L/\partial w$ = "¿cuánto cambia $L$ si
+  muevo solo $w$?"
+- **Gradiente** ($\nabla$): el paquete con todas las derivadas parciales juntas, una por
+  parámetro. Apunta hacia donde la loss *sube* más rápido.
+- Derivada ≈ 0 significa "mover esto casi no cambia nada" → no hay señal para aprender.
+
+> 🎥 **Para verlo animado** (muy recomendado): 3Blue1Brown,
+> [Gradient descent](https://www.youtube.com/watch?v=IHZwWFHWa-w) y
+> [Backpropagation, intuitively](https://www.youtube.com/watch?v=Ilg3gGewQ5U)
+> (subtítulos en español disponibles).
+
 ### Descenso por gradiente
 
 $$
@@ -245,13 +326,13 @@ $$
 
 **Intuición.** La loss define un paisaje montañoso sobre el espacio de parámetros. El
 gradiente $\nabla_\theta \mathcal{L}$ apunta cuesta *arriba*; caminamos en dirección
-contraria con pasos de tamaño $\eta$ (el **learning rate**).
+contraria con pasos de tamaño $\eta$ (el **learning rate**, abreviado **LR**).
 
 ![Efecto del learning rate](../docs/assets/figuras/learning_rate.png)
 
 ![Descenso de gradiente animado](../docs/assets/figuras/descenso_gradiente.gif)
 
-🕹️ **Simulador:** [Descenso de gradiente interactivo](https://felmco.github.io/deeplearning-class/interactivos/descenso-gradiente.html) — cambia el learning rate y el momentum, y suelta la bolita donde quieras.
+🕹️ **Simulador:** [Descenso de gradiente interactivo](https://felmco.github.io/deeplearning-class/interactivos/descenso-gradiente.html) — cambia el learning rate y el momentum (la "inercia" de la bolita; se explica en la Sesión 2), y suelta la bolita donde quieras.
 
 ### Regla de la cadena
 
@@ -356,9 +437,10 @@ La implementación completa y comentada del curso vive en [`src/train.py`](../sr
 - **Batch / iteración / epoch:** un *batch* es un subconjunto de muestras; una *iteración*
   procesa un batch; un *epoch* recorre todo el dataset. Batches pequeños → gradiente ruidoso
   pero regularizador; grandes → estable pero costoso en memoria.
-- **Inicialización:** romper la simetría con valores aleatorios bien escalados
-  (Xavier para tanh/sigmoid, He para ReLU). Inicializar todo en cero = todas las neuronas
-  aprenden lo mismo = red inútil.
+- **Inicialización:** romper la simetría con valores aleatorios bien escalados.
+  *Xavier* y *He* son reglas para elegir el tamaño típico de los pesos iniciales según
+  la activación (Xavier para tanh/sigmoid, He para ReLU). Inicializar todo en cero =
+  todas las neuronas aprenden lo mismo = red inútil.
 - **Learning rate:** el hiperparámetro más importante. Alto → diverge; bajo → eterno.
 
 ---
@@ -380,8 +462,8 @@ train–validation**:
 
 | Método | Qué hace | Riesgo si se abusa |
 |---|---|---|
-| **Weight decay** | penaliza pesos grandes (L2) | underfitting |
-| **Dropout** | apaga neuronas al azar en train | underfitting, más epochs necesarios |
+| **Weight decay** | penaliza pesos grandes ("L2": castigar la suma de los cuadrados de los pesos, empujándolos hacia valores pequeños) | underfitting |
+| **Dropout** | apaga neuronas al azar en cada paso de train, para que ninguna se vuelva imprescindible (detalle en Sesión 2) | underfitting, más epochs necesarios |
 | **Early stopping** | detiene al estancarse validation | detenerse ante ruido (usar patience) |
 | **Data augmentation** | crea variantes plausibles de los datos | destruir la señal de la etiqueta |
 
@@ -443,6 +525,16 @@ Cada equipo ejecuta dos variantes cambiando **una sola variable**:
 | weight decay | 0 vs `1e-3` |
 | learning rate | `1e-4` vs `1e-2` |
 | profundidad | 1 capa oculta vs 4 |
+
+### Las métricas que vas a reportar
+
+- **Matriz de confusión**: una tabla real-vs-predicho — cada celda cuenta cuántos
+  ejemplos de la clase X el modelo clasificó como Y. La diagonal son los aciertos.
+- **Precision**: de lo que marqué como positivo, ¿cuánto era verdad?
+- **Recall**: de lo positivo real, ¿cuánto encontré?
+- **F1**: el promedio (armónico) de precision y recall — solo es alto si *ambas* lo son.
+
+> 🎥 Profundiza con el [Google ML Crash Course en español — clasificación](https://developers.google.com/machine-learning/crash-course/classification?hl=es).
 
 ### Evidencia a entregar
 

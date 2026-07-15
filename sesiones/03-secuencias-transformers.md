@@ -30,7 +30,11 @@ Un modelo no ve palabras: ve **IDs enteros**. El tokenizer parte el texto en uni
 | Por carácter | `[t,r,a,n,s,...]` | vocabulario mínimo, secuencias larguísimas |
 | **Subword** (BPE/WordPiece) | `[transform, ادores]`* | equilibrio: lo raro se descompone |
 
-\* *ilustrativo; los cortes reales dependen del corpus de entrenamiento del tokenizer.*
+\* *ilustrativo; los cortes reales dependen del corpus de entrenamiento del tokenizer
+(el **corpus**: la colección de textos con la que se entrenó). BPE (*Byte-Pair
+Encoding*) y WordPiece son algoritmos que aprenden los cortes más frecuentes de ese
+corpus; si quieres verlos por dentro:
+[Let's build the GPT Tokenizer, de Karpathy](https://www.youtube.com/watch?v=zduSFxRajkE).*
 
 ### Embeddings: de IDs a geometría
 
@@ -46,8 +50,9 @@ distribuida**.
 
 ![Embeddings: cercanía = similitud](../docs/assets/figuras/embeddings_2d.png)
 
-> ⚠️ La similitud coseno y las analogías ("rey − hombre + mujer ≈ reina") son intuición
-> útil, no garantía matemática.
+> ⚠️ La **similitud coseno** (medir el ángulo entre dos vectores: 1 ≈ misma dirección,
+> 0 ≈ sin relación, −1 ≈ opuestos) y las analogías ("rey − hombre + mujer ≈ reina") son
+> intuición útil, no garantía matemática.
 
 ### Longitud variable: padding y máscaras
 
@@ -64,7 +69,13 @@ mask = [  1,   1,  1,  0,  0 ]      1 = token real
 
 ## 2. RNN: la primera respuesta al problema secuencial
 
+Una **RNN** (*Recurrent Neural Network*, red neuronal recurrente) procesa la secuencia
+token a token, arrastrando un "estado" que resume lo leído hasta el momento.
+
 ### La idea: un estado que se actualiza paso a paso
+
+La receta: el estado nuevo se cocina mezclando la entrada actual con el estado anterior,
+siempre con los mismos pesos.
 
 $$
 h_t=\tanh(W_{xh}x_t+W_{hh}h_{t-1}+b_h) \qquad y_t=W_{hy}h_t+b_y
@@ -83,18 +94,34 @@ El estado $h_t$ es una **memoria comprimida** de todo lo visto hasta $t$. Los mi
 $W$ se aplican en cada paso (compartir parámetros a través del *tiempo*, como la CNN los
 comparte a través del *espacio*).
 
-### Backpropagation Through Time y sus dos enfermedades
+### Backpropagation Through Time (BPTT) y sus dos enfermedades
 
-Entrenar una RNN = desplegar el grafo por $T$ pasos y aplicar backprop. El gradiente hacia
-pasos lejanos es un **producto de $T$ Jacobianos**:
+Entrenar una RNN = desplegar el grafo por $T$ pasos y aplicar backprop a través de todos
+ellos (de ahí el nombre: *backpropagation through time*). La clave: el gradiente llega
+al pasado **multiplicándose por un factor en cada paso**. Y las multiplicaciones
+repetidas solo tienen dos destinos:
+
+- factor un poco **menor que 1** → el producto colapsa: $0.9^{100} \approx 0.00003$.
+  El gradiente **se desvanece** y es imposible aprender dependencias largas.
+- factor un poco **mayor que 1** → el producto estalla: $1.1^{100} \approx 13{,}780$.
+  El gradiente **explota** y el entrenamiento se vuelve inestable.
+  *Parche:* `clip_grad_norm_` recorta los gradientes gigantes (resuelve la explosión,
+  no el desvanecimiento).
 
 ![Vanishing y exploding gradients](../docs/assets/figuras/rnn_gradientes.png)
 
-- $\|J\| < 1$ → el gradiente **se desvanece**: imposible aprender dependencias largas.
-- $\|J\| > 1$ → el gradiente **explota**: entrenamiento inestable.
-  *Parche:* `clip_grad_norm_` limita la norma (resuelve la explosión, no el desvanecimiento).
+> 📐 *Nota para quien tenga cálculo:* ese "factor" es en realidad una matriz de derivadas
+> llamada **Jacobiano**, y $\|J\|$ (su norma) mide su "tamaño". La intuición escalar de
+> arriba es exactamente la misma.
 
 ### LSTM: memoria con compuertas
+
+Una **LSTM** (*Long Short-Term Memory*) es una RNN con "compuertas" que regulan qué se
+guarda y qué se olvida.
+
+> 📐 **Notación de las fórmulas:** $\sigma$ = sigmoid (aplasta a 0–1: funciona como una
+> "perilla" de cuánto pasa); $\odot$ = multiplicación elemento a elemento;
+> $[x_t, h_{t-1}]$ = pegar los dos vectores uno tras otro (concatenar).
 
 $$
 f_t=\sigma(W_f[x_t,h_{t-1}]+b_f) \qquad i_t=\sigma(W_i[x_t,h_{t-1}]+b_i)
@@ -113,8 +140,11 @@ $f_t$ (forget) decide qué **borrar**, $i_t$ (input) qué **escribir**, $o_t$ (o
 **leer**. La suma $c_t=f_t\odot c_{t-1}+i_t\odot\tilde c_t$ crea un camino aditivo para el
 gradiente — la misma medicina que las conexiones residuales.
 
-**GRU:** la versión compacta (2 compuertas, sin celda separada). Menos parámetros,
-desempeño a menudo comparable.
+**GRU** (*Gated Recurrent Unit*): la versión compacta (2 compuertas, sin celda separada).
+Menos parámetros, desempeño a menudo comparable.
+
+> 🎥 La explicación visual canónica de las compuertas:
+> [Understanding LSTM Networks, de Chris Olah](https://colah.github.io/posts/2015-08-Understanding-LSTMs/).
 
 ### El cuello de botella que motiva todo lo demás
 
@@ -151,8 +181,10 @@ Paso a paso, con la matriz real calculada:
 ![Pipeline de attention: scores → escala → máscara → softmax](../docs/assets/figuras/atencion_pipeline.png)
 
 1. **$QK^\top$** — todas las compatibilidades query–key a la vez: shape `(T, T)`.
-2. **$\div\sqrt{d_k}$** — sin escalar, con $d_k$ grande los scores crecen, el softmax se
-   satura y los gradientes mueren. El escalado mantiene la varianza ≈ 1.
+2. **$\div\sqrt{d_k}$** — cada score suma $d_k$ productos, así que con $d_k$ grande los
+   scores crecen (más o menos como $\sqrt{d_k}$), el softmax concentra todo en un token
+   ("se satura") y los gradientes mueren. Dividir por $\sqrt{d_k}$ los mantiene en un
+   rango moderado. *(En términos estadísticos: mantiene la varianza ≈ 1.)*
 3. **$+M$ (máscara)** — $M=0$ en posiciones permitidas y $-\infty$ en las bloqueadas
    (futuro, padding) → el softmax les asigna probabilidad ~0.
 4. **softmax** por filas — cada query reparte una distribución de atención que **suma 1**.
@@ -198,7 +230,15 @@ $$
 
 En lugar de una atención de dimensión $d_{model}$, se ejecutan $h$ atenciones de dimensión
 $d_{model}/h$: cada head puede especializarse en relaciones distintas (sintaxis cercana,
-correferencia lejana, posición). Sus salidas se concatenan y se proyectan con $W^O$.
+correferencia lejana — saber que "ella" refiere a "María" cinco palabras atrás —,
+posición). Sus salidas se concatenan y se proyectan con $W^O$. **MHA** = *multi-head
+attention*, el nombre de todo este mecanismo.
+
+> 🎥 **Si esta sección se te movió el piso, dos refuerzos excelentes:**
+> [The Illustrated Transformer, de Jay Alammar](https://jalammar.github.io/illustrated-transformer/)
+> (la derivación con figuras, paso a paso) y 3Blue1Brown,
+> [Attention in transformers, visually explained](https://www.youtube.com/watch?v=eMlx5fFNoYc);
+> su [But what is a GPT?](https://www.youtube.com/watch?v=wjZofJX0v4M) da el mapa general.
 
 ### La self-attention no sabe de orden
 
@@ -214,8 +254,10 @@ $$
 ![Positional encoding sinusoidal](../docs/assets/figuras/positional_encoding.png)
 
 Cada posición recibe una "firma" única hecha de ondas de frecuencias distintas — como un
-reloj con manecillas de horas, minutos y segundos. (Los modelos modernos usan variantes
-aprendidas o rotatorias como RoPE; la intuición es la misma.)
+reloj con manecillas de horas, minutos y segundos. El $10000^{2i/d}$ solo gradúa esas
+frecuencias: dimensiones bajas oscilan rápido (los "segundos"), altas oscilan lento (las
+"horas"). (Los modelos modernos usan variantes aprendidas o rotatorias como RoPE,
+*Rotary Position Embeddings*; la intuición es la misma.)
 
 🕹️ **Simulador:** [Positional encoding](https://felmco.github.io/deeplearning-class/interactivos/positional-encoding.html).
 
@@ -227,6 +269,9 @@ $$
 x'=x+\mathrm{MHA}(\mathrm{LN}(x)) \qquad
 y=x'+\mathrm{FFN}(\mathrm{LN}(x'))
 $$
+
+Donde **LN** = LayerNorm (Sesión 2) y **FFN** = *feed-forward network*: una mini-MLP de
+dos capas que se aplica a cada token por separado.
 
 ```mermaid
 flowchart TB
@@ -246,7 +291,8 @@ flowchart TB
 - La **attention** es la única parte que **mezcla información entre tokens** (comunicación).
 - La **FFN** transforma cada token **independientemente** (computación por posición).
 - Los **residuals** ($+x$) son la autopista del gradiente — la lección de ResNet, reciclada.
-- **LayerNorm** (pre-norm) estabiliza cada subcapa normalizando las features de cada token.
+- **LayerNorm** (*pre-norm*: normalizar *antes* de cada subcapa, la variante moderna más
+  estable) estabiliza cada subcapa normalizando las features de cada token.
 
 ### Las tres familias
 
@@ -263,11 +309,18 @@ flowchart LR
     end
 ```
 
+*Cross-attention*: el decoder usa sus queries contra las keys/values del **encoder** —
+así la traducción "consulta" la oración original mientras genera.
+
 | | BERT-like (encoder) | GPT-like (decoder causal) |
 |---|---|---|
 | Atención | bidireccional | causal (solo pasado) |
-| Objetivo de pretraining | masked language modeling | next-token prediction |
+| Objetivo de pretraining | masked language modeling (se ocultan tokens al azar y el modelo debe adivinarlos) | next-token prediction (predecir siempre el token siguiente) |
 | Fortaleza típica | comprensión/clasificación | generación |
+
+> 📖 Los nombres, por si te lo preguntabas: **GPT** = *Generative Pre-trained
+> Transformer*; **BERT** = *Bidirectional Encoder Representations from Transformers*;
+> **T5** = *Text-to-Text Transfer Transformer*.
 
 ### Complejidad
 
@@ -295,6 +348,17 @@ cada paso en el [simulador de attention](https://felmco.github.io/deeplearning-c
 ## 7. 🔬 Laboratorio visual — Transformer Explainer
 
 **URL:** <https://poloclub.github.io/transformer-explainer/> (GPT-2 small corriendo en tu navegador)
+
+> 📖 **Tres controles de generación que verás en los pasos 9-10** (los usaremos a fondo
+> en la Sesión 4):
+> - **Temperatura**: cuánto se "aplana" la distribución antes de sortear el siguiente
+>   token — baja (0.2) → conservador y repetitivo; alta (1.5) → creativo y arriesgado.
+> - **Top-k**: solo se sortea entre los $k$ tokens más probables.
+> - **Top-p**: solo entre los tokens que acumulan probabilidad $p$ (el grupo se agranda
+>   o achica según la confianza del modelo).
+>
+> Profundiza: [How to generate text (blog de Hugging Face)](https://huggingface.co/blog/how-to-generate)
+> y nuestro [simulador de softmax y temperatura](https://felmco.github.io/deeplearning-class/interactivos/softmax-temperatura.html).
 
 Guion de 35–40 minutos:
 

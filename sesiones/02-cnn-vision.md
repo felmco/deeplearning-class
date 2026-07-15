@@ -1,5 +1,9 @@
 # 📗 Sesión 2 — CNN, optimización, regularización y transfer learning
 
+Una **CNN** (*Convolutional Neural Network*, red neuronal convolucional) es la
+arquitectura que dominó la visión por computadora: en lugar de conectar cada píxel con
+cada neurona, desliza pequeños detectores por la imagen.
+
 > **Pregunta detonante:** si aplanamos una imagen de 28×28 a un vector de 784 números,
 > ¿qué acabamos de destruir?
 
@@ -27,7 +31,9 @@ La convolución explota dos ideas:
 - **Localidad:** los patrones útiles (bordes, texturas) son locales → basta mirar ventanas pequeñas.
 - **Compartir pesos:** un detector de bordes sirve *en cualquier parte* de la imagen → el mismo kernel se desliza por toda ella.
 
-Resultado: muchísimos menos parámetros y una **inductive bias** correcta para imágenes.
+Resultado: muchísimos menos parámetros y una **inductive bias** correcta para imágenes
+(*inductive bias*: una suposición incorporada a la arquitectura — aquí, "los patrones
+son locales y se repiten en cualquier parte de la imagen").
 
 ### La imagen como tensor
 
@@ -52,6 +58,10 @@ la ventana se desliza y se repite. En una CNN real se suman además los canales 
 
 🕹️ **Simulador:** [Convolución 2D interactiva](https://felmco.github.io/deeplearning-class/interactivos/convolucion.html) — elige el kernel, el stride y el padding, y avanza paso a paso.
 
+> 🎥 Dos refuerzos visuales excelentes: [CNN Explainer](https://poloclub.github.io/cnn-explainer/)
+> (una CNN real, capa por capa, en el navegador) y 3Blue1Brown,
+> [But what is a convolution?](https://www.youtube.com/watch?v=KuXjwB4LzSA)
+
 ### Kernels clásicos: la antesala de los filtros aprendidos
 
 ![Kernels aplicados a una imagen real](../docs/assets/figuras/kernels_conv.png)
@@ -66,8 +76,10 @@ $$
 H_{out}=\left\lfloor\frac{H_{in}+2P-D(K-1)-1}{S}\right\rfloor+1
 $$
 
-donde $K$ = kernel, $P$ = padding, $S$ = stride, $D$ = dilation (con $D=1$ queda la forma
-familiar $\lfloor (H+2P-K)/S \rfloor + 1$).
+donde $K$ = tamaño del kernel, $P$ = padding, $S$ = stride, $D$ = dilation (*dilation*:
+separar los elementos del kernel dejando huecos; en este curso siempre $D=1$, con lo que
+queda la forma familiar $\lfloor (H+2P-K)/S \rfloor + 1$). Los corchetes $\lfloor\,\rfloor$
+significan "redondear hacia abajo".
 
 ![Efecto de padding y stride](../docs/assets/figuras/padding_stride.png)
 
@@ -128,7 +140,8 @@ honesto de visión: lo bastante fácil para entrenar en CPU, lo bastante difíci
 ### Normalización de entradas
 
 Centrar y escalar los píxeles con estadísticas **calculadas solo en train**
-(FashionMNIST: μ=0.2860, σ=0.3530). Ver [`configs/cnn.yaml`](../configs/cnn.yaml).
+(FashionMNIST: μ=0.2860, σ=0.3530; μ = la media de los valores, σ = la desviación
+estándar, el "ancho" típico alrededor de esa media). Ver [`configs/cnn.yaml`](../configs/cnn.yaml).
 
 ### Data augmentation
 
@@ -138,7 +151,8 @@ es un 6 — el augmentation se diseña *por dataset*.
 
 ### Dropout
 
-En entrenamiento, cada neurona se apaga con probabilidad $p$ (máscara Bernoulli): la red no
+En entrenamiento, cada neurona se apaga lanzando una moneda cargada con probabilidad $p$
+(los estadísticos lo llaman *máscara de Bernoulli*): la red no
 puede depender de ninguna neurona individual → co-adaptación rota → mejor generalización.
 En inferencia no se apaga nada (se compensa la escala). De ahí la importancia de
 `model.train()` / `model.eval()`.
@@ -166,16 +180,24 @@ Transformers, lo veremos en la Sesión 3).
 
 ### SGD con momentum
 
+**SGD** (*Stochastic Gradient Descent*): el descenso por gradiente de la Sesión 1,
+calculado sobre mini-batches aleatorios — de ahí lo de "estocástico".
+
 $$
 v_t=\beta v_{t-1}+g_t,\qquad \theta_{t+1}=\theta_t-\eta\, v_t
 $$
 
-El momentum acumula una "velocidad": amortigua oscilaciones perpendiculares al valle y
-acelera en la dirección persistente del gradiente.
+donde $g_t$ es el gradiente actual y $\beta$ (≈ 0.9) cuánta "velocidad" anterior se
+conserva. El momentum acumula esa velocidad: amortigua oscilaciones perpendiculares al
+valle y acelera en la dirección persistente del gradiente.
+
+> 🎥 Para jugarlo visualmente: [Why Momentum Really Works (distill.pub)](https://distill.pub/2017/momentum/) — interactivo, opcional.
 
 ### Adam / AdamW
 
-Adapta el learning rate por parámetro usando momentos de primer y segundo orden. **AdamW**
+Adam mantiene **dos promedios móviles por parámetro**: el del gradiente (¿hacia dónde
+suele apuntar?) y el de su cuadrado (¿qué tan grande suele ser?), y usa ambos para
+adaptar el tamaño del paso de cada parámetro por separado. **AdamW**
 desacopla el weight decay de la actualización adaptativa — es el default razonable del
 curso.
 
@@ -240,8 +262,9 @@ Esta idea reaparecerá **idéntica** en los bloques Transformer de la Sesión 3.
 ## 8. Transfer learning
 
 **Intuición.** Una ResNet entrenada en ImageNet ya sabe ver: bordes, texturas, formas,
-partes. Ese conocimiento se **transfiere**: se reemplaza la cabeza de clasificación y se
-reutiliza el resto.
+partes. Ese conocimiento se **transfiere**: se reemplaza la **cabeza** de clasificación
+(la capa final que decide la clase) y se reutiliza el **backbone** (el "cuerpo" de la
+red: todas las capas convolucionales que extraen features).
 
 ```python
 from torchvision.models import ResNet18_Weights, resnet18

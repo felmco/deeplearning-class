@@ -51,6 +51,7 @@
 </div>
 
 <div class="explica">
+  <strong>Leyenda de color:</strong> azul = +1 · blanco = 0 · rojo = −1.<br>
   <strong>Qué mirar:</strong> las primeras dimensiones (izquierda del mapa) oscilan RÁPIDO —
   distinguen posiciones vecinas; las últimas oscilan LENTO — codifican posición global.
   Juntas forman una firma única y de norma similar para cada posición, que se <em>suma</em> al
@@ -74,12 +75,8 @@ function pe(pos, dim, d){
   return dim % 2 === 0 ? Math.sin(pos*freq) : Math.cos(pos*freq);
 }
 
-// Rojo-azul divergente (coherente con las figuras del curso)
-function colorRB(v){
-  const t = (v+1)/2;
-  return `rgb(${Math.round(178+(255-178)*(1-t)*0 + (5)*0 + (255-178)*0)},0,0)`;
-}
-function rgb(v){  // v ∈ [-1, 1] → azul(−) blanco(0) rojo(+) estilo RdBu invertido
+// Divergente azul-rojo (coherente con las figuras del curso)
+function rgb(v){  // v ∈ [-1, 1] → rojo(−1) blanco(0) azul(+1)
   const t = Math.max(-1, Math.min(1, v));
   if (t >= 0) return `rgb(${255-Math.round(190*t)}, ${255-Math.round(200*t)}, 255)`;
   return `rgb(255, ${255+Math.round(200*t)}, ${255+Math.round(190*t)})`;

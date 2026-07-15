@@ -18,7 +18,8 @@ gradient de las RNN. Prefigura la idea de "autopista del gradiente". *(Sesión 3
 
 ### Adam: A Method for Stochastic Optimization
 **Kingma & Ba (2014)** · <https://arxiv.org/abs/1412.6980>
-Momentos adaptativos de primer y segundo orden por parámetro. Con la corrección de AdamW
+Lleva un promedio móvil del gradiente (hacia dónde ir) y de su magnitud (cuánto confiar),
+por parámetro. Con la corrección de AdamW
 (weight decay desacoplado), es el optimizador por defecto del curso. *(Sesión 2)*
 
 ### Batch Normalization

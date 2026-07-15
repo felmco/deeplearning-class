@@ -13,7 +13,7 @@
 
 ## 1. Propósito del curso
 
-El curso introduce Deep Learning desde sus fundamentos matemáticos y computacionales hasta el uso práctico de arquitecturas modernas basadas en Transformers. La secuencia pedagógica evita tratar las librerías como una “caja negra”: primero se construyen tensores, grafos computacionales, funciones de pérdida, backpropagation y ciclos de entrenamiento; luego se estudian MLP, CNN, RNN/LSTM, atención y Transformers; finalmente se reutilizan modelos preentrenados con Hugging Face y se entrega un proyecto reproducible en GitHub.
+El curso introduce Deep Learning desde sus fundamentos matemáticos y computacionales hasta el uso práctico de arquitecturas modernas basadas en Transformers. La secuencia pedagógica evita tratar las librerías como una “caja negra”: primero se construyen tensores, grafos computacionales, funciones de pérdida, backpropagation y ciclos de entrenamiento; luego se estudian MLP (*Multi-Layer Perceptron*), CNN (*Convolutional Neural Network*), RNN/LSTM (*Recurrent Neural Network* / *Long Short-Term Memory*), atención y Transformers; finalmente se reutilizan modelos preentrenados con Hugging Face y se entrega un proyecto reproducible en GitHub.
 
 El criterio rector es:
 
@@ -31,8 +31,8 @@ El criterio rector es:
 
 - Python: variables, funciones, clases básicas, listas/diccionarios y manejo de paquetes.
 - NumPy y pandas a nivel introductorio.
-- Álgebra lineal básica: vectores, matrices, producto punto y multiplicación matricial.
-- Cálculo básico: derivada, derivada parcial y regla de la cadena.
+- Álgebra lineal básica: vectores, matrices, producto punto y multiplicación matricial — **deseable, no excluyente**: la Sesión 1 explica cada símbolo cuando aparece, con cajas de nivelación y enlaces (Khan Academy, 3Blue1Brown).
+- Cálculo básico: derivada, derivada parcial y regla de la cadena — **deseable, no excluyente**: la Sesión 1 incluye la subsección "¿Qué es una derivada? (2 minutos)" para quien parte de cero.
 - Fundamentos de aprendizaje supervisado: features, labels, train/test y métricas.
 - Git básico es deseable, pero se incluye un flujo mínimo guiado.
 
@@ -76,7 +76,7 @@ Se utiliza Hugging Face para:
 - inspeccionar tokenizers y model cards;
 - ejecutar inferencia con `pipeline`;
 - realizar fine-tuning con `Trainer`;
-- introducir PEFT/LoRA, cuantización y publicación responsable.
+- introducir PEFT/LoRA (*Parameter-Efficient Fine-Tuning* / *Low-Rank Adaptation*), cuantización y publicación responsable.
 
 ### Herramienta visual: Transformer Explainer
 
@@ -86,7 +86,7 @@ Se incorpora como laboratorio guiado, no como sustituto de la formulación. Perm
 
 - Perceptrón y MLP.
 - CNN y conexiones residuales.
-- RNN, LSTM y GRU.
+- RNN, LSTM y GRU (*Gated Recurrent Unit*).
 - Scaled dot-product attention.
 - Multi-head attention.
 - Transformer encoder, decoder causal y encoder–decoder.
@@ -100,7 +100,7 @@ Por restricción de 32 horas, se presentan como extensiones:
 - detección y segmentación avanzada;
 - GAN, VAE y diffusion models;
 - entrenamiento distribuido multi-GPU;
-- pretraining de LLM desde cero;
+- pretraining de LLM (*Large Language Models*, modelos grandes de lenguaje) desde cero;
 - RLHF/DPO/GRPO;
 - serving de alta escala y optimizaciones de kernels;
 - interpretabilidad causal avanzada.
@@ -351,7 +351,7 @@ $$
 $$
 
 $$
-\operatorname{ReLU}(z)=\max(0,z)
+\mathrm{ReLU}(z)=\max(0,z)
 $$
 
 ### Softmax
@@ -382,7 +382,7 @@ $$
 \mathcal{L}_{CE}=-\frac{1}{N}\sum_i \log p(y_i\mid x_i)
 $$
 
-`CrossEntropyLoss` recibe **logits**, no probabilidades ni one-hot labels.
+`CrossEntropyLoss` recibe **logits**, no probabilidades ni one-hot labels (*one-hot*: vector de ceros con un 1 en la clase correcta).
 
 ### Descenso por gradiente
 
@@ -437,7 +437,7 @@ $$
 | 22 | **MSE** | L=(1/n)Σ(y−ŷ)²; penalización cuadrática y sensibilidad a outliers. | Parábola de error. |
 | 23 | **Binary cross-entropy** | Entropía cruzada para Bernoulli; usar logits para estabilidad. | Curvas de penalización para y=0 e y=1. |
 | 24 | **Cross-entropy multiclase** | L=−log p(y\|x); relación con máxima verosimilitud. | Probabilidad correcta vs pérdida. |
-| 25 | **Optimización** | Objetivo minθ J(θ); superficie de pérdida y trayectorias. | Mapa topográfico con SGD. |
+| 25 | **Optimización** | Objetivo minθ J(θ); superficie de pérdida y trayectorias. | Mapa topográfico con SGD (*Stochastic Gradient Descent*). |
 | 26 | **Gradiente** | Dirección de máximo crecimiento; actualización θ←θ−η∇J. | Vector tangente sobre una curva. |
 | 27 | **Regla de la cadena** | Derivadas locales se multiplican a través de la composición. | Árbol de dependencias sencillo. |
 | 28 | **Grafo computacional** | Nodos, operaciones, valores hacia adelante y gradientes hacia atrás. | Construir y anotar z=(wx+b)². |
@@ -1307,10 +1307,12 @@ $$
 h_t=o_t\odot\tanh(c_t)
 $$
 
+*Lectura: σ = sigmoid (perilla 0–1), ⊙ = producto elemento a elemento, [x,h] = concatenar. f = cuánto olvidar, i = cuánto escribir, o = cuánto leer; c es la "cinta de memoria" que atraviesa el tiempo casi sin tocarse.*
+
 ### Scaled dot-product attention
 
 $$
-\operatorname{Attention}(Q,K,V)=\operatorname{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}+M\right)V
+\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}+M\right)V
 $$
 
 `M` contiene `0` para posiciones permitidas y un valor muy negativo para posiciones bloqueadas.
@@ -1318,11 +1320,11 @@ $$
 ### Multi-head attention
 
 $$
-\operatorname{head}_i=\operatorname{Attention}(QW_i^Q,KW_i^K,VW_i^V)
+\mathrm{head}_i=\mathrm{Attention}(QW_i^Q,KW_i^K,VW_i^V)
 $$
 
 $$
-\operatorname{MHA}(Q,K,V)=\operatorname{Concat}(head_1,\dots,head_h)W^O
+\mathrm{MHA}(Q,K,V)=\mathrm{Concat}(head_1,\dots,head_h)W^O
 $$
 
 ### Positional encoding sinusoidal
@@ -1335,15 +1337,19 @@ $$
 PE(pos,2i+1)=\cos\left(pos/10000^{2i/d_{model}}\right)
 $$
 
+*Lectura: cada posición recibe una "huella digital" hecha de ondas de distintas frecuencias — como un reloj con manecillas de horas, minutos y segundos.*
+
 ### Transformer pre-norm simplificado
 
 $$
-x'=x+\operatorname{MHA}(\operatorname{LN}(x))
+x'=x+\mathrm{MHA}(\mathrm{LN}(x))
 $$
 
 $$
-y=x'+\operatorname{FFN}(\operatorname{LN}(x'))
+y=x'+\mathrm{FFN}(\mathrm{LN}(x'))
 $$
+
+*Lectura: LN = LayerNorm, FFN = feed-forward network (la mini-MLP del bloque). Los +x son las conexiones residuales: la autopista del gradiente.*
 
 ## Slides propuestos
 
@@ -1360,8 +1366,8 @@ $$
 | 8 | **Limitación de bolsa de palabras** | Ignora orden, negación y dependencias. | “no es bueno” vs “es bueno”. |
 | 9 | **RNN: estado recurrente** | h_t resume pasado y se actualiza paso a paso. | Celda desplegada en el tiempo. |
 | 10 | **Ecuaciones RNN** | h_t=tanh(W_xh x_t+W_hh h_{t−1}+b_h); ŷ_t=W_hy h_t+b_y. | Anotar shapes. |
-| 11 | **Backpropagation Through Time** | El grafo se replica por pasos; parámetros compartidos. | Forward y backward a través del tiempo. |
-| 12 | **Gradientes que desaparecen/explotan** | Productos repetidos de Jacobianos; dependencias largas difíciles. | Magnitud del gradiente por timestep. |
+| 11 | **Backpropagation Through Time (BPTT)** | El grafo se replica por pasos; parámetros compartidos. | Forward y backward a través del tiempo. |
+| 12 | **Gradientes que desaparecen/explotan** | Multiplicar muchas veces factores <1 desvanece el gradiente (0.9^100 ≈ 0.00003); >1 lo explota. La versión matricial del factor se llama Jacobiano. | Magnitud del gradiente por timestep. |
 | 13 | **Gradient clipping** | Limitar norma para controlar explosión; no resuelve vanishing. | Código clip_grad_norm_. |
 | 14 | **LSTM: intuición** | Celda de memoria y compuertas para controlar olvidar, escribir y leer. | Diagrama de tubería con compuertas. |
 | 15 | **Ecuaciones LSTM** | f_t, i_t, g_t, o_t, c_t y h_t. | Colorear cada compuerta. |
@@ -1386,7 +1392,7 @@ $$
 | 34 | **Encoder** | Atención bidireccional y representaciones contextuales. | Pila de encoders. |
 | 35 | **Decoder causal** | Masked self-attention y generación del siguiente token. | Pila GPT-like. |
 | 36 | **Encoder–decoder** | Self-attention, cross-attention y salida autoregresiva. | Arquitectura de traducción. |
-| 37 | **BERT vs GPT** | Encoder/MLM vs decoder/causal LM; comprensión vs generación como simplificación. | Tabla de objetivos y máscaras. |
+| 37 | **BERT vs GPT** | Encoder/MLM (*masked language modeling*: adivinar tokens tapados) vs decoder/causal LM (predecir el siguiente token); comprensión vs generación como simplificación. | Tabla de objetivos y máscaras. |
 | 38 | **Complejidad** | Self-attention O(T²d), RNN O(Td²) secuencial; matices por longitud/hardware. | Gráfica conceptual costo vs T. |
 | 39 | **Transformer Explainer** | GPT-2 small, embeddings, 12 heads, máscara, logits y sampling. | Recorrido guiado en la herramienta. |
 | 40 | **Temperatura, top-k y top-p** | Transformar distribución de salida y controlar diversidad. | Experimento con el mismo prompt. |
@@ -1724,7 +1730,7 @@ plt.show()
 | 13 | **Logits y probabilidades** | El modelo devuelve logits; aplicar softmax/sigmoid según tarea. | Inspeccionar ModelOutput. |
 | 14 | **Datasets** | load_dataset, splits, map, select, filter, shuffle; streaming opcional. | Vista de DatasetDict. |
 | 15 | **Dynamic padding** | DataCollatorWithPadding reduce cómputo innecesario por batch. | Padding global vs dinámico. |
-| 16 | **Baseline obligatorio** | Modelo simple y métrica base antes del Transformer. | Escalera majority → TF-IDF → MLP → Transformer. |
+| 16 | **Baseline obligatorio** | Modelo simple y métrica base antes del Transformer. | Escalera majority → TF-IDF (*Term Frequency–Inverse Document Frequency*) → MLP → Transformer. |
 | 17 | **Fine-tuning** | Actualizar pesos preentrenados con LR pequeño y datos de tarea. | Zona de parámetros que se ajusta. |
 | 18 | **TrainingArguments** | Batch, epochs, LR, evaluación, logging, checkpoints y mixed precision. | Ficha de configuración. |
 | 19 | **Trainer** | Orquesta loops de train/eval sin ocultar diseño experimental. | Componentes: model, args, datasets, collator, metrics. |
@@ -1741,7 +1747,7 @@ plt.show()
 | 30 | **Eficiencia** | Gradient accumulation/checkpointing, mixed precision, truncation y modelos distilled. | Matriz técnica–beneficio–costo. |
 | 31 | **Explicabilidad en NLP** | Atención, saliency y perturbaciones son evidencia parcial. | Heatmap con advertencias. |
 | 32 | **Sesgo y representatividad** | Datos, etiquetas y despliegue pueden generar daño diferencial. | Preguntas de auditoría. |
-| 33 | **Privacidad y seguridad** | PII, memorization, prompt/data leakage, dependencias y supply chain. | Threat model básico. |
+| 33 | **Privacidad y seguridad** | PII (*Personally Identifiable Information*), memorization, prompt/data leakage, dependencias y supply chain. | Threat model básico. |
 | 34 | **Licencias y uso** | Revisar dataset card/model card; restricciones comerciales y atribución. | Checklist legal no vinculante. |
 | 35 | **Reproducibilidad de entrega** | requirements/lock, seed, config, commit hash, README, model card. | Tarjeta de experimento. |
 | 36 | **Demo con Gradio** | UI mínima para probar entradas, salida, confianza y disclaimers. | Interfaz web local. |
@@ -2073,7 +2079,7 @@ Ventajas didácticas:
 
 Equipos de 3–4 estudiantes:
 
-- **Data/experiment lead:** splits, EDA, baseline y reproducibilidad.
+- **Data/experiment lead:** splits, EDA (*Exploratory Data Analysis*), baseline y reproducibilidad.
 - **Model lead:** arquitectura neuronal y Transformer.
 - **Evaluation lead:** métricas, errores, visualizaciones y riesgos.
 - **Delivery lead:** GitHub, README, app, pitch y model card.

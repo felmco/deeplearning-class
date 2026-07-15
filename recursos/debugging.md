@@ -67,7 +67,7 @@ for step in range(300):
 |---|---|
 | Loss constante desde el inicio | LR=0, gradientes no llegan, labels constantes |
 | Loss = NaN | LR demasiado alto, división por cero, log(0) |
-| Train baja, val nunca baja | leakage inverso, splits mal hechos, bug de eval |
+| Train baja, val nunca baja | val contiene datos corruptos o de otra distribución, splits mal hechos, bug en el loop de eval |
 | Accuracy perfecta sospechosa | leakage: el label se filtró a las features |
 | Métricas erráticas entre eval | falta `model.eval()`, BatchNorm en modo train |
-| GPU out of memory | batch muy grande, grafo retenido (falta `inference_mode`) |
+| GPU out of memory | batch muy grande, o el grafo de autograd se queda en memoria porque falta `inference_mode` al evaluar |

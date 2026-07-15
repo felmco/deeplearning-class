@@ -32,7 +32,7 @@
     <div class="control">
       <label>Superficie</label>
       <select id="superficie" style="padding:.4rem; border-radius:8px; border:1px solid var(--borde);">
-        <option value="valle">Valle alargado (mal condicionado)</option>
+        <option value="valle">Valle alargado (mal condicionado: curvatura muy desigual)</option>
         <option value="cuenco">Cuenco simétrico</option>
         <option value="rastrigin">No convexa (mínimos locales)</option>
       </select>
@@ -52,7 +52,7 @@
     <table class="metrica" style="margin-top:.8rem; width:100%;">
       <tr><th>paso</th><td id="outPaso">0</td></tr>
       <tr><th>loss L(θ)</th><td id="outLoss">—</td></tr>
-      <tr><th>‖∇L‖</th><td id="outGrad">—</td></tr>
+      <tr><th>‖∇L‖ (magnitud del gradiente)</th><td id="outGrad">—</td></tr>
     </table>
   </div>
 </div>
@@ -63,7 +63,9 @@
   clásico donde el momentum ayuda: activa β=0.9 y compara.
   (2) En la superficie <em>no convexa</em>, suelta la bolita en distintos puntos: ¿siempre llega al mismo
   mínimo? Eso es la sensibilidad a la inicialización.
-  (3) η diminuto: correcto pero eterno. η enorme: diverge. El LR es el hiperparámetro más importante.
+  (3) η diminuto: correcto pero eterno. η enorme: diverge — si la bolita queda rebotando
+  pegada al borde, eso ES la divergencia (el dominio del gráfico la contiene).
+  <br><strong>Leyenda:</strong> ★ = mínimo global · flecha verde = dirección −∇L (hacia donde empuja el gradiente).
 </div>
 </main>
 

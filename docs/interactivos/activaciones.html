@@ -18,7 +18,7 @@
 <div class="panel">
   <div class="controles">
     <div class="control">
-      <label>Posición z</label>
+      <label>Posición z — la entrada de la neurona (w·x+b), antes de activar</label>
       <input type="range" id="zSlider" min="-6" max="6" step="0.05" value="1.5">
       <output id="zValor">z = 1.50</output>
     </div>
@@ -46,7 +46,7 @@
   GELU es la versión suave que usan los Transformers.
 </div>
 
-<div class="formula">σ(z) = 1/(1+e⁻ᶻ) · tanh(z) · ReLU(z) = max(0, z) · GELU(z) ≈ z·Φ(z)</div>
+<div class="formula">σ(z) = 1/(1+e⁻ᶻ) &nbsp;|&nbsp; tanh(z) &nbsp;|&nbsp; ReLU(z) = max(0, z) &nbsp;|&nbsp; GELU(z) ≈ z·Φ(z), donde Φ = probabilidad acumulada de la normal estándar</div>
 </main>
 
 <footer class="aula">© 2026 Future Tales, LLC · <a href="../index.html">Volver al aula</a></footer>

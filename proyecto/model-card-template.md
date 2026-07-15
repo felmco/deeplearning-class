@@ -39,12 +39,12 @@
 - **Métricas (y por qué esas):**
 - **Resultados (validation y test):**
 - **Baselines comparados:**
-- **Subgrupos o slices evaluados:**
+- **Subgrupos o slices evaluados:** *(slices: subconjuntos del test — por longitud, tema, idioma — evaluados por separado)*
 
 ## Limitations
 
 - **Errores conocidos (con ejemplos):**
-- **Comportamiento fuera de distribución:**
+- **Comportamiento fuera de distribución:** *(¿qué hace el modelo con entradas distintas a las de entrenamiento? p. ej. otro idioma, otro dominio, jerga)*
 - **Restricciones de idioma/dominio:**
 
 ## Risks and mitigations
