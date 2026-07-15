@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "Si usas este material en tu docencia o investigación, cítalo así:"
+title: "Deep Learning: de los fundamentos a los Transformers — curso completo de 32 horas"
+authors:
+  - name: "Future Tales, LLC"
+type: software
+version: "1.0.0"
+date-released: "2026-07-15"
+url: "https://github.com/felmco/deeplearning-class"
+license: MIT
+keywords:
+  - deep learning
+  - transformers
+  - pytorch
+  - hugging face
+  - educación
+  - español
+abstract: >
+  Curso completo de Deep Learning en español (32 horas) que cubre desde
+  tensores, backpropagation y MLP hasta CNN, RNN/LSTM, attention,
+  arquitectura Transformer y fine-tuning con Hugging Face. Incluye
+  laboratorios en PyTorch, simuladores interactivos, animaciones y un
+  proyecto final reproducible.

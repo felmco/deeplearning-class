@@ -1,0 +1,29 @@
+# ══════════════════════════════════════════════════════════════════
+# Configuración del experimento CNN (Laboratorio 2 — Sesión 2)
+# Dataset: FashionMNIST (10 clases, 28×28 escala de grises)
+# ══════════════════════════════════════════════════════════════════
+
+experiment_name: cnn_fashionmnist_base
+seed: 42
+
+data:
+  root: data                # carpeta local de descarga (ignorada por git)
+  train_size: 54000         # el resto (6000) se usa como validation
+  batch_size: 128
+  eval_batch_size: 256
+  # Estadísticas del canal calculadas SOLO con el train set
+  normalize_mean: [0.2860]
+  normalize_std: [0.3530]
+  augmentation:
+    horizontal_flip_p: 0.3  # probabilidad de volteo horizontal
+    rotation_degrees: 8     # rotación aleatoria máxima
+
+model:
+  dropout: 0.25             # dropout del clasificador final
+
+training:
+  learning_rate: 1.0e-3
+  weight_decay: 1.0e-4
+  epochs: 12
+  grad_clip_norm: 5.0       # límite de la norma del gradiente
+  scheduler: cosine         # CosineAnnealingLR con T_max = epochs

@@ -1,0 +1,33 @@
+# ── Entorno virtual y caches de Python ──────────────────────────
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+
+# ── Secretos y configuración local ──────────────────────────────
+.env
+*.key
+*.token
+
+# ── Artifacts de entrenamiento (no versionar checkpoints grandes) ─
+runs/
+checkpoints/
+models/
+artifacts/
+data/raw/
+data/FashionMNIST/
+*.pt
+*.pth
+*.safetensors
+
+# ── Remotion / Node ──────────────────────────────────────────────
+remotion/node_modules/
+remotion/out/
+remotion/.remotion/
+
+# ── Sistema operativo / editor ───────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/settings.json

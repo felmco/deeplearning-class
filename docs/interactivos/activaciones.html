@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Funciones de activación — Deep Learning Course</title>
+<link rel="stylesheet" href="../assets/css/aula.css">
+</head>
+<body>
+
+<header class="aula">
+  <p class="migas"><a href="../index.html">🏠 Aula</a> · Sesión 1</p>
+  <h1>📈 Funciones de activación y sus derivadas</h1>
+  <p>Mueve el punto z y observa cuánto gradiente sobrevive en cada función. Donde la derivada ≈ 0, el aprendizaje se detiene.</p>
+</header>
+
+<main>
+<div class="panel">
+  <div class="controles">
+    <div class="control">
+      <label>Posición z</label>
+      <input type="range" id="zSlider" min="-6" max="6" step="0.05" value="1.5">
+      <output id="zValor">z = 1.50</output>
+    </div>
+    <div class="control">
+      <label>Funciones visibles</label>
+      <div style="display:flex; gap:.8rem; flex-wrap:wrap; font-size:.85rem;">
+        <label><input type="checkbox" id="chkSigmoid" checked> sigmoid</label>
+        <label><input type="checkbox" id="chkTanh" checked> tanh</label>
+        <label><input type="checkbox" id="chkRelu" checked> ReLU</label>
+        <label><input type="checkbox" id="chkGelu" checked> GELU</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <canvas id="lienzo" class="lienzo" width="1000" height="420"></canvas>
+  <table class="metrica" id="tabla" style="margin:1rem auto 0;"></table>
+</div>
+
+<div class="explica">
+  <strong>Qué mirar:</strong> el panel izquierdo grafica φ(z); el derecho, la derivada φ′(z) — <em>lo que
+  fluye hacia atrás en backpropagation</em>. Lleva z a −6: sigmoid y tanh se <strong>saturan</strong>
+  (derivada ≈ 0 → gradiente muerto). ReLU es exactamente 0 para z&lt;0 (zona "dead ReLU") y 1 para z&gt;0.
+  GELU es la versión suave que usan los Transformers.
+</div>
+
+<div class="formula">σ(z) = 1/(1+e⁻ᶻ) · tanh(z) · ReLU(z) = max(0, z) · GELU(z) ≈ z·Φ(z)</div>
+</main>
+
+<footer class="aula">© 2026 Future Tales, LLC · <a href="../index.html">Volver al aula</a></footer>
+
+<script>
+// ── Definición de las funciones y sus derivadas ─────────────────────
+const FN = {
+  sigmoid: { color: '#0072B2', f: z => 1/(1+Math.exp(-z)),
+             df: z => { const s = 1/(1+Math.exp(-z)); return s*(1-s); } },
+  tanh:    { color: '#E69F00', f: z => Math.tanh(z),
+             df: z => 1 - Math.tanh(z)**2 },
+  ReLU:    { color: '#009E73', f: z => Math.max(0, z),
+             df: z => z > 0 ? 1 : 0 },
+  GELU:    { color: '#CC79A7',
+             // Aproximación tanh de GELU (la usada en la práctica)
+             f: z => 0.5*z*(1+Math.tanh(Math.sqrt(2/Math.PI)*(z+0.044715*z**3))),
+             df: z => { const h = 1e-4; // derivada numérica: suficiente para visualizar
+                        return (FN.GELU.f(z+h)-FN.GELU.f(z-h))/(2*h); } },
+};
+const CHK = { sigmoid:'chkSigmoid', tanh:'chkTanh', ReLU:'chkRelu', GELU:'chkGelu' };
+
+const cv = document.getElementById('lienzo'), ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height, MITAD = W/2;
+
+// Transformaciones matemáticas → píxeles para cada mitad del lienzo
+function px(z, x0, w){ return x0 + (z+6)/12 * w; }
+function py(v, vmin, vmax){ return H-30 - (v-vmin)/(vmax-vmin) * (H-70); }
+
+function ejes(x0, w, vmin, vmax, titulo){
+  ctx.strokeStyle = '#d8dee8'; ctx.lineWidth = 1; ctx.font = '13px sans-serif';
+  ctx.strokeRect(x0+4, 10, w-12, H-40);
+  // eje z=0 y v=0
+  ctx.beginPath(); ctx.moveTo(px(0,x0,w), 10); ctx.lineTo(px(0,x0,w), H-30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x0+4, py(0,vmin,vmax)); ctx.lineTo(x0+w-8, py(0,vmin,vmax)); ctx.stroke();
+  ctx.fillStyle = '#1a2332'; ctx.font = 'bold 14px sans-serif';
+  ctx.fillText(titulo, x0 + w/2 - ctx.measureText(titulo).width/2, 28);
+}
+
+function curva(fn, x0, w, vmin, vmax, usaDeriv){
+  ctx.strokeStyle = fn.color; ctx.lineWidth = 2.4; ctx.beginPath();
+  for (let i = 0; i <= 300; i++){
+    const z = -6 + 12*i/300;
+    const v = usaDeriv ? fn.df(z) : fn.f(z);
+    const x = px(z, x0, w), y = py(Math.max(vmin, Math.min(vmax, v)), vmin, vmax);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
+function dibujar(){
+  const z = parseFloat(document.getElementById('zSlider').value);
+  document.getElementById('zValor').textContent = 'z = ' + z.toFixed(2);
+  ctx.clearRect(0, 0, W, H);
+
+  const activas = Object.keys(FN).filter(n => document.getElementById(CHK[n]).checked);
+  // Panel izquierdo: φ(z) en [-1.5, 6] · Panel derecho: φ'(z) en [-0.2, 1.2]
+  ejes(0, MITAD, -1.5, 6, 'φ(z) — activación');
+  ejes(MITAD, MITAD, -0.2, 1.2, "φ′(z) — lo que fluye en backprop");
+
+  for (const n of activas){
+    curva(FN[n], 0, MITAD, -1.5, 6, false);
+    curva(FN[n], MITAD, MITAD, -0.2, 1.2, true);
+    // Punto marcador en z
+    for (const [x0, vmin, vmax, usaD] of [[0,-1.5,6,false],[MITAD,-0.2,1.2,true]]){
+      const v = usaD ? FN[n].df(z) : FN[n].f(z);
+      ctx.fillStyle = FN[n].color; ctx.beginPath();
+      ctx.arc(px(z,x0,MITAD), py(Math.max(vmin,Math.min(vmax,v)),vmin,vmax), 5.5, 0, 7); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+  }
+  // Línea vertical del z actual en ambos paneles
+  ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.setLineDash([5,4]); ctx.lineWidth = 1;
+  for (const x0 of [0, MITAD]){
+    ctx.beginPath(); ctx.moveTo(px(z,x0,MITAD),10); ctx.lineTo(px(z,x0,MITAD),H-30); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Tabla de valores en el punto z
+  let html = '<tr><th>función</th><th>φ(z)</th><th>φ′(z) — gradiente</th><th>diagnóstico</th></tr>';
+  for (const n of activas){
+    const g = FN[n].df(z);
+    const diag = g < 0.01 ? '💀 gradiente muerto' : g < 0.1 ? '⚠️ gradiente débil' : '✅ gradiente sano';
+    html += `<tr><td style="color:${FN[n].color};font-weight:700">${n}</td>` +
+            `<td>${FN[n].f(z).toFixed(3)}</td><td>${g.toFixed(3)}</td><td>${diag}</td></tr>`;
+  }
+  document.getElementById('tabla').innerHTML = html;
+}
+
+document.querySelectorAll('input').forEach(el => el.addEventListener('input', dibujar));
+dibujar();
+</script>
+</body>
+</html>

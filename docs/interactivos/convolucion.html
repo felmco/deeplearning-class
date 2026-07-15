@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convolución 2D — Deep Learning Course</title>
+<link rel="stylesheet" href="../assets/css/aula.css">
+</head>
+<body>
+
+<header class="aula">
+  <p class="migas"><a href="../index.html">🏠 Aula</a> · Sesión 2</p>
+  <h1>🔍 Convolución 2D paso a paso</h1>
+  <p>Un kernel 3×3 recorre la imagen: ventana ⊙ kernel, suma, y esa es UNA celda del feature map. Cambia stride y padding y verifica la fórmula del tamaño de salida.</p>
+</header>
+
+<main>
+<div class="formula">H_out = ⌊(H + 2P − K) / S⌋ + 1 &nbsp;·&nbsp; Y[i,j] = Σₘ Σₙ X[i·S+m, j·S+n] · K[m,n]</div>
+
+<div class="panel">
+  <div class="controles">
+    <div class="control">
+      <label>Kernel</label>
+      <select id="kernel" style="padding:.4rem; border-radius:8px; border:1px solid var(--borde);">
+        <option value="bordesH">Bordes horizontales</option>
+        <option value="bordesV">Bordes verticales</option>
+        <option value="sharpen">Sharpen</option>
+        <option value="blur">Blur (promedio)</option>
+        <option value="identidad">Identidad</option>
+      </select>
+    </div>
+    <div class="control">
+      <label>Stride S</label>
+      <input type="range" id="stride" min="1" max="2" step="1" value="1">
+      <output id="strideOut">1</output>
+    </div>
+    <div class="control">
+      <label>Padding P</label>
+      <input type="range" id="padding" min="0" max="1" step="1" value="0">
+      <output id="paddingOut">0</output>
+    </div>
+    <div class="control">
+      <label>Imagen</label>
+      <select id="imagen" style="padding:.4rem; border-radius:8px; border:1px solid var(--borde);">
+        <option value="cuadrado">Cuadrado brillante</option>
+        <option value="diagonal">Franja diagonal</option>
+        <option value="cruz">Cruz</option>
+      </select>
+    </div>
+    <div class="control" style="flex-direction:row; gap:.5rem; align-items:flex-end;">
+      <button id="btnPaso">Paso ▸</button>
+      <button id="btnPlay" class="secundario">▶ Auto</button>
+      <button id="btnReset" class="peligro">Reiniciar</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div id="info" style="text-align:center; font-family:var(--mono); font-size:1rem; margin-bottom:.8rem; color:var(--tinta);"></div>
+  <canvas id="lienzo" class="lienzo" width="980" height="430"></canvas>
+</div>
+
+<div class="explica">
+  <strong>Verifica la fórmula:</strong> con H=8, K=3, P=0, S=1 la salida es 6×6. Sube el padding a 1:
+  ahora es 8×8 ("same"). Sube el stride a 2: ⌊(8+2−3)/2⌋+1 = 4. La celda amarilla del feature map es
+  la que se está calculando: su valor es la suma de los productos que ves en el centro.
+  <br><strong>Idea clave:</strong> estos kernels los eliges tú aquí; en una CNN, sus 9 números son
+  <em>parámetros entrenables</em> que backpropagation ajusta.
+</div>
+</main>
+
+<footer class="aula">© 2026 Future Tales, LLC · <a href="../index.html">Volver al aula</a></footer>
+
+<script>
+'use strict';
+// ── Kernels e imágenes de ejemplo ────────────────────────────────────
+const KERNELS = {
+  bordesH:   [[-1,-1,-1],[0,0,0],[1,1,1]],
+  bordesV:   [[-1,0,1],[-1,0,1],[-1,0,1]],
+  sharpen:   [[0,-1,0],[-1,5,-1],[0,-1,0]],
+  blur:      [[1/9,1/9,1/9],[1/9,1/9,1/9],[1/9,1/9,1/9]],
+  identidad: [[0,0,0],[0,1,0],[0,0,0]],
+};
+function hacerImagen(tipo){
+  const img = Array.from({length:8}, () => Array(8).fill(0));
+  if (tipo === 'cuadrado'){ for (let i=2;i<6;i++) for (let j=2;j<6;j++) img[i][j]=1; }
+  if (tipo === 'diagonal'){ for (let i=0;i<8;i++) for (let j=0;j<8;j++) if (Math.abs(i-j)<=1) img[i][j]=1; }
+  if (tipo === 'cruz'){ for (let k=0;k<8;k++){ img[3][k]=1; img[4][k]=1; img[k][3]=1; img[k][4]=1; } }
+  return img;
+}
+
+const cv = document.getElementById('lienzo'), ctx = cv.getContext('2d');
+let img, K, P, S, dims, salida, pos, animando = null;
+
+function config(){
+  img = hacerImagen(document.getElementById('imagen').value);
+  K = KERNELS[document.getElementById('kernel').value];
+  P = parseInt(document.getElementById('padding').value);
+  S = parseInt(document.getElementById('stride').value);
+  document.getElementById('strideOut').textContent = S;
+  document.getElementById('paddingOut').textContent = P;
+  const H = 8, out = Math.floor((H + 2*P - 3) / S) + 1;
+  dims = { H, out, total: H + 2*P };
+  salida = Array.from({length: out}, () => Array(out).fill(null));
+  pos = 0;
+}
+
+// Valor del píxel con padding (0 fuera de la imagen)
+function pixel(i, j){
+  const a = i - P, b = j - P;
+  return (a >= 0 && a < 8 && b >= 0 && b < 8) ? img[a][b] : 0;
+}
+
+function calcularCelda(oi, oj){
+  let suma = 0;
+  for (let m = 0; m < 3; m++)
+    for (let n = 0; n < 3; n++)
+      suma += pixel(oi*S + m, oj*S + n) * K[m][n];
+  return suma;
+}
+
+// ── Dibujo de las tres rejillas: entrada+kernel | kernel | salida ────
+function celdaColor(v, vmax){  // azul-rojo divergente para el feature map
+  if (v === null) return '#f1f5f9';
+  const t = Math.max(-1, Math.min(1, v / (vmax || 1)));
+  return t >= 0
+    ? `rgb(${Math.round(255-155*t)}, ${Math.round(255-183*t)}, 255)`
+    : `rgb(255, ${Math.round(255+140*t)}, ${Math.round(255+155*t)})`;
+}
+
+function dibujar(){
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = '#1a2332';
+
+  const total = dims.total;
+  const c1 = Math.min(38, 330/total);        // tamaño de celda de la entrada
+  const x1 = 30, y1 = 60;
+  ctx.fillText(`entrada ${dims.H}×${dims.H}` + (P ? ` + padding ${P}` : ''), x1, 40);
+
+  const oi = Math.floor(pos / dims.out), oj = pos % dims.out;
+  const enCurso = pos < dims.out * dims.out;
+
+  // entrada (con padding en gris)
+  for (let i = 0; i < total; i++){
+    for (let j = 0; j < total; j++){
+      const esPad = i < P || j < P || i >= P+8 || j >= P+8;
+      const v = pixel(i, j);
+      ctx.fillStyle = esPad ? '#e2e8f0' : `rgb(${40+200*v},${48+195*v},${66+180*v})`;
+      ctx.fillRect(x1 + j*c1, y1 + i*c1, c1-2, c1-2);
+    }
+  }
+  // ventana del kernel resaltada
+  if (enCurso){
+    ctx.strokeStyle = '#D55E00'; ctx.lineWidth = 3;
+    ctx.strokeRect(x1 + oj*S*c1 - 1, y1 + oi*S*c1 - 1, 3*c1 - 1, 3*c1 - 1);
+  }
+
+  // kernel al centro, con sus valores
+  const x2 = 460, y2 = 90, c2 = 46;
+  ctx.fillStyle = '#1a2332'; ctx.fillText('kernel 3×3', x2, 70);
+  for (let m = 0; m < 3; m++){
+    for (let n = 0; n < 3; n++){
+      ctx.fillStyle = '#fdf1e0';
+      ctx.fillRect(x2 + n*c2, y2 + m*c2, c2-3, c2-3);
+      ctx.strokeStyle = '#E69F00'; ctx.strokeRect(x2 + n*c2, y2 + m*c2, c2-3, c2-3);
+      ctx.fillStyle = '#7c4a00'; ctx.font = '13px monospace';
+      const v = K[m][n];
+      ctx.fillText(Number.isInteger(v) ? v : v.toFixed(2), x2 + n*c2 + 8, y2 + m*c2 + 27);
+    }
+  }
+  // ecuación de la celda actual
+  ctx.font = '13px monospace'; ctx.fillStyle = '#475569';
+  if (enCurso){
+    ctx.fillText('ventana ⊙ kernel', x2 - 6, y2 + 3*c2 + 30);
+    ctx.fillText('→ suma = Y[' + oi + ',' + oj + ']', x2 - 6, y2 + 3*c2 + 50);
+  }
+
+  // feature map a la derecha
+  const c3 = Math.min(44, 300/dims.out);
+  const x3 = 680, y3 = 60;
+  ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = '#1a2332';
+  ctx.fillText(`feature map ${dims.out}×${dims.out}`, x3, 40);
+  const vmax = Math.max(1, ...salida.flat().filter(v => v !== null).map(Math.abs));
+  for (let i = 0; i < dims.out; i++){
+    for (let j = 0; j < dims.out; j++){
+      ctx.fillStyle = celdaColor(salida[i][j], vmax);
+      ctx.fillRect(x3 + j*c3, y3 + i*c3, c3-2, c3-2);
+      if (salida[i][j] !== null){
+        ctx.fillStyle = '#334155'; ctx.font = '10px monospace';
+        ctx.fillText(salida[i][j].toFixed(1), x3 + j*c3 + 3, y3 + i*c3 + c3/2 + 3);
+      }
+    }
+  }
+  // celda en curso resaltada
+  if (enCurso){
+    ctx.strokeStyle = '#f5c400'; ctx.lineWidth = 3;
+    ctx.strokeRect(x3 + oj*c3 - 1, y3 + oi*c3 - 1, c3, c3);
+  }
+
+  document.getElementById('info').textContent = enCurso
+    ? `posición ${pos+1} de ${dims.out*dims.out} — Y[${oi},${oj}]`
+    : `✅ feature map completo (${dims.out}×${dims.out}) — H_out = ⌊(8+${2*P}−3)/${S}⌋+1 = ${dims.out}`;
+}
+
+function paso(){
+  if (pos >= dims.out * dims.out){ pausar(); return; }
+  const oi = Math.floor(pos / dims.out), oj = pos % dims.out;
+  salida[oi][oj] = calcularCelda(oi, oj);
+  pos++;
+  dibujar();
+}
+function pausar(){
+  if (animando){ clearInterval(animando); animando = null;
+    document.getElementById('btnPlay').textContent = '▶ Auto'; }
+}
+function reset(){ pausar(); config(); dibujar(); }
+
+document.getElementById('btnPaso').addEventListener('click', paso);
+document.getElementById('btnReset').addEventListener('click', reset);
+document.getElementById('btnPlay').addEventListener('click', () => {
+  if (animando) pausar();
+  else { animando = setInterval(paso, 150);
+    document.getElementById('btnPlay').textContent = '⏸ Pausar'; }
+});
+for (const id of ['kernel','stride','padding','imagen'])
+  document.getElementById(id).addEventListener('input', reset);
+
+reset();
+</script>
+</body>
+</html>

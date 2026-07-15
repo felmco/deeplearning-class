@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Positional encoding — Deep Learning Course</title>
+<link rel="stylesheet" href="../assets/css/aula.css">
+</head>
+<body>
+
+<header class="aula">
+  <p class="migas"><a href="../index.html">🏠 Aula</a> · Sesión 3</p>
+  <h1>🌊 Positional encoding sinusoidal</h1>
+  <p>La self-attention no distingue el orden de los tokens. Estas ondas le inyectan a cada posición una firma única — como un reloj con manecillas de distintas velocidades.</p>
+</header>
+
+<main>
+<div class="formula">PE(pos, 2i) = sin(pos / 10000^(2i/d)) &nbsp;·&nbsp; PE(pos, 2i+1) = cos(pos / 10000^(2i/d))</div>
+
+<div class="panel">
+  <div class="controles">
+    <div class="control">
+      <label>d_model</label>
+      <input type="range" id="dmodel" min="8" max="128" step="8" value="64">
+      <output id="dmodelOut">64</output>
+    </div>
+    <div class="control">
+      <label>Longitud de secuencia</label>
+      <input type="range" id="maxlen" min="20" max="200" step="10" value="100">
+      <output id="maxlenOut">100</output>
+    </div>
+    <div class="control">
+      <label>Posición seleccionada (fila)</label>
+      <input type="range" id="posSel" min="0" max="99" step="1" value="10">
+      <output id="posSelOut">10</output>
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="display:grid; grid-template-columns: 3fr 2fr; gap:1rem; align-items:start;">
+  <div>
+    <h4 style="margin:.2rem 0 .5rem;">Matriz PE (posición × dimensión)</h4>
+    <canvas id="mapa" class="lienzo" width="560" height="420"></canvas>
+  </div>
+  <div>
+    <h4 style="margin:.2rem 0 .5rem;">Firma de la posición seleccionada</h4>
+    <canvas id="firma" class="lienzo" width="380" height="190"></canvas>
+    <h4 style="margin:.9rem 0 .5rem;">Tres dimensiones a lo largo de la secuencia</h4>
+    <canvas id="ondas" class="lienzo" width="380" height="190"></canvas>
+  </div>
+</div>
+
+<div class="explica">
+  <strong>Qué mirar:</strong> las primeras dimensiones (izquierda del mapa) oscilan RÁPIDO —
+  distinguen posiciones vecinas; las últimas oscilan LENTO — codifican posición global.
+  Juntas forman una firma única y de norma similar para cada posición, que se <em>suma</em> al
+  embedding del token. Mueve la posición seleccionada: la línea amarilla del mapa es la fila
+  cuyo "código de barras" ves a la derecha.
+</div>
+</main>
+
+<footer class="aula">© 2026 Future Tales, LLC · <a href="../index.html">Volver al aula</a></footer>
+
+<script>
+'use strict';
+const mapa = document.getElementById('mapa'), mctx = mapa.getContext('2d');
+const firma = document.getElementById('firma'), fctx = firma.getContext('2d');
+const ondas = document.getElementById('ondas'), octx = ondas.getContext('2d');
+
+// PE(pos, dim) según el paper "Attention Is All You Need"
+function pe(pos, dim, d){
+  const i = Math.floor(dim/2);
+  const freq = Math.pow(10000, -2*i/d);
+  return dim % 2 === 0 ? Math.sin(pos*freq) : Math.cos(pos*freq);
+}
+
+// Rojo-azul divergente (coherente con las figuras del curso)
+function colorRB(v){
+  const t = (v+1)/2;
+  return `rgb(${Math.round(178+(255-178)*(1-t)*0 + (5)*0 + (255-178)*0)},0,0)`;
+}
+function rgb(v){  // v ∈ [-1, 1] → azul(−) blanco(0) rojo(+) estilo RdBu invertido
+  const t = Math.max(-1, Math.min(1, v));
+  if (t >= 0) return `rgb(${255-Math.round(190*t)}, ${255-Math.round(200*t)}, 255)`;
+  return `rgb(255, ${255+Math.round(200*t)}, ${255+Math.round(190*t)})`;
+}
+
+function dibujar(){
+  const d = parseInt(document.getElementById('dmodel').value);
+  const L = parseInt(document.getElementById('maxlen').value);
+  const sel = Math.min(parseInt(document.getElementById('posSel').value), L-1);
+  document.getElementById('dmodelOut').textContent = d;
+  document.getElementById('maxlenOut').textContent = L;
+  document.getElementById('posSel').max = L-1;
+  document.getElementById('posSelOut').textContent = sel;
+
+  // ── Mapa de calor ──
+  mctx.clearRect(0, 0, mapa.width, mapa.height);
+  const cw = mapa.width/d, ch = mapa.height/L;
+  for (let p = 0; p < L; p++)
+    for (let k = 0; k < d; k++){
+      mctx.fillStyle = rgb(pe(p, k, d));
+      mctx.fillRect(k*cw, p*ch, cw+0.5, ch+0.5);
+    }
+  // fila seleccionada
+  mctx.strokeStyle = '#f5c400'; mctx.lineWidth = 2.5;
+  mctx.strokeRect(0, sel*ch, mapa.width, ch);
+
+  // ── Firma de la posición: código de barras ──
+  fctx.clearRect(0, 0, firma.width, firma.height);
+  const bw = firma.width/d;
+  for (let k = 0; k < d; k++){
+    const v = pe(sel, k, d);
+    fctx.fillStyle = rgb(v);
+    const h = Math.abs(v) * (firma.height/2 - 14);
+    const y = v >= 0 ? firma.height/2 - h : firma.height/2;
+    fctx.fillRect(k*bw+1, y, bw-2, h);
+  }
+  fctx.strokeStyle = '#cbd5e1';
+  fctx.beginPath(); fctx.moveTo(0, firma.height/2); fctx.lineTo(firma.width, firma.height/2); fctx.stroke();
+  fctx.fillStyle = '#1a2332'; fctx.font = 'bold 12px sans-serif';
+  fctx.fillText(`PE[pos=${sel}] ∈ ℝ^${d}`, 10, 18);
+
+  // ── Ondas de 3 dimensiones ──
+  octx.clearRect(0, 0, ondas.width, ondas.height);
+  const dims = [0, Math.floor(d/4)*2, Math.floor(d/2.2)*2];
+  const cols = ['#0072B2', '#E69F00', '#009E73'];
+  dims.forEach((k, idx) => {
+    octx.strokeStyle = cols[idx]; octx.lineWidth = 2; octx.beginPath();
+    for (let p = 0; p < L; p++){
+      const x = p/(L-1) * (ondas.width-16) + 8;
+      const y = ondas.height/2 - pe(p, k, d) * (ondas.height/2 - 22);
+      p === 0 ? octx.moveTo(x, y) : octx.lineTo(x, y);
+    }
+    octx.stroke();
+    octx.fillStyle = cols[idx]; octx.font = '11px monospace';
+    octx.fillText('dim ' + k, 10 + idx*70, 16);
+  });
+  // marcador de la posición seleccionada
+  octx.strokeStyle = 'rgba(0,0,0,.3)'; octx.setLineDash([4,4]);
+  const xs = sel/(L-1) * (ondas.width-16) + 8;
+  octx.beginPath(); octx.moveTo(xs, 20); octx.lineTo(xs, ondas.height-8); octx.stroke();
+  octx.setLineDash([]);
+}
+
+['dmodel','maxlen','posSel'].forEach(id =>
+  document.getElementById(id).addEventListener('input', dibujar));
+dibujar();
+</script>
+</body>
+</html>

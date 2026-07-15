@@ -1,0 +1,22 @@
+{
+  "name": "deeplearning-class-animaciones",
+  "version": "1.0.0",
+  "description": "Animaciones de video del curso Deep Learning (Future Tales, LLC), construidas con Remotion",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio",
+    "render:forward-backward": "remotion render ForwardBackward out/forward-backward.mp4",
+    "render:atencion": "remotion render FlujoAtencion out/flujo-atencion.mp4",
+    "render:todo": "npm run render:forward-backward && npm run render:atencion"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "typescript": "^5.5.0"
+  }
+}

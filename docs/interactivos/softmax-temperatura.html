@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Softmax y temperatura — Deep Learning Course</title>
+<link rel="stylesheet" href="../assets/css/aula.css">
+</head>
+<body>
+
+<header class="aula">
+  <p class="migas"><a href="../index.html">🏠 Aula</a> · Sesiones 1 y 3</p>
+  <h1>🌡️ Softmax, temperatura y sampling</h1>
+  <p>De logits crudos a una distribución de probabilidad. La temperatura, top-k y top-p son exactamente lo que ajustas cuando usas un LLM.</p>
+</header>
+
+<main>
+<div class="formula">p_k = exp(z_k / T) / Σ_j exp(z_j / T)</div>
+
+<div class="panel">
+  <div class="controles" id="logitSliders"></div>
+</div>
+
+<div class="panel">
+  <div class="controles">
+    <div class="control">
+      <label>Temperatura T</label>
+      <input type="range" id="temp" min="0.1" max="3" step="0.05" value="1">
+      <output id="tempOut">T = 1.00</output>
+    </div>
+    <div class="control">
+      <label>Top-k (0 = desactivado)</label>
+      <input type="range" id="topk" min="0" max="6" step="1" value="0">
+      <output id="topkOut">off</output>
+    </div>
+    <div class="control">
+      <label>Top-p / nucleus (1 = desactivado)</label>
+      <input type="range" id="topp" min="0.1" max="1" step="0.05" value="1">
+      <output id="toppOut">off</output>
+    </div>
+    <div class="control" style="flex-direction:row; align-items:flex-end;">
+      <button id="btnSample">🎲 Muestrear 200 tokens</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <canvas id="lienzo" class="lienzo" width="980" height="380"></canvas>
+  <div id="muestras" style="margin-top:.8rem; font-family:var(--mono); font-size:.85rem; color:var(--texto-suave); line-height:1.9;"></div>
+</div>
+
+<div class="explica">
+  <strong>Qué mirar:</strong> T&lt;1 <em>afila</em> la distribución (más determinista, menos diverso);
+  T&gt;1 la <em>aplana</em> (más creatividad, más riesgo de tokens raros). Top-k recorta a los k
+  candidatos más probables; top-p recorta al conjunto más pequeño cuya probabilidad acumulada
+  supera p. Después del recorte se <em>renormaliza</em>: por eso las barras activas vuelven a sumar 1.
+  Muestrea 200 tokens y compara la frecuencia empírica con las probabilidades teóricas.
+</div>
+</main>
+
+<footer class="aula">© 2026 Future Tales, LLC · <a href="../index.html">Volver al aula</a></footer>
+
+<script>
+'use strict';
+// Vocabulario de juguete: los candidatos a "siguiente token"
+const TOKENS = ['gato', 'perro', 'león', 'lobo', 'pez', 'dragón'];
+const COLORES = ['#0072B2', '#E69F00', '#009E73', '#D55E00', '#CC79A7', '#56B4E9'];
+let logits = [2.0, 1.4, 0.6, 0.2, -0.4, -1.2];
+
+// ── Construir sliders de logits ──────────────────────────────────────
+const cont = document.getElementById('logitSliders');
+TOKENS.forEach((tok, i) => {
+  const div = document.createElement('div');
+  div.className = 'control';
+  div.innerHTML = `<label>logit «${tok}»</label>
+    <input type="range" id="lg${i}" min="-3" max="3" step="0.1" value="${logits[i]}">
+    <output id="lgOut${i}">${logits[i].toFixed(1)}</output>`;
+  cont.appendChild(div);
+  div.querySelector('input').addEventListener('input', e => {
+    logits[i] = parseFloat(e.target.value);
+    document.getElementById('lgOut' + i).textContent = logits[i].toFixed(1);
+    dibujar();
+  });
+});
+
+// ── Softmax con temperatura + filtros top-k / top-p ─────────────────
+function distribucion(){
+  const T = parseFloat(document.getElementById('temp').value);
+  const k = parseInt(document.getElementById('topk').value);
+  const p = parseFloat(document.getElementById('topp').value);
+
+  // softmax estable: restar el máximo antes de exponenciar
+  const z = logits.map(v => v / T);
+  const m = Math.max(...z);
+  let probs = z.map(v => Math.exp(v - m));
+  const s = probs.reduce((a, b) => a + b, 0);
+  probs = probs.map(v => v / s);
+
+  // aplicar top-k y top-p sobre los índices ordenados por probabilidad
+  const orden = probs.map((v, i) => [v, i]).sort((a, b) => b[0] - a[0]);
+  const activos = new Set();
+  let acumulada = 0;
+  for (let r = 0; r < orden.length; r++){
+    if (k > 0 && r >= k) break;                 // recorte top-k
+    if (p < 1 && acumulada >= p) break;         // recorte top-p (nucleus)
+    activos.add(orden[r][1]);
+    acumulada += orden[r][0];
+  }
+  // renormalizar sobre los supervivientes
+  const masa = [...activos].reduce((a, i) => a + probs[i], 0);
+  const final = probs.map((v, i) => activos.has(i) ? v / masa : 0);
+  return { bruta: probs, final, activos };
+}
+
+// ── Dibujo de barras ─────────────────────────────────────────────────
+const cv = document.getElementById('lienzo'), ctx = cv.getContext('2d');
+function dibujar(){
+  document.getElementById('tempOut').textContent = 'T = ' + parseFloat(document.getElementById('temp').value).toFixed(2);
+  const k = parseInt(document.getElementById('topk').value);
+  const p = parseFloat(document.getElementById('topp').value);
+  document.getElementById('topkOut').textContent = k === 0 ? 'off' : 'k = ' + k;
+  document.getElementById('toppOut').textContent = p >= 1 ? 'off' : 'p = ' + p.toFixed(2);
+
+  const { bruta, final, activos } = distribucion();
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  const n = TOKENS.length, ancho = cv.width / n;
+
+  for (let i = 0; i < n; i++){
+    const x = i*ancho + 30;
+    const w = ancho - 60;
+    // barra fantasma: probabilidad ANTES del recorte
+    ctx.fillStyle = 'rgba(148,163,184,.28)';
+    ctx.fillRect(x, cv.height-50 - bruta[i]*(cv.height-110), w, bruta[i]*(cv.height-110));
+    // barra final
+    ctx.fillStyle = activos.has(i) ? COLORES[i] : '#e2e8f0';
+    ctx.fillRect(x + 8, cv.height-50 - final[i]*(cv.height-110), w - 16, final[i]*(cv.height-110));
+    // etiquetas
+    ctx.fillStyle = '#1a2332'; ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(TOKENS[i], x + w/2 - ctx.measureText(TOKENS[i]).width/2, cv.height - 28);
+    ctx.font = '12px monospace'; ctx.fillStyle = activos.has(i) ? '#1a2332' : '#94a3b8';
+    const texto = (final[i]*100).toFixed(1) + '%';
+    ctx.fillText(texto, x + w/2 - ctx.measureText(texto).width/2,
+                 cv.height-56 - final[i]*(cv.height-110));
+  }
+  ctx.font = '12px sans-serif'; ctx.fillStyle = '#64748b';
+  ctx.fillText('barra gris = softmax(z/T) antes del recorte · barra de color = tras top-k/top-p + renormalización', 20, 22);
+}
+
+// ── Muestreo empírico ────────────────────────────────────────────────
+document.getElementById('btnSample').addEventListener('click', () => {
+  const { final } = distribucion();
+  const conteo = Array(TOKENS.length).fill(0);
+  for (let s = 0; s < 200; s++){
+    let r = Math.random(), acc = 0;
+    for (let i = 0; i < final.length; i++){
+      acc += final[i];
+      if (r <= acc){ conteo[i]++; break; }
+    }
+  }
+  document.getElementById('muestras').innerHTML =
+    '<b>Frecuencia empírica en 200 muestras:</b> ' +
+    TOKENS.map((t, i) => `${t}: <b style="color:${COLORES[i]}">${conteo[i]}</b>`).join(' · ') +
+    ' &nbsp;→&nbsp; compara con las probabilidades teóricas de las barras.';
+});
+
+['temp','topk','topp'].forEach(id =>
+  document.getElementById(id).addEventListener('input', dibujar));
+dibujar();
+</script>
+</body>
+</html>

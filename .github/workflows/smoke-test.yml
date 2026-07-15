@@ -1,0 +1,35 @@
+# ══════════════════════════════════════════════════════════════════
+# CI mínima del curso: lint + smoke tests.
+# Regla de oro: NO descargar datasets ni modelos pesados en CI.
+# Las pruebas deben ser rápidas y determinísticas.
+# ══════════════════════════════════════════════════════════════════
+name: smoke-test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Actualizar pip
+        run: python -m pip install --upgrade pip
+
+      - name: Instalar dependencias mínimas (CPU)
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install numpy pyyaml pytest ruff
+
+      - name: Lint con ruff
+        run: ruff check src/ tests/
+
+      - name: Ejecutar smoke tests
+        run: pytest tests/ -q -k "not transformers"

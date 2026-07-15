@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deep Learning: de los fundamentos a los Transformers — Aula virtual</title>
+<meta name="description" content="Curso completo de Deep Learning en español (32 h): tensores, MLP, CNN, RNN, attention y Transformers. Por Future Tales, LLC.">
+<link rel="stylesheet" href="assets/css/aula.css">
+</head>
+<body>
+
+<header class="aula">
+  <h1>🧠 Deep Learning: de los fundamentos a los Transformers</h1>
+  <p>Aula virtual del curso de 32 horas · intuición → visual → fórmula → implementación verificable</p>
+  <p style="margin-top:.6rem; font-size:.85rem;">
+    <a href="https://github.com/felmco/deeplearning-class" style="color:#9ecbff;">📦 Repositorio en GitHub</a> ·
+    Future Tales, LLC · 2026
+  </p>
+</header>
+
+<main>
+
+<h2 class="seccion"><span>📖</span>Las cuatro sesiones</h2>
+<div class="grid">
+  <a class="tarjeta" href="https://github.com/felmco/deeplearning-class/blob/main/sesiones/01-fundamentos.md">
+    <span class="etiqueta">Sesión 1 · 8 h</span>
+    <h3>Fundamentos, MLP y backpropagation</h3>
+    <p>Tensores, shapes, activaciones, loss, gradientes, autograd y el training loop escrito a mano. Lab: MLP sobre make_moons.</p>
+  </a>
+  <a class="tarjeta" href="https://github.com/felmco/deeplearning-class/blob/main/sesiones/02-cnn-vision.md">
+    <span class="etiqueta s2">Sesión 2 · 8 h</span>
+    <h3>CNN, regularización y transfer learning</h3>
+    <p>Convolución, kernels, feature maps, BatchNorm, optimizadores, ResNet y fine-tuning. Lab: CNN sobre FashionMNIST.</p>
+  </a>
+  <a class="tarjeta" href="https://github.com/felmco/deeplearning-class/blob/main/sesiones/03-secuencias-transformers.md">
+    <span class="etiqueta s3">Sesión 3 · 8 h</span>
+    <h3>Secuencias, attention y Transformers</h3>
+    <p>Embeddings, RNN/LSTM, scaled dot-product attention, multi-head, positional encoding y el bloque Transformer desde cero.</p>
+  </a>
+  <a class="tarjeta" href="https://github.com/felmco/deeplearning-class/blob/main/sesiones/04-hugging-face-proyecto.md">
+    <span class="etiqueta s4">Sesión 4 · 8 h</span>
+    <h3>Hugging Face, fine-tuning y entrega</h3>
+    <p>Tokenizers, datasets, Trainer, PEFT/LoRA, evaluación honesta, riesgos, model cards y el proyecto integrador.</p>
+  </a>
+</div>
+
+<h2 class="seccion"><span>🕹️</span>Simuladores interactivos</h2>
+<p style="color:var(--texto-suave); margin-top:-0.4rem;">Manipula cada concepto antes de programarlo. Formula una hipótesis, mueve un control, verifica.</p>
+<div class="grid">
+  <a class="tarjeta" href="interactivos/mlp-playground.html">
+    <div class="icono">🧪</div>
+    <h3>MLP Playground</h3>
+    <p>Entrena una red neuronal EN TU NAVEGADOR sobre moons, círculos o XOR y observa la frontera de decisión aprenderse en vivo.</p>
+  </a>
+  <a class="tarjeta" href="interactivos/descenso-gradiente.html">
+    <div class="icono">⛰️</div>
+    <h3>Descenso de gradiente</h3>
+    <p>Suelta la bolita sobre la superficie de pérdida. Learning rate y momentum deciden si converge, oscila o diverge.</p>
+  </a>
+  <a class="tarjeta" href="interactivos/activaciones.html">
+    <div class="icono">📈</div>
+    <h3>Funciones de activación</h3>
+    <p>Sigmoid, tanh, ReLU y GELU con sus derivadas. Descubre dónde se satura el gradiente y qué es una "dead ReLU".</p>
+  </a>
+  <a class="tarjeta" href="interactivos/convolucion.html">
+    <div class="icono">🔍</div>
+    <h3>Convolución 2D</h3>
+    <p>Desliza un kernel sobre la imagen paso a paso, cambia stride y padding, y ve nacer el feature map celda a celda.</p>
+  </a>
+  <a class="tarjeta" href="interactivos/atencion.html">
+    <div class="icono">🎯</div>
+    <h3>Scaled dot-product attention</h3>
+    <p>QKᵀ, escala, máscara causal y softmax sobre una matriz interactiva de 4 tokens. La ecuación central de los Transformers.</p>
+  </a>
+  <a class="tarjeta" href="interactivos/softmax-temperatura.html">
+    <div class="icono">🌡️</div>
+    <h3>Softmax y temperatura</h3>
+    <p>De logits a probabilidades. Ajusta la temperatura y top-k/top-p: la base del sampling en los LLMs.</p>
+  </a>
+  <a class="tarjeta" href="interactivos/positional-encoding.html">
+    <div class="icono">🌊</div>
+    <h3>Positional encoding</h3>
+    <p>Las ondas sinusoidales que le enseñan la noción de orden a una arquitectura que, sin ellas, no distingue posiciones.</p>
+  </a>
+</div>
+
+<h2 class="seccion"><span>📓</span>Laboratorios y proyecto</h2>
+<div class="grid">
+  <a class="tarjeta" href="https://github.com/felmco/deeplearning-class/tree/main/notebooks">
+    <div class="icono">📓</div>
+    <h3>6 notebooks ejecutables</h3>
+    <p>Tensores y autograd · MLP · CNN · Secuencias/RNN · Attention desde cero · Fine-tuning con Hugging Face.</p>
+  </a>
+  <a class="tarjeta" href="https://github.com/felmco/deeplearning-class/blob/main/proyecto/README.md">
+    <div class="icono">🏆</div>
+    <h3>Proyecto final</h3>
+    <p>Clasificador de texto reproducible: baseline TF-IDF vs red propia vs Transformer fine-tuned. Milestones, rúbrica y model card.</p>
+  </a>
+  <a class="tarjeta" href="https://github.com/felmco/deeplearning-class/blob/main/recursos/README.md">
+    <div class="icono">🔗</div>
+    <h3>Recursos y enlaces</h3>
+    <p>Simuladores externos (Transformer Explainer, CNN Explainer), papers fundamentales, librerías y plataformas.</p>
+  </a>
+  <a class="tarjeta" href="https://github.com/felmco/deeplearning-class/tree/main/remotion">
+    <div class="icono">🎬</div>
+    <h3>Animaciones Remotion</h3>
+    <p>Composiciones de video (forward/backward pass, flujo de attention) renderizables con Remotion, con código comentado.</p>
+  </a>
+</div>
+
+</main>
+
+<footer class="aula">
+  © 2026 <strong>Future Tales, LLC</strong> · Código MIT · Contenido CC BY 4.0 ·
+  <a href="https://github.com/felmco/deeplearning-class">github.com/felmco/deeplearning-class</a>
+</footer>
+
+</body>
+</html>

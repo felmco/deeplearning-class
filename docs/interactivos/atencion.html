@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scaled dot-product attention — Deep Learning Course</title>
+<link rel="stylesheet" href="../assets/css/aula.css">
+</head>
+<body>
+
+<header class="aula">
+  <p class="migas"><a href="../index.html">🏠 Aula</a> · Sesión 3</p>
+  <h1>🎯 Scaled dot-product attention</h1>
+  <p>Cuatro tokens, la ecuación completa: QKᵀ → ÷√d_k → máscara → softmax → ×V. Pasa el mouse por una fila para leer cómo un token reparte su atención.</p>
+</header>
+
+<main>
+<div class="formula">Attention(Q, K, V) = softmax( QKᵀ / √d_k + M ) · V</div>
+
+<div class="panel">
+  <div class="controles">
+    <div class="control" style="flex-direction:row; gap:.5rem; align-items:center;">
+      <button id="btnAleatorio">🎲 Nuevos Q, K, V</button>
+    </div>
+    <div class="control">
+      <label><input type="checkbox" id="chkCausal" checked> Máscara causal (no ver el futuro)</label>
+      <label style="margin-top:.3rem;"><input type="checkbox" id="chkEscala" checked> Escalar por √d_k</label>
+    </div>
+    <div class="control">
+      <label>d_k (dimensión de Q y K)</label>
+      <input type="range" id="dk" min="2" max="64" step="2" value="8">
+      <output id="dkOut">8</output>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div id="matrices" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1.2rem;"></div>
+</div>
+
+<div class="panel">
+  <h3 style="margin-top:0;">Lectura de la fila seleccionada</h3>
+  <div id="lectura" style="font-size:.95rem;">Pasa el mouse por una fila de la matriz softmax.</div>
+</div>
+
+<div class="explica">
+  <strong>Experimentos:</strong>
+  (1) Desactiva el escalado y sube d_k a 64: los scores crecen, el softmax se <em>satura</em>
+  (una celda ≈ 1.00 y el resto ≈ 0) — por eso existe el √d_k.
+  (2) Activa/desactiva la máscara causal y observa el triángulo superior apagarse: así entrena GPT.
+  (3) Verifica que CADA fila del softmax suma 1: cada token reparte un presupuesto fijo de atención.
+</div>
+</main>
+
+<footer class="aula">© 2026 Future Tales, LLC · <a href="../index.html">Volver al aula</a></footer>
+
+<script>
+'use strict';
+const TOKENS = ['El', 'gato', 'come', 'pescado'];
+const T = 4;
+let Q, Km, V, dk = 8;
+
+// ── Álgebra mínima ───────────────────────────────────────────────────
+const aleatorio = () => (Math.random()*2 - 1);
+function nuevaMatriz(filas, cols){
+  return Array.from({length: filas}, () => Array.from({length: cols}, aleatorio));
+}
+function matmulT(A, B){   // A (T,d) @ B(T,d)ᵀ → (T,T)
+  return A.map(fila => B.map(filaB => fila.reduce((s, v, i) => s + v*filaB[i], 0)));
+}
+function softmaxFila(fila){
+  const m = Math.max(...fila.filter(v => v > -1e8));
+  const e = fila.map(v => v <= -1e8 ? 0 : Math.exp(v - m));
+  const s = e.reduce((a, b) => a + b, 0);
+  return e.map(v => v / s);
+}
+
+// ── Pipeline completo de attention ───────────────────────────────────
+function calcular(){
+  const causal = document.getElementById('chkCausal').checked;
+  const escalar = document.getElementById('chkEscala').checked;
+
+  const scores = matmulT(Q, Km);                                   // 1. QKᵀ
+  const escalado = scores.map(f => f.map(v => escalar ? v/Math.sqrt(dk) : v)); // 2. ÷√dk
+  const enmascarado = escalado.map((f, i) =>                       // 3. máscara
+    f.map((v, j) => (causal && j > i) ? -1e9 : v));
+  const pesos = enmascarado.map(softmaxFila);                      // 4. softmax
+  const salida = pesos.map(f =>                                    // 5. ×V
+    V[0].map((_, d) => f.reduce((s, w, j) => s + w*V[j][d], 0)));
+  return { scores, escalado, enmascarado, pesos, salida };
+}
+
+// ── Render de matrices como tablas-heatmap ───────────────────────────
+function colorCelda(v, vmax, esPeso){
+  if (v <= -1e8) return 'background:#f8fafc; color:#cbd5e1;';
+  if (esPeso){   // pesos ∈ [0,1]: escala viridis-ish azul
+    const t = Math.max(0, Math.min(1, v));
+    return `background: rgba(0,114,178,${(0.08 + 0.92*t).toFixed(2)}); color:${t > .45 ? '#fff' : '#1a2332'};`;
+  }
+  const t = Math.max(-1, Math.min(1, v / (vmax || 1)));
+  return t >= 0
+    ? `background: rgba(0,158,115,${(0.1 + 0.7*t).toFixed(2)});`
+    : `background: rgba(213,94,0,${(0.1 - 0.7*t).toFixed(2)});`;
+}
+
+function tablaHTML(titulo, M, esPeso, conHover){
+  const vmax = Math.max(...M.flat().filter(v => v > -1e8).map(Math.abs), 1e-9);
+  let html = `<div><h4 style="margin:.2rem 0 .5rem; font-size:.92rem;">${titulo}</h4>` +
+    '<table class="metrica" style="width:100%;"><tr><th></th>' +
+    TOKENS.map(t => `<th>${t}</th>`).join('') + '</tr>';
+  M.forEach((fila, i) => {
+    html += `<tr${conHover ? ` class="filaAtt" data-fila="${i}" style="cursor:pointer;"` : ''}><th>${TOKENS[i]}</th>`;
+    fila.forEach(v => {
+      const texto = v <= -1e8 ? '−∞' : v.toFixed(2);
+      html += `<td style="${colorCelda(v, vmax, esPeso)} font-family:var(--mono); font-size:.8rem;">${texto}</td>`;
+    });
+    html += '</tr>';
+  });
+  return html + '</table></div>';
+}
+
+function render(){
+  const r = calcular();
+  document.getElementById('matrices').innerHTML =
+    tablaHTML('1 · scores = QKᵀ', r.scores, false) +
+    tablaHTML('2-3 · ÷√d_k + máscara', r.enmascarado, false) +
+    tablaHTML('4 · softmax → pesos (cada fila suma 1)', r.pesos, true, true) +
+    tablaHTML('5 · salida = pesos × V  (d_v=3)', r.salida.map(f => f.slice(0, 3)), false);
+
+  // hover sobre filas del softmax → lectura en lenguaje natural
+  document.querySelectorAll('.filaAtt').forEach(tr => {
+    tr.addEventListener('mouseenter', () => {
+      const i = parseInt(tr.dataset.fila);
+      const pesos = r.pesos[i];
+      const partes = pesos.map((w, j) =>
+        `<b style="color:#0072B2">${(w*100).toFixed(0)}%</b> a «${TOKENS[j]}»`).join(' · ');
+      const suma = pesos.reduce((a, b) => a + b, 0);
+      document.getElementById('lectura').innerHTML =
+        `El token <b>«${TOKENS[i]}»</b> (query) reparte su atención: ${partes}. ` +
+        `Suma = <b>${suma.toFixed(3)}</b> ✓. Su salida es la mezcla ponderada de los VALUES con esos pesos.`;
+    });
+  });
+}
+
+function regenerar(){
+  // Q y K con dimensión dk; V con d_v=3 fijo (para mostrarla compacta)
+  Q = nuevaMatriz(T, dk);
+  Km = nuevaMatriz(T, dk);
+  V = nuevaMatriz(T, 3);
+  render();
+}
+
+document.getElementById('btnAleatorio').addEventListener('click', regenerar);
+document.getElementById('chkCausal').addEventListener('input', render);
+document.getElementById('chkEscala').addEventListener('input', render);
+document.getElementById('dk').addEventListener('input', e => {
+  dk = parseInt(e.target.value);
+  document.getElementById('dkOut').textContent = dk;
+  regenerar();
+});
+
+regenerar();
+</script>
+</body>
+</html>

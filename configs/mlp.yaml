@@ -1,0 +1,26 @@
+# ══════════════════════════════════════════════════════════════════
+# Configuración del experimento MLP (Laboratorio 1 — Sesión 1)
+# Dataset: make_moons (clasificación binaria no lineal)
+#
+# La configuración vive FUERA del notebook para que el experimento
+# sea reproducible: cambiar un hiperparámetro = cambiar una línea aquí.
+# ══════════════════════════════════════════════════════════════════
+
+experiment_name: mlp_moons_base
+seed: 42                    # semilla global para reproducibilidad
+
+data:
+  n_samples: 1500           # total de puntos generados
+  noise: 0.22               # ruido gaussiano de make_moons
+  test_size: 0.30           # fracción reservada para validation + test
+  batch_size: 64
+
+model:
+  hidden_dim: 32            # neuronas por capa oculta (experimento: 4 vs 64)
+  dropout: 0.10             # probabilidad de apagado (experimento: 0 vs 0.4)
+
+training:
+  learning_rate: 1.0e-3     # experimento: 1e-4 vs 1e-2
+  weight_decay: 1.0e-4      # regularización L2 desacoplada (AdamW)
+  max_epochs: 300
+  patience: 20              # early stopping: epochs sin mejora en val loss

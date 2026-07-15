@@ -1,0 +1,41 @@
+# ══════════════════════════════════════════════════════════════════
+# Dependencias del curso "Deep Learning: de los fundamentos a los
+# Transformers" — Future Tales, LLC
+#
+# IMPORTANTE: instala PyTorch PRIMERO con el selector oficial según
+# tu hardware (CPU / CUDA / MPS):
+#   https://pytorch.org/get-started/locally/
+#
+# El instructor debe congelar una combinación validada de versiones
+# una semana antes de cada cohorte (ver "Nota de mantenimiento" en el
+# programa del curso).
+# ══════════════════════════════════════════════════════════════════
+
+# ── Núcleo científico ─────────────────────────────────────────────
+torchvision
+numpy
+pandas
+matplotlib
+scikit-learn
+
+# ── Jupyter y utilidades ──────────────────────────────────────────
+jupyter
+ipykernel
+tqdm
+pillow
+pyyaml
+
+# ── Ecosistema Hugging Face (Sesión 4) ────────────────────────────
+transformers
+datasets
+evaluate
+accelerate
+peft
+
+# ── Demo y tracking ───────────────────────────────────────────────
+gradio
+tensorboard
+
+# ── Calidad de código ─────────────────────────────────────────────
+ruff
+pytest

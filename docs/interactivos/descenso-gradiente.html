@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Descenso de gradiente — Deep Learning Course</title>
+<link rel="stylesheet" href="../assets/css/aula.css">
+</head>
+<body>
+
+<header class="aula">
+  <p class="migas"><a href="../index.html">🏠 Aula</a> · Sesión 1</p>
+  <h1>⛰️ Descenso de gradiente interactivo</h1>
+  <p>Haz clic en la superficie para soltar la bolita. El learning rate y el momentum deciden su destino: converger, arrastrarse u oscilar.</p>
+</header>
+
+<main>
+<div class="formula">θ ← θ − η·∇L(θ) &nbsp;&nbsp;(con momentum: v ← β·v + ∇L; θ ← θ − η·v)</div>
+
+<div class="panel">
+  <div class="controles">
+    <div class="control">
+      <label>Learning rate η</label>
+      <input type="range" id="lr" min="-2.3" max="-0.35" step="0.01" value="-1">
+      <output id="lrOut"></output>
+    </div>
+    <div class="control">
+      <label>Momentum β</label>
+      <input type="range" id="beta" min="0" max="0.95" step="0.05" value="0">
+      <output id="betaOut"></output>
+    </div>
+    <div class="control">
+      <label>Superficie</label>
+      <select id="superficie" style="padding:.4rem; border-radius:8px; border:1px solid var(--borde);">
+        <option value="valle">Valle alargado (mal condicionado)</option>
+        <option value="cuenco">Cuenco simétrico</option>
+        <option value="rastrigin">No convexa (mínimos locales)</option>
+      </select>
+    </div>
+    <div class="control" style="flex-direction:row; gap:.5rem; align-items:flex-end;">
+      <button id="btnPlay">▶ Correr</button>
+      <button id="btnPaso" class="secundario">Paso a paso</button>
+      <button id="btnReset" class="peligro">Reiniciar</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="display:grid; grid-template-columns: 2fr 1fr; gap:1rem; align-items:start;">
+  <canvas id="lienzo" class="lienzo" width="640" height="440" style="cursor:crosshair;"></canvas>
+  <div>
+    <canvas id="lossCanvas" class="lienzo" width="300" height="220"></canvas>
+    <table class="metrica" style="margin-top:.8rem; width:100%;">
+      <tr><th>paso</th><td id="outPaso">0</td></tr>
+      <tr><th>loss L(θ)</th><td id="outLoss">—</td></tr>
+      <tr><th>‖∇L‖</th><td id="outGrad">—</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="explica">
+  <strong>Experimentos sugeridos:</strong>
+  (1) En el <em>valle alargado</em>, sube η hasta que la bolita oscile perpendicular al valle — el caso
+  clásico donde el momentum ayuda: activa β=0.9 y compara.
+  (2) En la superficie <em>no convexa</em>, suelta la bolita en distintos puntos: ¿siempre llega al mismo
+  mínimo? Eso es la sensibilidad a la inicialización.
+  (3) η diminuto: correcto pero eterno. η enorme: diverge. El LR es el hiperparámetro más importante.
+</div>
+</main>
+
+<footer class="aula">© 2026 Future Tales, LLC · <a href="../index.html">Volver al aula</a></footer>
+
+<script>
+// ── Superficies de pérdida: f(x,y) y su gradiente analítico ─────────
+const SUP = {
+  valle: {  // valle alargado: curvatura 12:1 → el clásico zig-zag
+    f: (x,y) => 0.5*x*x + 6*y*y,
+    g: (x,y) => [x, 12*y],
+    dom: 4.2,
+  },
+  cuenco: { // cuenco simétrico: el caso fácil
+    f: (x,y) => x*x + y*y,
+    g: (x,y) => [2*x, 2*y],
+    dom: 4.2,
+  },
+  rastrigin: { // no convexa: mínimos locales por todas partes
+    f: (x,y) => 0.3*(x*x+y*y) + 1.5*(2 - Math.cos(2.2*x) - Math.cos(2.2*y)),
+    g: (x,y) => [0.6*x + 3.3*Math.sin(2.2*x), 0.6*y + 3.3*Math.sin(2.2*y)],
+    dom: 4.2,
+  },
+};
+
+const cv = document.getElementById('lienzo'), ctx = cv.getContext('2d');
+const lcv = document.getElementById('lossCanvas'), lctx = lcv.getContext('2d');
+let sup = SUP.valle, pos = [-3.4, 1.7], vel = [0, 0], ruta = [], losses = [], animando = null;
+
+const aPx = (x,y) => [ (x/sup.dom/2 + .5) * cv.width, (.5 - y/sup.dom/2) * cv.height ];
+const aMath = (px,py) => [ (px/cv.width - .5) * 2*sup.dom, (.5 - py/cv.height) * 2*sup.dom ];
+
+// ── Fondo: mapa de contorno pintado por píxeles (cacheado) ───────────
+let fondo = null;
+function pintarFondo(){
+  const img = ctx.createImageData(cv.width, cv.height);
+  let fmax = 0;
+  for (let i = 0; i < 400; i++){
+    const x = -sup.dom + 2*sup.dom*Math.random(), y = -sup.dom + 2*sup.dom*Math.random();
+    fmax = Math.max(fmax, sup.f(x,y));
+  }
+  for (let py = 0; py < cv.height; py++){
+    for (let px = 0; px < cv.width; px++){
+      const [x, y] = aMath(px, py);
+      const v = Math.sqrt(Math.min(sup.f(x,y)/fmax, 1));   // sqrt: más contraste cerca del mínimo
+      const idx = (py*cv.width + px) * 4;
+      // gradiente azul: claro (bajo) → oscuro (alto)
+      img.data[idx]   = 235 - 205*v;
+      img.data[idx+1] = 244 - 180*v;
+      img.data[idx+2] = 252 - 130*v;
+      img.data[idx+3] = 255;
+    }
+  }
+  fondo = img;
+}
+
+function dibujar(){
+  ctx.putImageData(fondo, 0, 0);
+  // mínimo global (estrella)
+  const [mx, my] = aPx(0, 0);
+  ctx.fillStyle = '#f5c400'; ctx.strokeStyle = '#333'; ctx.font = '22px sans-serif';
+  ctx.fillText('★', mx-10, my+8);
+  // trayectoria
+  ctx.strokeStyle = '#D55E00'; ctx.lineWidth = 2; ctx.beginPath();
+  ruta.forEach(([x,y], i) => { const [a,b] = aPx(x,y); i===0 ? ctx.moveTo(a,b) : ctx.lineTo(a,b); });
+  ctx.stroke();
+  // bolita
+  const [bx, by] = aPx(pos[0], pos[1]);
+  ctx.fillStyle = '#D55E00'; ctx.beginPath(); ctx.arc(bx, by, 8, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+  // flecha del gradiente negativo (hacia dónde caminará)
+  const [gx, gy] = sup.g(pos[0], pos[1]);
+  const n = Math.hypot(gx, gy) || 1;
+  const [tx, ty] = aPx(pos[0] - gx/n*0.9, pos[1] - gy/n*0.9);
+  ctx.strokeStyle = '#009E73'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(tx, ty); ctx.stroke();
+
+  // panel de curva de loss
+  lctx.clearRect(0, 0, lcv.width, lcv.height);
+  lctx.strokeStyle = '#d8dee8'; lctx.strokeRect(6, 6, lcv.width-12, lcv.height-12);
+  lctx.fillStyle = '#1a2332'; lctx.font = 'bold 12px sans-serif';
+  lctx.fillText('loss por paso (escala log)', 14, 22);
+  if (losses.length > 1){
+    const lmin = Math.log10(Math.max(1e-8, Math.min(...losses)));
+    const lmax = Math.log10(Math.max(...losses));
+    lctx.strokeStyle = '#0072B2'; lctx.lineWidth = 2; lctx.beginPath();
+    losses.forEach((L, i) => {
+      const x = 10 + (lcv.width-20) * i / (losses.length-1);
+      const y = lcv.height-12 - (lcv.height-40) * (Math.log10(Math.max(1e-8,L)) - lmin) / Math.max(1e-9, lmax-lmin);
+      i===0 ? lctx.moveTo(x,y) : lctx.lineTo(x,y);
+    });
+    lctx.stroke();
+  }
+  // métricas
+  document.getElementById('outPaso').textContent = ruta.length - 1;
+  document.getElementById('outLoss').textContent = sup.f(...pos).toFixed(4);
+  document.getElementById('outGrad').textContent = Math.hypot(...sup.g(...pos)).toFixed(4);
+}
+
+// ── Un paso de (momentum) gradient descent ───────────────────────────
+function paso(){
+  const lr = Math.pow(10, parseFloat(document.getElementById('lr').value));
+  const beta = parseFloat(document.getElementById('beta').value);
+  const [gx, gy] = sup.g(pos[0], pos[1]);
+  vel = [beta*vel[0] + gx, beta*vel[1] + gy];        // acumular velocidad
+  pos = [pos[0] - lr*vel[0], pos[1] - lr*vel[1]];    // actualizar parámetros
+  // mantener en el lienzo aunque diverja
+  pos = pos.map(v => Math.max(-sup.dom, Math.min(sup.dom, v)));
+  ruta.push([...pos]);
+  losses.push(sup.f(...pos));
+  dibujar();
+}
+
+function reset(desde){
+  if (animando){ clearInterval(animando); animando = null; document.getElementById('btnPlay').textContent = '▶ Correr'; }
+  pos = desde || [-3.4, 1.7]; vel = [0,0];
+  ruta = [[...pos]]; losses = [sup.f(...pos)];
+  dibujar();
+}
+
+// ── Controles ────────────────────────────────────────────────────────
+function actualizarEtiquetas(){
+  const lr = Math.pow(10, parseFloat(document.getElementById('lr').value));
+  document.getElementById('lrOut').textContent = 'η = ' + lr.toFixed(3);
+  document.getElementById('betaOut').textContent = 'β = ' + document.getElementById('beta').value;
+}
+document.getElementById('lr').addEventListener('input', actualizarEtiquetas);
+document.getElementById('beta').addEventListener('input', actualizarEtiquetas);
+document.getElementById('superficie').addEventListener('change', e => {
+  sup = SUP[e.target.value]; pintarFondo(); reset();
+});
+document.getElementById('btnPaso').addEventListener('click', paso);
+document.getElementById('btnReset').addEventListener('click', () => reset());
+document.getElementById('btnPlay').addEventListener('click', () => {
+  if (animando){ clearInterval(animando); animando = null; document.getElementById('btnPlay').textContent = '▶ Correr'; }
+  else { animando = setInterval(paso, 90); document.getElementById('btnPlay').textContent = '⏸ Pausar'; }
+});
+cv.addEventListener('click', e => {
+  const r = cv.getBoundingClientRect();
+  // escalar coordenadas del click al tamaño interno del canvas
+  const px = (e.clientX - r.left) * cv.width / r.width;
+  const py = (e.clientY - r.top) * cv.height / r.height;
+  reset(aMath(px, py));
+});
+
+actualizarEtiquetas(); pintarFondo(); reset();
+</script>
+</body>
+</html>
