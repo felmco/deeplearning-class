@@ -162,7 +162,7 @@ fronteras curvas.
 $$
 \sigma(z)=\frac{1}{1+e^{-z}} \qquad
 \tanh(z)=\frac{e^z-e^{-z}}{e^z+e^{-z}} \qquad
-\operatorname{ReLU}(z)=\max(0,z)
+\mathrm{ReLU}(z)=\max(0,z)
 $$
 
 ![Funciones de activación y sus derivadas](../docs/assets/figuras/activaciones.png)

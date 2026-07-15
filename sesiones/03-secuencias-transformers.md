@@ -143,7 +143,7 @@ apuntan en direcciones similares.
 ### La fórmula
 
 $$
-\operatorname{Attention}(Q,K,V)=\operatorname{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}+M\right)V
+\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}+M\right)V
 $$
 
 Paso a paso, con la matriz real calculada:
@@ -192,8 +192,8 @@ y softmax por filas, con los números recalculándose en cada etapa.
 ### Varias miradas en paralelo
 
 $$
-\operatorname{head}_i=\operatorname{Attention}(QW_i^Q,KW_i^K,VW_i^V) \qquad
-\operatorname{MHA}(Q,K,V)=\operatorname{Concat}(\operatorname{head}_1,\dots,\operatorname{head}_h)\,W^O
+\mathrm{head}_i=\mathrm{Attention}(QW_i^Q,KW_i^K,VW_i^V) \qquad
+\mathrm{MHA}(Q,K,V)=\mathrm{Concat}(\mathrm{head}_1,\dots,\mathrm{head}_h)\,W^O
 $$
 
 En lugar de una atención de dimensión $d_{model}$, se ejecutan $h$ atenciones de dimensión
@@ -224,8 +224,8 @@ aprendidas o rotatorias como RoPE; la intuición es la misma.)
 ## 5. El bloque Transformer completo
 
 $$
-x'=x+\operatorname{MHA}(\operatorname{LN}(x)) \qquad
-y=x'+\operatorname{FFN}(\operatorname{LN}(x'))
+x'=x+\mathrm{MHA}(\mathrm{LN}(x)) \qquad
+y=x'+\mathrm{FFN}(\mathrm{LN}(x'))
 $$
 
 ```mermaid
