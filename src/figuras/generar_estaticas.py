@@ -107,7 +107,7 @@ def fig_softmax_temperatura() -> None:
 
     axes[0].set_ylabel("probabilidad")
     fig.suptitle("softmax(z/T): la temperatura controla la 'confianza' de la distribución",
-                 fontweight="bold")
+                 fontweight="bold", y=1.06)
     fig.savefig(DESTINO / "softmax_temperatura.png")
     plt.close(fig)
 
@@ -146,7 +146,7 @@ def fig_curvas_aprendizaje() -> None:
                 va="top", ha="center", color=GRIS, style="italic")
     axes[0].set_ylabel("loss")
     axes[0].legend()
-    fig.suptitle("Diagnóstico por curvas de aprendizaje", fontweight="bold")
+    fig.suptitle("Diagnóstico por curvas de aprendizaje", fontweight="bold", y=1.04)
     fig.savefig(DESTINO / "curvas_aprendizaje.png")
     plt.close(fig)
 
@@ -321,6 +321,7 @@ def fig_padding_stride() -> None:
         ax.set_aspect("equal")
         ax.axis("off")
     fig.suptitle("H_out = ⌊(H + 2P − K)/S⌋ + 1   (gris = padding, rojo = kernel)",
+                 y=1.06,
                  fontweight="bold")
     fig.savefig(DESTINO / "padding_stride.png")
     plt.close(fig)
@@ -443,6 +444,7 @@ def fig_positional_encoding() -> None:
             xlabel="posición", ylabel="valor")
     ax2.legend(fontsize=9)
     fig.suptitle("PE(pos, 2i) = sin(pos/10000^{2i/d}) · PE(pos, 2i+1) = cos(…)",
+                 y=1.06,
                  fontweight="bold")
     fig.savefig(DESTINO / "positional_encoding.png")
     plt.close(fig)

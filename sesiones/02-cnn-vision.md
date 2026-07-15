@@ -89,10 +89,10 @@ significan "redondear hacia abajo".
 ### Parámetros de una capa Conv2d
 
 $$
-\#\theta=C_{out}\,(C_{in}\,K_h\,K_w+1)
+N_\theta=C_{out}\,(C_{in}\,K_h\,K_w+1)
 $$
 
-El `+1` es el bias por canal de salida. Comparación que lo dice todo, para una imagen 28×28:
+$N_\theta$ = número de parámetros de la capa. El `+1` es el bias por canal de salida. Comparación que lo dice todo, para una imagen 28×28:
 
 | Capa | Parámetros |
 |---|---:|

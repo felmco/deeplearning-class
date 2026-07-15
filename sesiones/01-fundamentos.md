@@ -43,7 +43,7 @@ es matar moscas a cañonazos.
 Todo el curso usa este vocabulario:
 
 $$
-\mathcal{D} = \{(x_i, y_i)\}_{i=1}^{N} \qquad \hat{y} = f_\theta(x) \qquad \mathcal{L}(\hat{y}, y)
+\mathcal{D} = \lbrace (x_i, y_i)\rbrace_{i=1}^{N} \qquad \hat{y} = f_\theta(x) \qquad \mathcal{L}(\hat{y}, y)
 $$
 
 | Símbolo | Nombre | Qué es |

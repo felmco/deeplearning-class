@@ -835,7 +835,7 @@ La misma fórmula aplica para el ancho.
 ### Parámetros de Conv2d
 
 $$
-\#\theta=C_{out}(C_{in}K_hK_w+1)
+N_\theta=C_{out}(C_{in}K_hK_w+1)
 $$
 
 El término `+1` corresponde a un bias por canal de salida, si `bias=True`.
