@@ -122,11 +122,16 @@ En el repo esto ya está encapsulado: [`src/utils.py → detectar_dispositivo()`
 
 ![Anatomía comparada: neurona biológica vs perceptrón, con sus componentes y fórmulas](../docs/assets/figuras/neurona_vs_perceptron.png)
 
-El perceptrón nació como una **analogía** de la neurona biológica: las dendritas reciben
-señales (entradas $x_j$), cada sinapsis las pondera con una fuerza aprendida (pesos $w_j$),
-el soma las integra (suma $\Sigma$) y el axón dispara si se supera un umbral (activación
-$\varphi$). La analogía es inspiración histórica, no equivalencia: una neurona real es
-mucho más compleja que una suma ponderada.
+El perceptrón nació como una **analogía** de la neurona biológica, y los números de la
+figura siguen esa correspondencia: las dendritas reciben las señales ① (entradas $x_j$),
+cada sinapsis de entrada las pondera con una fuerza que se aprende ② (pesos $w_j$), el
+soma integra todo lo que recibe ③ (suma $\Sigma$), el cono axónico dispara si se supera
+el umbral ④ (activación $\varphi$) y el axón lleva el impulso a la siguiente neurona ⑤
+(salida $\hat{y}$).
+
+Ojo con ②: lo que corresponde a los pesos son las sinapsis de **entrada**, no los
+terminales del axón — esos son la salida. Y la analogía es inspiración histórica, no
+equivalencia: una neurona real es mucho más compleja que una suma ponderada.
 
 $$
 z = \mathbf{w}^\top \mathbf{x} + b

@@ -22,7 +22,6 @@ import numpy as np
 from .estilo import (
     AMARILLO,
     AZUL,
-    CELESTE,
     GRIS,
     MORADO,
     NARANJA,
@@ -496,172 +495,238 @@ def fig_complejidad() -> None:
 
 def fig_neurona_vs_perceptron() -> None:
     """Anatomía comparada: neurona biológica (izquierda) vs perceptrón (derecha).
-    Diagrama didáctico dibujado con patches; define cada componente y la
-    correspondencia entre ambos modelos."""
-    from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch
 
-    fig, (ax_bio, ax_art) = plt.subplots(1, 2, figsize=(15, 6.4))
+    Cada componente lleva un número ①-⑤ y un color propio que se repiten en
+    ambos paneles y en el mapa inferior: así la correspondencia se lee mirando
+    el dibujo, sin tener que reconstruirla desde el texto.
+
+    Precisión importante: los pesos corresponden a las sinapsis de ENTRADA
+    (los contactos sobre las dendritas), no a los terminales del axón, que son
+    la salida hacia la siguiente neurona.
+    """
+    from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Polygon
+
+    # Un color por componente, repetido en ambos paneles (paleta Okabe-Ito)
+    C_ENTRADA, C_PESO, C_SUMA, C_ACT, C_SALIDA = AZUL, MORADO, VERDE, NARANJA, ROJO
+
+    fig, (ax_bio, ax_art) = plt.subplots(1, 2, figsize=(15, 6.9))
     for ax in (ax_bio, ax_art):
         ax.set_xlim(0, 10)
         ax.set_ylim(0, 10)
         ax.axis("off")
         ax.grid(False)
 
-    # ─────────────── Panel izquierdo: neurona biológica ───────────────
-    ax_bio.set_title("Neurona biológica", fontsize=15, fontweight="bold", pad=14)
+    def badge(ax, x: float, y: float, n: int, color: str) -> None:
+        """Marca numerada que liga un componente con su par del otro panel."""
+        ax.add_patch(Circle((x, y), 0.27, facecolor=color, edgecolor="white",
+                            linewidth=1.6, zorder=7))
+        ax.text(x, y, str(n), ha="center", va="center", fontsize=9.5,
+                color="white", fontweight="bold", zorder=8)
 
-    y_soma = 5.6   # centro vertical del soma; alinea el panel con el del perceptrón
-
-    # Soma (cuerpo celular) y núcleo
-    ax_bio.add_patch(Circle((3.3, y_soma), 1.15, facecolor=CELESTE, alpha=0.45,
-                            edgecolor=AZUL, linewidth=2.0, zorder=3))
-    ax_bio.add_patch(Circle((3.3, y_soma), 0.42, facecolor=AZUL, alpha=0.85,
-                            edgecolor="white", linewidth=1.2, zorder=4))
-
-    # Dendritas: ramas que ENTRAN al soma (las "features" del mundo)
-    for ang in (150, 172, 195, 128, 218):
-        rad = np.deg2rad(ang)
-        x0, y0 = 3.3 + 2.55 * np.cos(rad), y_soma + 2.55 * np.sin(rad)
-        x1, y1 = 3.3 + 1.05 * np.cos(rad), y_soma + 1.05 * np.sin(rad)
-        xm, ym = (x0 + x1) / 2, (y0 + y1) / 2 + 0.16
-        ax_bio.plot([x0, xm, x1], [y0, ym, y1], color=AZUL, linewidth=2.2,
-                    solid_capstyle="round", zorder=2)
-        ax_bio.add_patch(Circle((x0, y0), 0.12, facecolor=AZUL, zorder=2))
-
-    # Axón: el canal de salida, con vainas de mielina
-    ax_bio.plot([4.45, 8.0], [y_soma, y_soma], color=NARANJA, linewidth=3.4,
-                solid_capstyle="round", zorder=2)
-    for xm in (5.2, 6.1, 7.0):
-        ax_bio.add_patch(FancyBboxPatch((xm - 0.22, y_soma - 0.18), 0.44, 0.36,
-                                        boxstyle="round,pad=0.02,rounding_size=0.1",
-                                        facecolor=AMARILLO, edgecolor=NARANJA,
-                                        linewidth=1.4, zorder=3))
-    # Terminales axónicos (sinapsis)
-    for dy in (0.62, 0.0, -0.62):
-        ax_bio.plot([8.0, 8.75], [y_soma, y_soma + dy], color=NARANJA, linewidth=2.4,
-                    solid_capstyle="round", zorder=2)
-        ax_bio.add_patch(Circle((8.85, y_soma + dy), 0.16, facecolor=ROJO, zorder=3))
-
-    anotaciones_bio = [
-        ("Dendritas\nreciben señales de entrada", (0.55, 8.4), (1.5, 6.95), AZUL),
-        ("Soma (cuerpo celular)\nintegra las señales recibidas", (1.9, 2.6), (3.0, 4.5), AZUL),
-        ("Axón\ntransmite el impulso si se\nsupera el umbral de disparo", (5.0, 8.4), (5.9, 5.85), NARANJA),
-        ("Sinapsis\nentrega la señal a la\nsiguiente neurona", (7.5, 2.7), (8.6, 5.1), ROJO),
-    ]
-    for texto, xy_text, xy_punta, color in anotaciones_bio:
-        ax_bio.annotate(texto, xy=xy_punta, xytext=xy_text, fontsize=9.5,
+    def anotar(ax, anotaciones) -> None:
+        for texto, xy_text, xy_punta, color in anotaciones:
+            ax.annotate(texto, xy=xy_punta, xytext=xy_text, fontsize=9.5,
                         color="#222222", ha="left", va="center",
                         arrowprops=dict(arrowstyle="->", color=color,
                                         linewidth=1.4, shrinkA=2, shrinkB=4))
 
-    ax_bio.text(5.0, 0.55,
-                "La neurona dispara (todo o nada) cuando la suma de estímulos\n"
-                "supera un umbral. La fuerza de cada sinapsis se aprende con la experiencia.",
-                ha="center", va="center", fontsize=9.5, style="italic", color=GRIS)
+    def nota(ax, texto: str) -> None:
+        """Caja inferior; ambos paneles la comparten para quedar simétricos."""
+        ax.add_patch(FancyBboxPatch((0.5, 0.2), 9.0, 1.5,
+                                    boxstyle="round,pad=0.12,rounding_size=0.18",
+                                    facecolor="#F7FAFD", edgecolor="#C9D8E4",
+                                    linewidth=1.3, zorder=1))
+        ax.text(5.0, 0.95, texto, ha="center", va="center", fontsize=9.5,
+                style="italic", color="#444444", zorder=2)
+
+    # ─────────────── Panel izquierdo: neurona biológica ───────────────
+    ax_bio.set_title("Neurona biológica", fontsize=15, fontweight="bold", pad=14)
+
+    x_soma, y_soma = 3.35, 5.9   # y_soma = y_centro del perceptrón: paneles alineados
+
+    # Soma (cuerpo celular) y núcleo — integra: es el Σ biológico
+    ax_bio.add_patch(Circle((x_soma, y_soma), 1.15, facecolor=C_SUMA, alpha=0.22,
+                            edgecolor=C_SUMA, linewidth=2.2, zorder=3))
+    ax_bio.add_patch(Circle((x_soma, y_soma), 0.40, facecolor=C_SUMA, alpha=0.75,
+                            edgecolor="white", linewidth=1.2, zorder=4))
+
+    # Dendritas, con su contacto sináptico de entrada en la punta
+    ang_dendritas = (128, 150, 172, 195, 218)
+    for ang in ang_dendritas:
+        rad = np.deg2rad(ang)
+        x0, y0 = x_soma + 2.55 * np.cos(rad), y_soma + 2.55 * np.sin(rad)
+        x1, y1 = x_soma + 1.05 * np.cos(rad), y_soma + 1.05 * np.sin(rad)
+        xm, ym = (x0 + x1) / 2, (y0 + y1) / 2 + 0.16
+        ax_bio.plot([x0, xm, x1], [y0, ym, y1], color=C_ENTRADA, linewidth=2.2,
+                    solid_capstyle="round", zorder=2)
+        # La punta es la sinapsis: su fuerza es lo que el perceptrón llama peso
+        ax_bio.add_patch(Circle((x0, y0), 0.15, facecolor=C_PESO,
+                                edgecolor="white", linewidth=1.0, zorder=5))
+
+    # Cono axónico: donde se decide el disparo — el φ biológico
+    ax_bio.add_patch(Polygon([[x_soma + 1.02, y_soma + 0.42],
+                              [x_soma + 1.02, y_soma - 0.42],
+                              [x_soma + 1.95, y_soma]],
+                             closed=True, facecolor=C_ACT, alpha=0.75,
+                             edgecolor=C_ACT, linewidth=1.6, zorder=4))
+
+    # Axón, con sus vainas de mielina, y terminales hacia la siguiente neurona
+    ax_bio.plot([x_soma + 1.9, 8.0], [y_soma, y_soma], color=C_SALIDA,
+                linewidth=3.4, solid_capstyle="round", zorder=2)
+    for xm in (5.9, 6.7, 7.5):
+        ax_bio.add_patch(FancyBboxPatch((xm - 0.22, y_soma - 0.18), 0.44, 0.36,
+                                        boxstyle="round,pad=0.02,rounding_size=0.1",
+                                        facecolor=AMARILLO, edgecolor=C_SALIDA,
+                                        linewidth=1.4, zorder=3))
+    for dy in (0.62, 0.0, -0.62):
+        ax_bio.plot([8.0, 8.7], [y_soma, y_soma + dy], color=C_SALIDA,
+                    linewidth=2.4, solid_capstyle="round", zorder=2)
+        ax_bio.add_patch(Circle((8.8, y_soma + dy), 0.15, facecolor=C_SALIDA,
+                                zorder=3))
+
+    # Puntos de referencia sobre dendritas concretas, para badges y flechas
+    r150 = np.deg2rad(150)
+    med_dendrita = (x_soma + 1.8 * np.cos(r150), y_soma + 1.8 * np.sin(r150) + 0.14)
+    r218 = np.deg2rad(218)
+    sinapsis_baja = (x_soma + 2.55 * np.cos(r218), y_soma + 2.55 * np.sin(r218))
+
+    badge(ax_bio, med_dendrita[0] + 0.30, med_dendrita[1] + 0.40, 1, C_ENTRADA)
+    badge(ax_bio, sinapsis_baja[0] - 0.44, sinapsis_baja[1] - 0.28, 2, C_PESO)
+    badge(ax_bio, x_soma - 0.62, y_soma - 0.92, 3, C_SUMA)
+    badge(ax_bio, x_soma + 1.38, y_soma + 0.72, 4, C_ACT)
+    badge(ax_bio, 7.1, y_soma + 0.52, 5, C_SALIDA)
+
+    anotar(ax_bio, [
+        ("Dendritas\nreciben las señales de entrada",
+         (0.3, 9.0), med_dendrita, C_ENTRADA),
+        ("Sinapsis de entrada\nsu fuerza pondera cada señal\ny se aprende con la experiencia",
+         (0.15, 2.75), sinapsis_baja, C_PESO),
+        ("Soma (cuerpo celular)\nintegra todo lo que recibe",
+         (4.35, 2.75), (x_soma + 0.35, y_soma - 1.15), C_SUMA),
+        ("Cono axónico\ndispara si se supera\nel umbral",
+         (4.15, 8.85), (x_soma + 1.5, y_soma + 0.3), C_ACT),
+        ("Axón y terminales\nllevan el impulso a\nla siguiente neurona",
+         (7.15, 8.85), (7.7, y_soma + 0.18), C_SALIDA),
+    ])
+
+    nota(ax_bio, "La neurona dispara todo o nada: transmite el impulso solo cuando\n"
+                 "la suma de los estímulos recibidos supera un umbral.")
 
     # ─────────────── Panel derecho: perceptrón ───────────────
     ax_art.set_title("Perceptrón (neurona artificial)", fontsize=15,
                      fontweight="bold", pad=14)
 
-    entradas = [("$x_1$", 7.4), ("$x_2$", 5.9), ("$x_3$", 4.4)]
-    x_in, x_sum, x_act, x_out = 1.15, 4.6, 6.5, 8.8
+    entradas = [("$x_1$", 7.75), ("$x_2$", 5.9), ("$x_3$", 4.05)]
+    x_in, x_sum, x_act, x_out = 1.15, 4.6, 6.5, 8.55
     y_centro = 5.9
 
     # Nodos de entrada + aristas ponderadas
     for i, (etq, y) in enumerate(entradas, start=1):
         ax_art.add_patch(Circle((x_in, y), 0.42, facecolor="white",
-                                edgecolor=AZUL, linewidth=2.0, zorder=3))
+                                edgecolor=C_ENTRADA, linewidth=2.0, zorder=3))
         ax_art.text(x_in, y, etq, ha="center", va="center", fontsize=12, zorder=4)
         ax_art.add_patch(FancyArrowPatch((x_in + 0.42, y), (x_sum - 0.62, y_centro),
                                          arrowstyle="->", mutation_scale=13,
-                                         color=AZUL, linewidth=1.7,
+                                         color=C_ENTRADA, linewidth=1.7,
                                          shrinkA=0, shrinkB=0, zorder=2))
-        # Etiqueta del peso sobre la arista
-        xw, yw = x_in + 1.5, y + (y_centro - y) * 0.42 + 0.16
-        ax_art.text(xw, yw, f"$w_{i}$", fontsize=12, color=AZUL,
+        # Etiqueta del peso sobre la arista: el color la liga con la sinapsis
+        xw, yw = x_in + 1.55, y + (y_centro - y) * 0.44 + 0.17
+        ax_art.text(xw, yw, f"$w_{i}$", fontsize=12, color=C_PESO,
                     fontweight="bold", ha="center", va="center",
                     bbox=dict(boxstyle="round,pad=0.16", facecolor="white",
                               edgecolor="none", alpha=0.92), zorder=4)
 
     # Bias: entrada constante = 1
-    ax_art.add_patch(Circle((x_in, 2.9), 0.42, facecolor="#F4F4F4",
+    ax_art.add_patch(Circle((x_in, 3.05), 0.42, facecolor="#F4F4F4",
                             edgecolor=GRIS, linewidth=1.8, linestyle="--", zorder=3))
-    ax_art.text(x_in, 2.9, "$1$", ha="center", va="center", fontsize=12, zorder=4)
-    ax_art.add_patch(FancyArrowPatch((x_in + 0.42, 2.9), (x_sum - 0.62, y_centro - 0.3),
+    ax_art.text(x_in, 3.05, "$1$", ha="center", va="center", fontsize=12, zorder=4)
+    ax_art.add_patch(FancyArrowPatch((x_in + 0.42, 3.05), (x_sum - 0.5, y_centro - 0.42),
                                      arrowstyle="->", mutation_scale=13, color=GRIS,
                                      linewidth=1.6, linestyle="--",
                                      shrinkA=0, shrinkB=0, zorder=2))
-    ax_art.text(x_in + 1.5, 3.35, "$b$", fontsize=12, color=GRIS, fontweight="bold",
+    ax_art.text(x_in + 1.62, 3.62, "$b$", fontsize=12, color=GRIS, fontweight="bold",
                 ha="center", va="center",
                 bbox=dict(boxstyle="round,pad=0.16", facecolor="white",
                           edgecolor="none", alpha=0.92), zorder=4)
 
-    # Nodo suma (Σ)
-    ax_art.add_patch(Circle((x_sum, y_centro), 0.62, facecolor=CELESTE, alpha=0.5,
-                            edgecolor=AZUL, linewidth=2.0, zorder=3))
+    # Nodo suma (Σ) — el soma artificial
+    ax_art.add_patch(Circle((x_sum, y_centro), 0.62, facecolor=C_SUMA, alpha=0.22,
+                            edgecolor=C_SUMA, linewidth=2.2, zorder=3))
     ax_art.text(x_sum, y_centro, r"$\Sigma$", ha="center", va="center",
                 fontsize=17, zorder=4)
 
-    # Nodo activación (φ)
+    # Nodo activación (φ) — el umbral artificial
     ax_art.add_patch(FancyArrowPatch((x_sum + 0.62, y_centro), (x_act - 0.62, y_centro),
-                                     arrowstyle="->", mutation_scale=13, color=AZUL,
+                                     arrowstyle="->", mutation_scale=13, color=C_SUMA,
                                      linewidth=1.8, shrinkA=0, shrinkB=0, zorder=2))
-    ax_art.text((x_sum + x_act) / 2, y_centro + 0.42, "$z$", fontsize=12,
-                color=AZUL, ha="center", va="center", zorder=4)
-    ax_art.add_patch(Circle((x_act, y_centro), 0.62, facecolor=AMARILLO, alpha=0.65,
-                            edgecolor=NARANJA, linewidth=2.0, zorder=3))
+    ax_art.text((x_sum + x_act) / 2, y_centro + 0.36, "$z$", fontsize=12,
+                color=C_SUMA, ha="center", va="center", zorder=4)
+    ax_art.add_patch(Circle((x_act, y_centro), 0.62, facecolor=C_ACT, alpha=0.55,
+                            edgecolor=C_ACT, linewidth=2.2, zorder=3))
     ax_art.text(x_act, y_centro, r"$\varphi$", ha="center", va="center",
                 fontsize=16, zorder=4)
 
     # Salida
-    ax_art.add_patch(FancyArrowPatch((x_act + 0.62, y_centro), (x_out - 0.12, y_centro),
-                                     arrowstyle="->", mutation_scale=13, color=NARANJA,
+    ax_art.add_patch(FancyArrowPatch((x_act + 0.62, y_centro), (x_out - 0.1, y_centro),
+                                     arrowstyle="->", mutation_scale=13, color=C_SALIDA,
                                      linewidth=2.2, shrinkA=0, shrinkB=0, zorder=2))
-    ax_art.text(x_out + 0.35, y_centro, r"$\hat{y}$", fontsize=14,
+    ax_art.text(x_out + 0.32, y_centro, r"$\hat{y}$", fontsize=14, color=C_SALIDA,
                 fontweight="bold", ha="center", va="center", zorder=4)
 
-    anotaciones_art = [
-        ("Entradas $x_j$\n(features)", (0.25, 9.0), (x_in, 7.85), AZUL),
-        ("Pesos $w_j$\nimportancia de cada\nentrada (se aprenden)", (1.95, 9.0), (2.5, 6.85), AZUL),
-        ("Bias $b$ — entrada constante\nque desplaza el umbral", (0.15, 2.05), (x_in - 0.25, 2.6), GRIS),
-        ("Suma ponderada", (3.6, 7.55), (x_sum, 6.6), AZUL),
-        ("Activación $\\varphi$\nintroduce la no linealidad", (5.75, 8.75), (x_act, 6.6), NARANJA),
-        ("Salida $\\hat{y}$\npredicción", (8.6, 7.45), (x_out + 0.15, 6.35), NARANJA),
-    ]
-    for texto, xy_text, xy_punta, color in anotaciones_art:
-        ax_art.annotate(texto, xy=xy_punta, xytext=xy_text, fontsize=9.5,
-                        color="#222222", ha="left", va="center",
-                        arrowprops=dict(arrowstyle="->", color=color,
-                                        linewidth=1.4, shrinkA=2, shrinkB=4))
+    badge(ax_art, x_in - 0.5, entradas[0][1] + 0.38, 1, C_ENTRADA)
+    badge(ax_art, x_in + 1.62, entradas[0][1] - 0.02, 2, C_PESO)
+    badge(ax_art, x_sum - 0.72, y_centro + 0.62, 3, C_SUMA)
+    badge(ax_art, x_act - 0.72, y_centro + 0.62, 4, C_ACT)
+    badge(ax_art, x_out + 0.32, y_centro + 0.72, 5, C_SALIDA)
 
-    # Fórmulas del perceptrón, en una caja limpia bajo el diagrama
-    ax_art.add_patch(FancyBboxPatch((0.55, 0.18), 8.9, 1.42,
+    anotar(ax_art, [
+        ("Entradas $x_j$\n(las features)",
+         (0.15, 9.0), (x_in - 0.15, entradas[0][1] + 0.5), C_ENTRADA),
+        ("Pesos $w_j$\nimportancia de cada\nentrada (se aprenden)",
+         (2.3, 8.9), (2.35, 7.35), C_PESO),
+        ("Bias $b$ — entrada constante\nque desplaza el umbral",
+         (0.15, 2.08), (x_in - 0.28, 2.8), GRIS),
+        ("Suma ponderada",
+         (5.35, 3.6), (x_sum + 0.35, y_centro - 0.7), C_SUMA),
+        ("Activación $\\varphi$\nintroduce la no linealidad",
+         (5.9, 8.95), (x_act, y_centro + 0.68), C_ACT),
+        ("Salida $\\hat{y}$\nla predicción",
+         (8.35, 8.0), (x_out + 0.3, y_centro + 1.05), C_SALIDA),
+    ])
+
+    # Fórmulas: misma caja que la nota del panel bio, para que ambos cierren igual
+    ax_art.add_patch(FancyBboxPatch((0.5, 0.2), 9.0, 1.5,
                                     boxstyle="round,pad=0.12,rounding_size=0.18",
-                                    facecolor="#F7FAFD", edgecolor=AZUL,
-                                    linewidth=1.4, zorder=1))
-    ax_art.text(5.0, 1.2,
+                                    facecolor="#F7FAFD", edgecolor="#C9D8E4",
+                                    linewidth=1.3, zorder=1))
+    ax_art.text(5.0, 1.28,
                 r"$z \;=\; \sum_{j=1}^{n} w_j x_j \;+\; b \;=\; "
                 r"\mathbf{w}^\top \mathbf{x} + b$",
                 ha="center", va="center", fontsize=14, zorder=2)
-    ax_art.text(5.0, 0.48, r"$\hat{y} \;=\; \varphi(z)$",
+    ax_art.text(5.0, 0.54, r"$\hat{y} \;=\; \varphi(z)$",
                 ha="center", va="center", fontsize=14, zorder=2)
 
-    # ─────────────── Correspondencia entre ambos modelos ───────────────
-    fig.subplots_adjust(bottom=0.16, top=0.90, wspace=0.06)
-    pares = [("dendritas", r"entradas $x_j$"), ("sinapsis", r"pesos $w_j$"),
-             ("soma", r"suma $\Sigma$"), ("umbral de disparo", r"activación $\varphi$"),
-             ("axón", r"salida $\hat{y}$")]
-    x0, ancho = 0.075, 0.855 / len(pares)
-    for i, (bio, art) in enumerate(pares):
-        fig.text(x0 + ancho * (i + 0.5), 0.075, f"{bio}  →  {art}",
+    # ─────────────── Mapa de correspondencia ───────────────
+    fig.subplots_adjust(bottom=0.155, top=0.90, wspace=0.05)
+    pares = [
+        ("①", "dendritas", r"entradas $x_j$", C_ENTRADA),
+        ("②", "sinapsis", r"pesos $w_j$", C_PESO),
+        ("③", "soma", r"suma $\Sigma$", C_SUMA),
+        ("④", "cono axónico", r"activación $\varphi$", C_ACT),
+        ("⑤", "axón", r"salida $\hat{y}$", C_SALIDA),
+    ]
+    x0, ancho = 0.055, 0.895 / len(pares)
+    for i, (num, bio, art, color) in enumerate(pares):
+        fig.text(x0 + ancho * (i + 0.5), 0.072, f"{num}  {bio}  →  {art}",
                  ha="center", va="center", fontsize=10.5, color="#222222",
-                 bbox=dict(boxstyle="round,pad=0.42", facecolor="#F2F6FA",
-                           edgecolor=CELESTE, linewidth=1.1))
-    fig.text(0.5, 0.018,
+                 bbox=dict(boxstyle="round,pad=0.42", facecolor="white",
+                           edgecolor=color, linewidth=1.6))
+    fig.text(0.5, 0.016,
              "La analogía es inspiración histórica, no equivalencia: una neurona real "
              "es mucho más compleja que esta suma ponderada.",
              ha="center", va="center", fontsize=9, style="italic", color=GRIS)
     fig.savefig(DESTINO / "neurona_vs_perceptron.png")
+    plt.close(fig)
 
 
 def main() -> None:
