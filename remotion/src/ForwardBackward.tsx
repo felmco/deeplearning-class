@@ -29,8 +29,14 @@ const NODOS = {
   cuad: {cx: 1570, cy: 620, texto: '(·)²', tipo: 'op'},
 } as const;
 
-// Aristas del forward: [desde, hasta, etiqueta del valor que viaja]
-const FORWARD: Array<[keyof typeof NODOS, keyof typeof NODOS, string]> = [
+// Aristas: [desde, hasta, etiqueta, t?, off?]
+// t   = posición de la etiqueta a lo largo de la arista (0 = origen, 1 = destino)
+// off = separación perpendicular de la etiqueta respecto a su línea
+// Ambos se ajustan en las diagonales, donde convergen varias aristas sobre el
+// nodo ×, para que ningún texto caiga sobre un nodo u otra flecha.
+type Arista = [keyof typeof NODOS, keyof typeof NODOS, string, number?, number?];
+
+const FORWARD: Arista[] = [
   ['x', 'mul', ''],
   ['w', 'mul', ''],
   ['mul', 'suma', 'wx = 6'],
@@ -39,13 +45,13 @@ const FORWARD: Array<[keyof typeof NODOS, keyof typeof NODOS, string]> = [
   ['resta', 'cuad', 'e = −3'],
 ];
 
-// Aristas del backward: [desde, hasta, gradiente que viaja]
-const BACKWARD: Array<[keyof typeof NODOS, keyof typeof NODOS, string]> = [
+// Aristas del backward: [desde, hasta, gradiente que viaja, t?]
+const BACKWARD: Arista[] = [
   ['cuad', 'resta', '∂L/∂e = 2e = −6'],
   ['resta', 'suma', '∂L/∂ŷ = −6'],
-  ['suma', 'b', '∂L/∂b = −6'],
-  ['suma', 'mul', '∂L/∂(wx) = −6'],
-  ['mul', 'w', '∂L/∂w = −6·x = −12'],
+  ['suma', 'b', '∂L/∂b = −6', 0.62, 40],
+  ['suma', 'mul', '∂L/∂(wx) = −6', 0.30, 34],
+  ['mul', 'w', '∂L/∂w = −6·x = −12', 0.78, 62],
 ];
 
 /** Nodo circular del grafo, con color según su tipo. */
@@ -75,22 +81,33 @@ const Nodo: React.FC<{cx: number; cy: number; texto: string; tipo: string}> = ({
   </g>
 );
 
-/** Flecha animada entre dos nodos con una etiqueta que aparece al llegar. */
+/** Flecha animada entre dos nodos con una etiqueta que aparece al llegar.
+ *
+ * `carril` desplaza la línea perpendicularmente a su dirección. Como el
+ * backward recorre las mismas aristas en sentido inverso, su perpendicular
+ * apunta al lado opuesto: dándole un carril propio, las flechas y etiquetas
+ * de ambas fases nunca se solapan. */
 const Flecha: React.FC<{
   de: {cx: number; cy: number};
   a: {cx: number; cy: number};
   progreso: number;      // 0 → 1: cuánto de la flecha se ha dibujado
   color: string;
   etiqueta: string;
-}> = ({de, a, progreso, color, etiqueta}) => {
+  carril?: number;       // desplazamiento perpendicular de la línea
+  offEtiqueta?: number;  // desplazamiento perpendicular de la etiqueta
+  posEtiqueta?: number;  // posición de la etiqueta a lo largo de la arista (0..1)
+}> = ({de, a, progreso, color, etiqueta, carril = 0, offEtiqueta = 34,
+       posEtiqueta = 0.5}) => {
   if (progreso <= 0) return null;
   // Acortar la línea para que no tape los círculos de los nodos
   const dx = a.cx - de.cx, dy = a.cy - de.cy;
   const dist = Math.hypot(dx, dy);
   const ux = dx / dist, uy = dy / dist;
-  const x1 = de.cx + ux * 70, y1 = de.cy + uy * 70;
-  const x2 = de.cx + ux * (dist - 76) * progreso + ux * 70 * (1 - progreso);
-  const y2 = de.cy + uy * (dist - 76) * progreso + uy * 70 * (1 - progreso);
+  const px = -uy, py = ux;                  // perpendicular unitaria
+  const ox = px * carril, oy = py * carril; // offset del carril
+  const x1 = de.cx + ux * 70 + ox, y1 = de.cy + uy * 70 + oy;
+  const x2 = de.cx + ux * (dist - 76) * progreso + ux * 70 * (1 - progreso) + ox;
+  const y2 = de.cy + uy * (dist - 76) * progreso + uy * 70 * (1 - progreso) + oy;
   return (
     <g>
       <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={7} strokeLinecap="round" />
@@ -101,10 +118,10 @@ const Flecha: React.FC<{
       />
       {progreso >= 0.95 && etiqueta && (
         <text
-          x={(x1 + x2) / 2}
-          y={(y1 + y2) / 2 - 22}
+          x={x1 + (x2 - x1) * posEtiqueta + px * offEtiqueta}
+          y={y1 + (y2 - y1) * posEtiqueta + py * offEtiqueta + 9}
           textAnchor="middle"
-          fontSize={26}
+          fontSize={24}
           fontFamily="monospace"
           fontWeight="bold"
           fill={color}
@@ -139,7 +156,7 @@ export const ForwardBackward: React.FC = () => {
         </text>
 
         {/* Aristas del forward (azul) */}
-        {FORWARD.map(([de, a, etiqueta], i) => (
+        {FORWARD.map(([de, a, etiqueta, t, off], i) => (
           <Flecha
             key={`f${i}`}
             de={NODOS[de]}
@@ -149,11 +166,13 @@ export const ForwardBackward: React.FC = () => {
             })}
             color={AZUL}
             etiqueta={etiqueta}
+            posEtiqueta={t}
+            offEtiqueta={off}
           />
         ))}
 
         {/* Aristas del backward (rojo), en sentido inverso */}
-        {frame >= 170 && BACKWARD.map(([de, a, etiqueta], i) => (
+        {frame >= 170 && BACKWARD.map(([de, a, etiqueta, t, off], i) => (
           <Flecha
             key={`b${i}`}
             de={NODOS[de]}
@@ -163,6 +182,9 @@ export const ForwardBackward: React.FC = () => {
             })}
             color={ROJO}
             etiqueta={etiqueta}
+            carril={52}
+            offEtiqueta={off ?? 34}
+            posEtiqueta={t}
           />
         ))}
 
@@ -179,7 +201,7 @@ export const ForwardBackward: React.FC = () => {
 
         {/* Conclusión: los gradientes listos para el update */}
         {frame > 330 && (
-          <text x={960} y={1000} textAnchor="middle" fontSize={36}
+          <text x={960} y={900} textAnchor="middle" fontSize={36}
             fontFamily="monospace" fontWeight="bold" fill={ROJO}>
             θ ← θ − η·∇L :  w ← 3 − η·(−12) ,  b ← 1 − η·(−6)
           </text>

@@ -120,6 +120,14 @@ En el repo esto ya está encapsulado: [`src/utils.py → detectar_dispositivo()`
 
 ### Neurona lineal
 
+![Anatomía comparada: neurona biológica vs perceptrón, con sus componentes y fórmulas](../docs/assets/figuras/neurona_vs_perceptron.png)
+
+El perceptrón nació como una **analogía** de la neurona biológica: las dendritas reciben
+señales (entradas $x_j$), cada sinapsis las pondera con una fuerza aprendida (pesos $w_j$),
+el soma las integra (suma $\Sigma$) y el axón dispara si se supera un umbral (activación
+$\varphi$). La analogía es inspiración histórica, no equivalencia: una neurona real es
+mucho más compleja que una suma ponderada.
+
 $$
 z = \mathbf{w}^\top \mathbf{x} + b
 $$
@@ -308,11 +316,12 @@ print('dL/dw:', w.grad.item())              # -12.0  ✓ coincide con la derivac
 print('dL/db:', b.grad.item())              # -6.0   ✓
 ```
 
-> 🎬 **Animación Remotion:** el video recorre este mismo grafo con valores animados.
+🎬 **Animación:** el video recorre este mismo grafo con valores animados — primero el
+forward pass (azul, valores), luego el backward pass (naranja, gradientes).
 
-<video src="https://felmco.github.io/deeplearning-class/videos/forward-backward.mp4" controls width="720"></video>
+[![Ver la animación del forward y backward pass sobre el grafo computacional](../docs/assets/figuras/video_forward_backward_poster.png)](https://felmco.github.io/deeplearning-class/videos/forward-backward.mp4)
 
-▶️ [Ver el video forward-backward](https://felmco.github.io/deeplearning-class/videos/forward-backward.mp4) · [código fuente de la animación](../remotion/README.md)
+▶️ [Reproducir el video](https://felmco.github.io/deeplearning-class/videos/forward-backward.mp4) · [código fuente de la animación](../remotion/README.md)
 
 ---
 
