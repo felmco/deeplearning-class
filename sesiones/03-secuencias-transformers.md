@@ -168,6 +168,12 @@ salida  : (B, H, T, d_k)
 
 🕹️ **Simulador:** [Scaled dot-product attention](https://felmco.github.io/deeplearning-class/interactivos/atencion.html) — edita los vectores, activa la máscara causal y mira el softmax recalcularse.
 
+> 🎬 **Animación Remotion:** el video anima este pipeline paso a paso — scores, escala, máscara y softmax.
+
+<video src="https://felmco.github.io/deeplearning-class/videos/flujo-atencion.mp4" controls width="720"></video>
+
+▶️ [Ver el video flujo-atencion](https://felmco.github.io/deeplearning-class/videos/flujo-atencion.mp4) · [código fuente de la animación](../remotion/README.md)
+
 ### Máscara causal vs padding mask
 
 | Máscara | Bloquea | Se usa en |

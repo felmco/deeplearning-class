@@ -308,8 +308,11 @@ print('dL/dw:', w.grad.item())              # -12.0  ✓ coincide con la derivac
 print('dL/db:', b.grad.item())              # -6.0   ✓
 ```
 
-> 🎬 **Animación Remotion:** el video [`forward-backward`](../remotion/README.md) del
-> proyecto Remotion recorre este mismo grafo con valores animados.
+> 🎬 **Animación Remotion:** el video recorre este mismo grafo con valores animados.
+
+<video src="https://felmco.github.io/deeplearning-class/videos/forward-backward.mp4" controls width="720"></video>
+
+▶️ [Ver el video forward-backward](https://felmco.github.io/deeplearning-class/videos/forward-backward.mp4) · [código fuente de la animación](../remotion/README.md)
 
 ---
 
