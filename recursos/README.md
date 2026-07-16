@@ -75,6 +75,8 @@ Lista comentada en [papers.md](papers.md). Los seis imprescindibles:
 
 - [Git y GitHub del curso](git-flujo.md) — branches, commits, PRs y convenciones.
 - [Checklist de debugging](debugging.md) — datos, modelo, entrenamiento y evaluación.
+- [Puente PyTorch ↔ TensorFlow/Keras](pytorch-keras.md) — tabla de equivalencias y el
+  MLP del Lab 1 lado a lado en ambos frameworks.
 
 ## 🔭 Después del curso (extensiones)
 

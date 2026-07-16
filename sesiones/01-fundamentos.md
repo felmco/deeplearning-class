@@ -16,6 +16,10 @@
 
 ## 1. El mapa: IA → ML → Deep Learning
 
+> 📔 Este mapa se explora a fondo en la [Sesión 0 — Fundamentos de Machine
+> Learning](00-fundamentos-ml.md): los tres paradigmas (supervisado, no supervisado,
+> reforzado) y los modelos clásicos. Aquí va el resumen ejecutivo.
+
 ```mermaid
 flowchart TB
     subgraph IA["Inteligencia Artificial"]

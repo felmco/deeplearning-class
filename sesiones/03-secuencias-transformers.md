@@ -183,6 +183,53 @@ Menos parámetros, desempeño a menudo comparable.
 > 🎥 La explicación visual canónica de las compuertas:
 > [Understanding LSTM Networks, de Chris Olah](https://colah.github.io/posts/2015-08-Understanding-LSTMs/).
 
+### No solo texto: analítica de series temporales
+
+Todo lo anterior aplica a **cualquier secuencia**: para la RNN da igual si cada paso
+es el embedding de una palabra o una **medición en el tiempo** (ventas del día,
+temperatura, señal de un sensor). El *forecasting* (pronóstico) es el mismo problema
+many-to-one del texto: leer una ventana del pasado y predecir el valor siguiente —
+solo que la salida es un número (regresión → MSE, Sesión 1) en vez de una clase.
+
+```python
+import torch
+from torch import nn
+
+# Serie sintética: un seno con ruido. Ventanas de 20 pasos → predecir el paso 21.
+t = torch.linspace(0, 20 * torch.pi, 600)
+serie = torch.sin(t) + 0.1 * torch.randn(600)
+
+VENTANA = 20
+X = torch.stack([serie[i:i + VENTANA] for i in range(len(serie) - VENTANA)])
+y = serie[VENTANA:]
+X = X.unsqueeze(-1)        # (N, 20, 1): batch, pasos de tiempo, features por paso
+
+
+class PronosticoLSTM(nn.Module):
+    """Many-to-one para regresión: la LSTM resume la ventana y una
+    capa lineal produce el siguiente valor."""
+
+    def __init__(self, hidden: int = 32) -> None:
+        super().__init__()
+        self.lstm = nn.LSTM(input_size=1, hidden_size=hidden, batch_first=True)
+        self.salida = nn.Linear(hidden, 1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:   # x: (B, T, 1)
+        _, (h_final, _) = self.lstm(x)     # h_final: (1, B, hidden) — el resumen
+        return self.salida(h_final[0])     # (B, 1): el valor siguiente
+
+
+modelo = PronosticoLSTM()
+criterio = nn.MSELoss()                    # regresión → MSE
+optimizador = torch.optim.AdamW(modelo.parameters(), lr=1e-3)
+# ... y el training loop es EL MISMO de la Sesión 1 (src/train.py)
+```
+
+> ⚠️ **La regla anti-leakage cambia de forma en series temporales:** el split debe ser
+> **temporal** — train con el pasado, test con el futuro, jamás barajar. Un split
+> aleatorio deja que el modelo "vea el futuro" y las métricas se inflan. El reto de
+> series temporales está al final del [notebook 04](../notebooks/04_sequences_rnn.ipynb).
+
 ### El cuello de botella que motiva todo lo demás
 
 Aun con LSTM, quedan dos límites estructurales:

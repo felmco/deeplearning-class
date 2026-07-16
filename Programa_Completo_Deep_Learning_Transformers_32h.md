@@ -4,8 +4,11 @@
 **Duración:** 4 sesiones de 8 horas — 32 horas totales  
 **Modalidad sugerida:** presencial o sincrónica, con exposición breve, demostración, práctica guiada y trabajo por equipos  
 **Stack principal:** Python, PyTorch, Jupyter en VS Code, Git/GitHub y Hugging Face  
-**Fecha de actualización de la guía:** 13 de julio de 2026  
-**Idioma:** español, conservando términos técnicos estándar en inglés
+**Fecha de actualización de la guía:** 16 de julio de 2026  
+**Idioma:** español, conservando términos técnicos estándar en inglés  
+**Alineación institucional:** el mapeo con el syllabus oficial (R-FAC-002, Maestría en
+Ciencia de Datos, U. del Sinú) está en [docs/alineacion-syllabus.md](docs/alineacion-syllabus.md);
+incluye la Sesión 0 de nivelación de ML que cubre la semana 1 del syllabus.
 
 > Esta guía sirve simultáneamente como programa académico, guion docente, especificación de slides, manual de laboratorios y brief del proyecto final. No pretende convertir cada bloque de código en una diapositiva: los slides deben presentar la intuición, la fórmula, la visualización y el contrato del ejercicio; el código completo debe vivir en notebooks o scripts del repositorio.
 
@@ -293,6 +296,48 @@ data/raw/
 ```
 
 No subir tokens, credenciales, datos personales ni checkpoints grandes directamente al repositorio. Usar variables de entorno, Git LFS o repositorios especializados cuando corresponda.
+
+---
+
+# SESIÓN 0 — Nivelación: fundamentos de Machine Learning
+
+> Sesión corta (4 horas sugeridas, antes de la Sesión 1 o como primera mitad de la
+> semana 1). Cubre el eje "Fundamentos de aprendizaje automático; aprendizaje
+> supervisado, no supervisado y reforzado" del syllabus institucional
+> (ver [docs/alineacion-syllabus.md](docs/alineacion-syllabus.md)).
+> Material del estudiante: [sesiones/00-fundamentos-ml.md](sesiones/00-fundamentos-ml.md) ·
+> Laboratorio: [notebooks/00_ml_clasico.ipynb](notebooks/00_ml_clasico.ipynb).
+
+## Objetivos de la sesión
+
+- Distinguir los tres paradigmas del ML por su señal de aprendizaje: supervisado
+  (labels), no supervisado (solo datos), reforzado (recompensas).
+- Conocer los modelos clásicos comunes y su intuición: regresión lineal/logística,
+  k-NN, árboles, random forest, gradient boosting, SVM; k-means y PCA.
+- Ejecutar y comparar modelos de scikit-learn sobre un mismo dataset con baseline.
+- Comprender el flujo de un proyecto de ML y los criterios para elegir DL vs ML clásico.
+
+## Agenda sugerida (4 horas)
+
+| Bloque | Duración | Actividad |
+|---|---:|---|
+| El mapa del ML y los tres paradigmas | 45 min | Exposición + figura del mapa |
+| Modelos supervisados clásicos | 60 min | Galería de fronteras sobre make_moons |
+| Pausa | 15 min | — |
+| No supervisado: k-means y PCA | 40 min | Demo + trampa de k-means en moons |
+| Reforzado conceptual + Q-learning en vivo | 40 min | Gridworld del Lab 0 |
+| Laboratorio 0 y cierre | 40 min | Notebook + exit ticket |
+
+## Puntos que el instructor debe anclar
+
+- La diferencia entre paradigmas es la **señal**, no el tipo de dato ni el modelo.
+- Para tabulares, gradient boosting suele ganarle al DL: elegir por evidencia.
+- El baseline (majority, luego un modelo simple) es obligatorio en todo el curso.
+- k-means fracasa en moons: todo modelo lleva suposiciones (adelanto del concepto
+  de *inductive bias* de la Sesión 2).
+- La regresión logística ES la neurona de la Sesión 1: el puente perfecto.
+- En el Lab 0, el estudiante guarda sus métricas de moons: la Sesión 1 ataca el
+  mismo dataset con una MLP y podrá comparar.
 
 ---
 

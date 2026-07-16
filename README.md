@@ -36,10 +36,11 @@ evitando tratar las librerías como una "caja negra".
 > atención y Transformers; finalmente se reutilizan modelos preentrenados con Hugging Face y
 > se entrega un proyecto reproducible en GitHub.
 
-## 🗺️ Mapa del curso (4 sesiones × 8 horas)
+## 🗺️ Mapa del curso (nivelación + 4 sesiones × 8 horas)
 
 | Sesión | Eje temático | Laboratorio | Material del aula |
 |:---:|---|---|---|
+| **0** | Nivelación de Machine Learning: supervisado, no supervisado y reforzado; modelos clásicos | Modelos de scikit-learn + Q-learning | [📔 Sesión 0](sesiones/00-fundamentos-ml.md) |
 | **1** | Fundamentos: tensores, MLP, activaciones, loss, gradientes, backpropagation, training loop | MLP sobre `make_moons` | [📘 Sesión 1](sesiones/01-fundamentos.md) |
 | **2** | Visión y entrenamiento robusto: CNN, convolución, regularización, optimizadores, ResNet, transfer learning | CNN sobre FashionMNIST | [📗 Sesión 2](sesiones/02-cnn-vision.md) |
 | **3** | Secuencias y Transformers: embeddings, RNN/LSTM, atención, multi-head, positional encoding | Atención y bloque Transformer desde cero | [📙 Sesión 3](sesiones/03-secuencias-transformers.md) |
@@ -47,7 +48,7 @@ evitando tratar las librerías como una "caja negra".
 
 ```mermaid
 flowchart LR
-    A["Sesión 1<br/>Tensores · MLP<br/>Backpropagation"] --> B["Sesión 2<br/>CNN · Regularización<br/>Transfer Learning"]
+    Z["Sesión 0<br/>ML clásico<br/>3 paradigmas"] --> A["Sesión 1<br/>Tensores · MLP<br/>Backpropagation"] --> B["Sesión 2<br/>CNN · Regularización<br/>Transfer Learning"]
     B --> C["Sesión 3<br/>RNN/LSTM · Attention<br/>Transformers"]
     C --> D["Sesión 4<br/>Hugging Face<br/>Fine-tuning · PEFT"]
     D --> E["🏆 Proyecto final<br/>Baseline vs red propia<br/>vs Transformer"]
@@ -72,6 +73,7 @@ Manipula los conceptos en vivo desde el navegador (GitHub Pages):
 
 | # | Notebook | Sesión | Contenido |
 |:---:|---|:---:|---|
+| 00 | [`00_ml_clasico.ipynb`](notebooks/00_ml_clasico.ipynb) | 0 | ML clásico: 5 modelos supervisados, k-means/PCA y Q-learning |
 | 01 | [`01_tensors_autograd.ipynb`](notebooks/01_tensors_autograd.ipynb) | 1 | Tensores, shapes, broadcasting y autograd visible |
 | 02 | [`02_mlp_training.ipynb`](notebooks/02_mlp_training.ipynb) | 1 | MLP para `make_moons`: training loop, curvas y frontera |
 | 03 | [`03_cnn_fashionmnist.ipynb`](notebooks/03_cnn_fashionmnist.ipynb) | 2 | CNN completa: augmentation, BatchNorm, análisis de errores |
@@ -85,8 +87,8 @@ Manipula los conceptos en vivo desde el navegador (GitHub Pages):
 deeplearning-class/
 ├── README.md                  ← estás aquí (portada del aula)
 ├── Programa_Completo_...md    ← programa académico completo (32 h)
-├── sesiones/                  ← las 4 sesiones del curso (el contenido del aula)
-├── notebooks/                 ← 6 laboratorios ejecutables
+├── sesiones/                  ← las sesiones del curso, 0–4 (el contenido del aula)
+├── notebooks/                 ← 7 laboratorios ejecutables
 ├── src/                       ← código fuente comentado (data, models, train, evaluate, utils)
 ├── tests/                     ← pruebas de shapes y smoke tests
 ├── configs/                   ← configuraciones YAML de experimentos (mlp, cnn, transformer)
@@ -155,6 +157,8 @@ python -m src.utils
 - [📄 Papers fundamentales comentados](recursos/papers.md)
 - [🌿 Flujo de Git/GitHub del curso](recursos/git-flujo.md)
 - [🩺 Checklist de debugging de modelos](recursos/debugging.md)
+- [🌉 Puente PyTorch ↔ TensorFlow/Keras](recursos/pytorch-keras.md)
+- [📋 Alineación con el syllabus oficial](docs/alineacion-syllabus.md)
 
 ## 📜 Licencia y autoría
 

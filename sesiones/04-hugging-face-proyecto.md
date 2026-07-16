@@ -310,6 +310,17 @@ formatos decimales de 16 bits ("media precisión").
 - **Explicabilidad:** attention maps, saliency (mapas de qué partes de la entrada
   influyeron más en la salida) y perturbaciones son **evidencia parcial**,
   no explicación causal.
+- **Implicaciones económicas y sociales de automatizar:** un clasificador que
+  prioriza mensajes decide, en la práctica, *a quién se atiende primero y a quién no*.
+  Antes de desplegar: ¿qué tareas (y empleos) transforma?, ¿quién asume el costo de
+  los errores — la organización o el usuario mal clasificado?, ¿el ahorro de la
+  automatización se reparte o se concentra?, ¿hay vía de apelación humana? Estas
+  preguntas se trabajan a fondo en el [ensayo del curso](../proyecto/ensayo.md).
+
+> 💬 **Para discutir en clase:** el Transformer del proyecto automatiza una decisión
+> que hoy toma una persona en segundos. Si el modelo se equivoca en el 8% de los
+> casos, ¿ese 8% se distribuye igual entre todos los usuarios — o castiga a un
+> subgrupo? ¿Cambia tu respuesta si el volumen pasa de 100 a 100 000 mensajes al día?
 
 ### Checklist de reproducibilidad de la entrega
 

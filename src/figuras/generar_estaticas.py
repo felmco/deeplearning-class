@@ -38,6 +38,436 @@ DESTINO = Path(__file__).resolve().parents[2] / "docs" / "assets" / "figuras"
 
 
 # ────────────────────────────────────────────────────────────────────
+# Sesión 0 — Fundamentos de Machine Learning
+# ────────────────────────────────────────────────────────────────────
+
+def fig_mapa_ml() -> None:
+    """La taxonomía del Machine Learning en un árbol: los tres paradigmas
+    (supervisado, no supervisado, reforzado) con sus tareas y modelos
+    comunes colgando de cada rama."""
+    from matplotlib.patches import FancyBboxPatch
+
+    fig, ax = plt.subplots(figsize=(13.5, 6.2))
+    ax.set_xlim(0, 27)
+    ax.set_ylim(0, 13)
+    ax.axis("off")
+    ax.grid(False)
+
+    def caja(x, y, w, h, color, titulo, cuerpo="", fs_t=10.5, fs_c=8.5,
+             borde=AZUL):
+        ax.add_patch(FancyBboxPatch((x, y), w, h,
+                                    boxstyle="round,pad=0.10",
+                                    facecolor=color, edgecolor=borde,
+                                    linewidth=1.5, zorder=3))
+        if cuerpo:
+            ax.text(x + w / 2, y + h - 0.55, titulo, ha="center",
+                    va="center", fontsize=fs_t, fontweight="bold", zorder=4)
+            ax.text(x + w / 2, y + (h - 0.9) / 2, cuerpo, ha="center",
+                    va="center", fontsize=fs_c, color="#333", zorder=4)
+        else:
+            ax.text(x + w / 2, y + h / 2, titulo, ha="center", va="center",
+                    fontsize=fs_t, fontweight="bold", zorder=4)
+
+    def linea(x0, y0, x1, y1):
+        ax.plot([x0, x0, x1, x1], [y0, (y0 + y1) / 2, (y0 + y1) / 2, y1],
+                color="#999", linewidth=1.4, zorder=1)
+
+    # Raíz
+    caja(9.0, 10.8, 9.0, 1.5, "#DCE9F6",
+         "MACHINE LEARNING — aprender de los datos", fs_t=11.5)
+
+    # Tres paradigmas
+    ramas = [
+        (1.0, "#CBE8DC", VERDE, "SUPERVISADO",
+         "aprende de ejemplos\nCON respuesta (labels)"),
+        (10.0, "#F9E3C8", NARANJA, "NO SUPERVISADO",
+         "encuentra estructura\nSIN respuestas"),
+        (19.0, "#F0D9E7", MORADO, "REFORZADO",
+         "aprende probando:\nacciones y recompensas"),
+    ]
+    for x, color, borde, titulo, cuerpo in ramas:
+        linea(13.5, 10.8, x + 3.5, 9.3)
+        caja(x, 7.6, 7.0, 1.7, color, titulo, cuerpo, borde=borde)
+
+    # Hojas: tareas y modelos
+    hojas = [
+        (0.2, VERDE, "Clasificación",
+         "¿qué clase es?\nlogística · k-NN · árboles\nrandom forest · SVM · redes"),
+        (4.6, VERDE, "Regresión",
+         "¿cuánto vale?\nlineal · árboles\ngradient boosting · redes"),
+        (9.2, NARANJA, "Clustering",
+         "agrupar lo parecido\nk-means · jerárquico\nDBSCAN"),
+        (13.6, NARANJA, "Reducción de dim.",
+         "comprimir features\nPCA · t-SNE · UMAP\n(y los embeddings)"),
+        (18.6, MORADO, "Control y decisión",
+         "juegos · robots · RLHF\nQ-learning\npolicy gradients"),
+    ]
+    for x, borde, titulo, cuerpo in hojas:
+        x_padre = {VERDE: 4.5, NARANJA: 13.5, MORADO: 22.5}[borde]
+        linea(x_padre, 7.6, x + 2.1, 5.9)
+        caja(x, 3.4, 4.2, 2.5, "#FAFAFA", titulo, cuerpo, fs_t=9.5,
+             fs_c=7.8, borde=borde)
+
+    ax.text(13.5, 1.7,
+            "Las redes neuronales (este curso) juegan en LOS TRES equipos: "
+            "son un tipo de modelo, no un paradigma aparte.",
+            ha="center", fontsize=10.5, fontweight="bold",
+            bbox=dict(boxstyle="round,pad=0.5", facecolor="#FDF3D0",
+                      edgecolor=NARANJA, linewidth=1.4))
+    ax.text(13.5, 12.75, "El mapa del Machine Learning",
+            ha="center", fontsize=13.5, fontweight="bold")
+    fig.savefig(DESTINO / "mapa_ml.png")
+    plt.close(fig)
+
+
+def fig_paradigmas_ml() -> None:
+    """Los tres paradigmas sobre datos concretos: los MISMOS puntos con
+    etiqueta (supervisado) y sin etiqueta (no supervisado: k-means los
+    agrupa solo), y el loop agente-entorno del aprendizaje reforzado."""
+    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+    from sklearn.cluster import KMeans
+    from sklearn.datasets import make_blobs
+
+    X, y = make_blobs(n_samples=180, centers=[[-1.6, -1], [1.4, 1.2]],
+                      cluster_std=0.75, random_state=7)
+
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.4))
+
+    # ── Panel 1: supervisado ──
+    ax = axes[0]
+    for clase, color in [(0, AZUL), (1, NARANJA)]:
+        ax.scatter(*X[y == clase].T, s=22, color=color, alpha=0.8,
+                   label=f"clase {clase}")
+    xs = np.linspace(-4, 4, 2)
+    ax.plot(xs, -xs * 0.85 + 0.15, color=TINTA_LINEA, linewidth=2.2)
+    ax.legend(fontsize=8, loc="lower right")
+    ax.set_title("SUPERVISADO\ndatos CON etiqueta → predecir la etiqueta",
+                 fontsize=10.5)
+
+    # ── Panel 2: no supervisado (los MISMOS puntos, sin etiquetas) ──
+    ax = axes[1]
+    km = KMeans(n_clusters=2, n_init=10, random_state=0).fit(X)
+    for grupo, color in [(0, VERDE), (1, MORADO)]:
+        ax.scatter(*X[km.labels_ == grupo].T, s=22, color=color, alpha=0.8)
+    ax.scatter(*km.cluster_centers_.T, s=260, marker="X", color="#1a2332",
+               edgecolor="white", linewidth=1.5, zorder=5,
+               label="centroides")
+    ax.legend(fontsize=8, loc="lower right")
+    ax.set_title("NO SUPERVISADO\nlos MISMOS datos, sin etiquetas → agrupar",
+                 fontsize=10.5)
+
+    for ax in axes[:2]:
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.grid(False)
+
+    # ── Panel 3: reforzado (el loop agente-entorno) ──
+    ax = axes[2]
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
+    ax.axis("off")
+    ax.grid(False)
+    for x, y0, texto, color in [(1.0, 6.4, "AGENTE\n(el modelo)", "#DCE9F6"),
+                                (5.8, 6.4, "ENTORNO\n(el mundo)", "#F9E3C8")]:
+        ax.add_patch(FancyBboxPatch((x, y0), 3.2, 2.2,
+                                    boxstyle="round,pad=0.1",
+                                    facecolor=color, edgecolor="#666",
+                                    linewidth=1.4))
+        ax.text(x + 1.6, y0 + 1.1, texto, ha="center", va="center",
+                fontsize=9.5, fontweight="bold")
+    ax.add_patch(FancyArrowPatch((4.4, 8.1), (5.7, 8.1), arrowstyle="->",
+                                 mutation_scale=14, color=MORADO,
+                                 linewidth=2,
+                                 connectionstyle="arc3,rad=-0.35"))
+    ax.text(5.05, 9.5, "acción", ha="center", fontsize=9, color=MORADO,
+            fontweight="bold")
+    ax.add_patch(FancyArrowPatch((5.7, 6.6), (4.4, 6.6), arrowstyle="->",
+                                 mutation_scale=14, color=VERDE,
+                                 linewidth=2,
+                                 connectionstyle="arc3,rad=-0.35"))
+    ax.text(5.05, 5.0, "estado nuevo\n+ recompensa", ha="center",
+            fontsize=9, color=VERDE, fontweight="bold")
+    ax.text(5.0, 2.6, "nadie le dice la respuesta correcta:\n"
+            "aprende PROBANDO y cobrando recompensas\n"
+            "(o castigos) por sus acciones",
+            ha="center", fontsize=8.8, color=GRIS, style="italic")
+    ax.set_title("REFORZADO\nacciones → recompensas → mejor política",
+                 fontsize=10.5)
+
+    fig.suptitle("Los tres paradigmas del Machine Learning: qué cambia es "
+                 "la SEÑAL de la que se aprende", fontweight="bold", y=1.06)
+    fig.savefig(DESTINO / "paradigmas_ml.png")
+    plt.close(fig)
+
+
+def fig_fronteras_clasicas() -> None:
+    """Seis modelos clásicos de clasificación sobre el MISMO make_moons
+    del Lab 1: cada uno dibuja una frontera con 'personalidad' distinta.
+    Es la galería que motiva la pregunta: ¿y una red neuronal qué haría?"""
+    from sklearn.datasets import make_moons
+    from sklearn.ensemble import (GradientBoostingClassifier,
+                                  RandomForestClassifier)
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.model_selection import train_test_split
+    from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.svm import SVC
+    from sklearn.tree import DecisionTreeClassifier
+
+    X, y = make_moons(n_samples=500, noise=0.22, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, stratify=y, random_state=42)
+
+    modelos = [
+        ("Regresión logística", LogisticRegression()),
+        ("k-NN (k=15)", KNeighborsClassifier(n_neighbors=15)),
+        ("Árbol de decisión", DecisionTreeClassifier(max_depth=5,
+                                                     random_state=0)),
+        ("Random forest", RandomForestClassifier(n_estimators=100,
+                                                 random_state=0)),
+        ("Gradient boosting", GradientBoostingClassifier(random_state=0)),
+        ("SVM (kernel RBF)", SVC(gamma=2, probability=True,
+                                 random_state=0)),
+    ]
+
+    xx, yy = np.meshgrid(np.linspace(X[:, 0].min() - 0.6,
+                                     X[:, 0].max() + 0.6, 220),
+                         np.linspace(X[:, 1].min() - 0.6,
+                                     X[:, 1].max() + 0.6, 220))
+    malla = np.c_[xx.ravel(), yy.ravel()]
+
+    fig, axes = plt.subplots(2, 3, figsize=(13, 7.6))
+    for ax, (nombre, modelo) in zip(axes.ravel(), modelos):
+        modelo.fit(X_train, y_train)
+        acc = modelo.score(X_test, y_test)
+        prob = modelo.predict_proba(malla)[:, 1].reshape(xx.shape)
+        ax.contourf(xx, yy, prob, levels=16, cmap="RdBu_r", alpha=0.5)
+        ax.contour(xx, yy, prob, levels=[0.5], colors="k", linewidths=1.6)
+        ax.scatter(X_test[:, 0], X_test[:, 1], c=y_test, cmap="RdBu_r",
+                   s=12, edgecolors="k", linewidths=0.3)
+        ax.set_title(f"{nombre} — acc test {acc:.2f}", fontsize=10.5)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.grid(False)
+
+    fig.suptitle("Seis modelos clásicos, el mismo dataset (make_moons, el "
+                 "del Lab 1): cada familia dibuja fronteras con su propia "
+                 "'personalidad'", fontweight="bold", y=1.00)
+    fig.savefig(DESTINO / "fronteras_clasicas.png")
+    plt.close(fig)
+
+
+def fig_kmeans_pca() -> None:
+    """Los dos clásicos del aprendizaje no supervisado: k-means agrupando
+    puntos SIN etiquetas, y PCA comprimiendo los 64 píxeles de los
+    dígitos a 2 números que aún separan las clases."""
+    from sklearn.cluster import KMeans
+    from sklearn.datasets import load_digits, make_blobs
+    from sklearn.decomposition import PCA
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.5, 4.8))
+
+    # ── k-means ──
+    X, _ = make_blobs(n_samples=350, centers=[[-2, 0], [1.6, 1.6], [1.4, -1.8]],
+                      cluster_std=0.72, random_state=4)
+    km = KMeans(n_clusters=3, n_init=10, random_state=0).fit(X)
+    for grupo, color in zip(range(3), [AZUL, NARANJA, VERDE]):
+        ax1.scatter(*X[km.labels_ == grupo].T, s=18, color=color, alpha=0.75)
+    ax1.scatter(*km.cluster_centers_.T, s=300, marker="X", color="#1a2332",
+                edgecolor="white", linewidth=1.6, zorder=5)
+    ax1.set_title("k-means (k=3): agrupa lo parecido\nsin haber visto UNA "
+                  "sola etiqueta", fontsize=11)
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+    ax1.grid(False)
+    ax1.text(0.03, 0.03, "✗ = centroides (el 'centro de gravedad'\nde cada "
+             "grupo, que k-means va moviendo)", transform=ax1.transAxes,
+             fontsize=8, color=GRIS, style="italic")
+
+    # ── PCA sobre los dígitos ──
+    digits = load_digits()
+    Z = PCA(n_components=2).fit_transform(digits.data)
+    sc = ax2.scatter(Z[:, 0], Z[:, 1], c=digits.target, cmap="tab10", s=10,
+                     alpha=0.75)
+    ax2.set_title("PCA: 64 píxeles → 2 números por dígito\n(el color es el "
+                  "dígito real, solo para verificar)", fontsize=11)
+    ax2.set_xlabel("componente principal 1", fontsize=9)
+    ax2.set_ylabel("componente principal 2", fontsize=9)
+    ax2.set_xticks([])
+    ax2.set_yticks([])
+    ax2.grid(False)
+    fig.colorbar(sc, ax=ax2, label="dígito", ticks=range(10))
+
+    fig.suptitle("Aprendizaje no supervisado: descubrir estructura sin "
+                 "respuestas", fontweight="bold", y=1.03)
+    fig.savefig(DESTINO / "kmeans_pca.png")
+    plt.close(fig)
+
+
+def fig_refuerzo_qlearning() -> None:
+    """Q-learning de verdad (el mismo del Lab 0) sobre un gridworld 4×4:
+    la política aprendida (flechas hacia la meta esquivando el pozo) y la
+    curva de recompensa por episodio subiendo a medida que aprende."""
+    from matplotlib.patches import Rectangle
+
+    N = 4
+    META, POZO = (3, 3), (1, 2)
+    ACCIONES = [(-1, 0), (1, 0), (0, -1), (0, 1)]      # ↑ ↓ ← →
+    FLECHAS = ["↑", "↓", "←", "→"]
+
+    rng = np.random.default_rng(0)
+    Q = np.zeros((N, N, 4))
+    recompensas = []
+
+    for episodio in range(400):
+        fila, col = 0, 0
+        total = 0.0
+        for _ in range(60):
+            eps = max(0.05, 1 - episodio / 250)        # explorar → explotar
+            if rng.random() < eps:
+                a = rng.integers(4)
+            else:
+                a = int(np.argmax(Q[fila, col]))
+            df, dc = ACCIONES[a]
+            f2 = min(max(fila + df, 0), N - 1)
+            c2 = min(max(col + dc, 0), N - 1)
+            if (f2, c2) == META:
+                r, fin = 1.0, True
+            elif (f2, c2) == POZO:
+                r, fin = -1.0, True
+            else:
+                r, fin = -0.02, False
+            Q[fila, col, a] += 0.2 * (r + 0.95 * np.max(Q[f2, c2])
+                                      - Q[fila, col, a])
+            total += r
+            fila, col = f2, c2
+            if fin:
+                break
+        recompensas.append(total)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.5, 4.6),
+                                   gridspec_kw={"width_ratios": [1, 1.4]})
+
+    # ── El mundo y la política aprendida ──
+    ax1.set_xlim(-0.2, N + 0.2)
+    ax1.set_ylim(-0.2, N + 0.2)
+    ax1.set_aspect("equal")
+    ax1.axis("off")
+    ax1.grid(False)
+    for f in range(N):
+        for c in range(N):
+            if (f, c) == META:
+                color, texto = "#CBE8DC", "META\n+1"
+            elif (f, c) == POZO:
+                color, texto = "#F6D9CE", "POZO\n−1"
+            else:
+                color, texto = "#FAFAFA", None
+            ax1.add_patch(Rectangle((c, N - 1 - f), 1, 1, facecolor=color,
+                                    edgecolor="#999", linewidth=1.2))
+            if texto:
+                ax1.text(c + 0.5, N - 1 - f + 0.5, texto, ha="center",
+                         va="center", fontsize=9, fontweight="bold")
+            elif Q[f, c].any():
+                ax1.text(c + 0.5, N - 1 - f + 0.5,
+                         FLECHAS[int(np.argmax(Q[f, c]))], ha="center",
+                         va="center", fontsize=17, color=AZUL,
+                         fontweight="bold")
+    ax1.add_patch(Rectangle((0, N - 1), 1, 1, facecolor="none",
+                            edgecolor=NARANJA, linewidth=3))
+    ax1.text(0.5, N - 0.82, "inicio", ha="center", fontsize=8,
+             color=NARANJA, fontweight="bold")
+    ax1.set_title("La política aprendida: en cada casilla,\nla mejor acción "
+                  "según la tabla Q", fontsize=10.5)
+
+    # ── La curva de aprendizaje ──
+    ventana = 20
+    suave = np.convolve(recompensas, np.ones(ventana) / ventana,
+                        mode="valid")
+    ax2.plot(recompensas, color=CELESTE, alpha=0.35, linewidth=0.8,
+             label="recompensa por episodio")
+    ax2.plot(np.arange(ventana - 1, len(recompensas)), suave, color=AZUL,
+             linewidth=2.4, label=f"promedio móvil ({ventana})")
+    ax2.axhline(0, color=GRIS, linewidth=0.8)
+    ax2.set(title="Aprender probando: la recompensa sube\ncon la experiencia",
+            xlabel="episodio", ylabel="recompensa total")
+    ax2.legend(fontsize=8.5, loc="lower right")
+
+    fig.suptitle("Aprendizaje reforzado en miniatura: Q-learning en un "
+                 "gridworld 4×4 (el código completo está en el Lab 0)",
+                 fontweight="bold", y=1.04)
+    fig.savefig(DESTINO / "refuerzo_qlearning.png")
+    plt.close(fig)
+
+
+# ────────────────────────────────────────────────────────────────────
+# Sesión 2 — Cómputo
+# ────────────────────────────────────────────────────────────────────
+
+def fig_paralelismo() -> None:
+    """Por qué la GPU: la CPU procesa el batch con pocos núcleos potentes
+    (en tandas), la GPU con miles de núcleos simples (todo de golpe).
+    El batch ES la unidad de paralelismo del Deep Learning."""
+    from matplotlib.patches import FancyArrowPatch, Rectangle
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.6))
+    batch = 16
+
+    def dibujar_batch(ax, y):
+        for k in range(batch):
+            ax.add_patch(Rectangle((0.4 + k * 0.62, y), 0.5, 0.7,
+                                   facecolor="#DCE9F6", edgecolor=AZUL,
+                                   linewidth=0.9))
+        ax.text(0.4 + batch * 0.62 / 2, y + 1.15,
+                "un batch de 16 imágenes", ha="center", fontsize=9,
+                color=GRIS)
+
+    # ── CPU ──
+    ax = axes[0]
+    ax.set_xlim(0, 11)
+    ax.set_ylim(0, 9)
+    ax.axis("off")
+    ax.grid(False)
+    dibujar_batch(ax, 6.6)
+    for k in range(4):
+        ax.add_patch(Rectangle((1.6 + k * 2.0, 2.6), 1.7, 1.7,
+                               facecolor="#F9E3C8", edgecolor=NARANJA,
+                               linewidth=1.6))
+        ax.text(2.45 + k * 2.0, 3.45, f"core {k + 1}", ha="center",
+                va="center", fontsize=9, fontweight="bold")
+    ax.add_patch(FancyArrowPatch((5.5, 6.3), (5.5, 4.6), arrowstyle="->",
+                                 mutation_scale=14, color=GRIS,
+                                 linewidth=1.8))
+    ax.text(5.5, 1.5, "4 núcleos potentes → el batch pasa en TANDAS\n"
+            "(4 imágenes a la vez, 4 tandas)", ha="center", fontsize=9.5)
+    ax.set_title("CPU: pocos núcleos, muy listos", fontsize=11.5)
+
+    # ── GPU ──
+    ax = axes[1]
+    ax.set_xlim(0, 11)
+    ax.set_ylim(0, 9)
+    ax.axis("off")
+    ax.grid(False)
+    dibujar_batch(ax, 6.6)
+    for f in range(4):
+        for c in range(16):
+            ax.add_patch(Rectangle((1.35 + c * 0.53, 2.35 + f * 0.58),
+                                   0.44, 0.48, facecolor="#CBE8DC",
+                                   edgecolor=VERDE, linewidth=0.5))
+    ax.add_patch(FancyArrowPatch((5.5, 6.3), (5.5, 4.9), arrowstyle="->",
+                                 mutation_scale=14, color=GRIS,
+                                 linewidth=1.8))
+    ax.text(5.5, 1.5, "miles de núcleos simples → TODO el batch de golpe\n"
+            "(la misma operación sobre todos los datos: SIMD)",
+            ha="center", fontsize=9.5)
+    ax.set_title("GPU: miles de núcleos, muy simples", fontsize=11.5)
+
+    fig.suptitle("El batch ES la unidad de paralelismo: por eso vectorizamos "
+                 "(Sesión 1) y por eso la GPU vuela", fontweight="bold",
+                 y=1.03)
+    fig.savefig(DESTINO / "paralelismo.png")
+    plt.close(fig)
+
+
+# ────────────────────────────────────────────────────────────────────
 # Sesión 1 — Fundamentos
 # ────────────────────────────────────────────────────────────────────
 
@@ -2326,6 +2756,8 @@ def main() -> None:
     aplicar_estilo()
     DESTINO.mkdir(parents=True, exist_ok=True)
     tareas = [
+        fig_mapa_ml, fig_paradigmas_ml, fig_fronteras_clasicas,
+        fig_kmeans_pca, fig_refuerzo_qlearning, fig_paralelismo,
         fig_tensores, fig_neurona_frontera, fig_xor, fig_capa_densa,
         fig_softmax_pasos, fig_losses, fig_paisaje_perdida,
         fig_matriz_confusion, fig_lora,

@@ -266,6 +266,35 @@ típico en CNN. **LayerNorm** normaliza cada muestra *a través de sus propias f
 (una fila): no depende del batch en absoluto — el estándar en Transformers, la
 reencontrarás en la Sesión 3.
 
+### El cómputo: CPU, GPU y paralelización
+
+Entrenar una CNN es multiplicar matrices millones de veces — y esa carga se puede
+**repartir**. La clave: dentro de un batch, cada imagen se procesa con **exactamente
+las mismas operaciones** y sin depender de las demás. Eso es paralelismo servido en
+bandeja:
+
+![CPU con pocos núcleos procesando el batch en tandas vs GPU con miles de núcleos procesándolo de golpe](../docs/assets/figuras/paralelismo.png)
+
+- **CPU:** pocos núcleos (4–16) muy potentes y flexibles — procesa el batch en tandas.
+- **GPU:** miles de núcleos simples que ejecutan **la misma instrucción sobre muchos
+  datos a la vez** (el término técnico: *SIMD*, Single Instruction Multiple Data) —
+  el batch completo pasa de un solo golpe. Es la misma razón por la que en la Sesión 1
+  **vectorizamos** en vez de usar `for`.
+
+Las palancas prácticas de paralelización, de la más barata a la más cara:
+
+| Palanca | Qué paraleliza | En el curso |
+|---|---|---|
+| **Vectorización** | las operaciones dentro de cada tensor | Sesión 1 §2 — ya la usas |
+| **Batch** | las muestras entre sí | todos los labs (subir batch = más paralelismo, más memoria) |
+| **`DataLoader(num_workers=N)`** | la CARGA de datos en N procesos, mientras la GPU entrena | evita que la GPU espere al disco |
+| **Mixed precision** (BF16/FP16) | no paraleliza: hace cada operación ~2× más barata | Sesión 4 §6 |
+| **Multi-GPU** (DataParallel / DDP) | el batch se parte entre varias GPUs; cada una tiene una copia del modelo y los gradientes se promedian | conceptual — fuera del alcance del curso (Accelerate/FSDP como extensión) |
+
+> 🧩 **Idea para llevarse:** casi todo el paralelismo del Deep Learning es **paralelismo
+> de datos** — la misma operación sobre pedazos distintos del batch. Por eso el shape
+> `(B, ...)` encabeza todos los tensores del curso: la dimensión B es la que se reparte.
+
 ---
 
 ## 6. Optimizadores y schedules
