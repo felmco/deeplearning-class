@@ -74,6 +74,7 @@ Manipula los conceptos en vivo desde el navegador (GitHub Pages):
 | # | Notebook | Sesión | Contenido |
 |:---:|---|:---:|---|
 | 00 | [`00_ml_clasico.ipynb`](notebooks/00_ml_clasico.ipynb) | 0 | ML clásico: 5 modelos supervisados, k-means/PCA y Q-learning |
+| 00b | [`00b_guia_modelos_clasicos.ipynb`](notebooks/00b_guia_modelos_clasicos.ipynb) | 0 | Guía de campo: cada modelo clásico con fórmula, código comentado y su visualización |
 | 01 | [`01_tensors_autograd.ipynb`](notebooks/01_tensors_autograd.ipynb) | 1 | Tensores, shapes, broadcasting y autograd visible |
 | 02 | [`02_mlp_training.ipynb`](notebooks/02_mlp_training.ipynb) | 1 | MLP para `make_moons`: training loop, curvas y frontera |
 | 03 | [`03_cnn_fashionmnist.ipynb`](notebooks/03_cnn_fashionmnist.ipynb) | 2 | CNN completa: augmentation, BatchNorm, análisis de errores |

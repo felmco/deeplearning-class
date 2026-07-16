@@ -6,7 +6,9 @@
 
 **Duración sugerida:** 4 horas (nivelación, antes de la Sesión 1) ·
 **Laboratorio:** modelos clásicos sobre `make_moons` + Q-learning en miniatura ·
-**Notebook:** [`00_ml_clasico.ipynb`](../notebooks/00_ml_clasico.ipynb)
+**Notebooks:** [`00_ml_clasico.ipynb`](../notebooks/00_ml_clasico.ipynb) (el lab) y
+[`00b_guia_modelos_clasicos.ipynb`](../notebooks/00b_guia_modelos_clasicos.ipynb)
+(la guía de campo: cada modelo con su fórmula, código comentado y visualización)
 
 **Objetivos de la sesión**
 
@@ -85,6 +87,26 @@ k-NN y SVM-RBF dibujan curvas suaves y aciertan ~97%. Ningún modelo es "el mejo
 general — cada dataset premia una personalidad distinta (por eso siempre se comparan
 contra un baseline, regla de oro del curso).
 
+### La fórmula esencial de cada modelo
+
+| Modelo | La fórmula | Cómo leerla |
+|---|---|---|
+| Regresión lineal | $\hat{y} = wx + b$ | la recta; entrenar = minimizar el error cuadrático (MSE) de sus residuos |
+| Regresión logística | $p = \sigma(wx + b)$ | la misma recta pasada por la sigmoide σ → una probabilidad entre 0 y 1 |
+| k-NN | $d(a,b)=\sqrt{\sum_i (a_i-b_i)^2}$ | distancia euclidiana (Pitágoras generalizado); predice el voto de los k más cercanos |
+| Árbol de decisión | $G = 1 - \sum_k p_k^2$ | impureza Gini del nodo ($p_k$ = proporción de la clase k); cada pregunta se elige para bajarla |
+| Random forest | voto de $B$ árboles | cada árbol ve una muestra *bootstrap* distinta; el voto cancela sus errores individuales |
+| Gradient boosting | $F_m = F_{m-1} + \eta h_m$ | cada árbol nuevo $h_m$ corrige los residuos del acumulado; η es un learning rate |
+| SVM | margen $= 2/\Vert w \Vert$ | de todas las fronteras posibles, la que deja la "calle" más ancha entre clases |
+
+> 🧑‍🏫 **Para la clase — la guía de campo:** cada uno de estos modelos tiene su
+> sección en el [**notebook 00b**](../notebooks/00b_guia_modelos_clasicos.ipynb), con
+> la fórmula desarrollada, código comentado línea a línea y su **visualización
+> característica** (los residuos de la recta, la sigmoide sobre los datos, el círculo
+> de vecinos que votan, el árbol de preguntas dibujado, los árboles individuales vs el
+> voto del bosque, el boosting mejorando etapa a etapa, y la calle de la SVM con sus
+> vectores de soporte).
+
 > ⚠️ **Momento honestidad:** para datos **tabulares** (filas y columnas), gradient
 > boosting sigue ganándole al Deep Learning la mayoría de las veces. El DL domina
 > cuando los datos son **no estructurados**: imágenes, texto, audio. Elegir la
@@ -109,6 +131,21 @@ Las dos tareas estrella:
   componentes principales) encuentra las direcciones en las que los datos más varían
   y proyecta sobre ellas: en la figura, los 64 píxeles de cada dígito quedan reducidos
   a **2 números** — y los dígitos iguales siguen cayendo juntos.
+
+Las fórmulas de ambos, leídas en palabras:
+
+- **k-means** minimiza $J = \sum_i \min_k \Vert x_i - \mu_k \Vert^2$ — *"la suma, para
+  cada punto, del cuadrado de su distancia al centroide más cercano"* ($\mu_k$ = el
+  centroide del grupo k). Buenos grupos = puntos pegados a su centroide.
+- **PCA** no necesita fórmula nueva: la componente 1 es *la dirección donde los datos
+  más varían*; la 2, la perpendicular que más varía de lo que queda. El número a
+  reportar es la **varianza explicada**: "con 2 de 64 dimensiones conservo el X% de
+  la información".
+
+> 🧑‍🏫 **Para la clase:** en la [guía de campo (notebook 00b)](../notebooks/00b_guia_modelos_clasicos.ipynb),
+> k-means está implementado **a mano en numpy** (~10 líneas) con los centroides
+> moviéndose iteración a iteración, y PCA con sus componentes dibujadas como flechas
+> sobre la nube de datos.
 
 > 🔗 **Conexión con el curso:** los **embeddings** de la Sesión 3 son la versión
 > *aprendida* de esta idea — comprimir un token a un vector denso donde "cerca"

@@ -306,7 +306,9 @@ No subir tokens, credenciales, datos personales ni checkpoints grandes directame
 > supervisado, no supervisado y reforzado" del syllabus institucional
 > (ver [docs/alineacion-syllabus.md](docs/alineacion-syllabus.md)).
 > Material del estudiante: [sesiones/00-fundamentos-ml.md](sesiones/00-fundamentos-ml.md) ·
-> Laboratorio: [notebooks/00_ml_clasico.ipynb](notebooks/00_ml_clasico.ipynb).
+> Laboratorio: [notebooks/00_ml_clasico.ipynb](notebooks/00_ml_clasico.ipynb) ·
+> Guía de campo por modelo (para proyectar en clase):
+> [notebooks/00b_guia_modelos_clasicos.ipynb](notebooks/00b_guia_modelos_clasicos.ipynb).
 
 ## Objetivos de la sesión
 
