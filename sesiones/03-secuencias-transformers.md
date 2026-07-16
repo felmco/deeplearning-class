@@ -290,7 +290,7 @@ flowchart TB
 
 - La **attention** es la única parte que **mezcla información entre tokens** (comunicación).
 - La **FFN** transforma cada token **independientemente** (computación por posición).
-- Los **residuals** ($+x$) son la autopista del gradiente — la lección de ResNet, reciclada.
+- Los **residuals** (el «+x» de la fórmula) son la autopista del gradiente — la lección de ResNet, reciclada.
 - **LayerNorm** (*pre-norm*: normalizar *antes* de cada subcapa, la variante moderna más
   estable) estabiliza cada subcapa normalizando las features de cada token.
 

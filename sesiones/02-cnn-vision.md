@@ -163,7 +163,7 @@ $$
 \hat x=\frac{x-\mu_B}{\sqrt{\sigma_B^2+\epsilon}} \qquad y=\gamma\hat x+\beta
 $$
 
-Normaliza las activaciones con las estadísticas del mini-batch ($\mu_B, \sigma_B$) y luego
+Normaliza las activaciones con las estadísticas del mini-batch (la μ y la σ calculadas sobre ese batch) y luego
 las re-escala con parámetros aprendibles $\gamma, \beta$. Efecto práctico: estabiliza y
 acelera el entrenamiento, tolera learning rates mayores.
 

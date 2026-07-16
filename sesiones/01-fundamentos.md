@@ -241,7 +241,7 @@ $$
 \mathrm{ReLU}(z)=\max(0,z)
 $$
 
-**En palabras:** sigmoid ($\sigma$) aplasta cualquier número al rango (0, 1); tanh lo
+**En palabras:** sigmoid (σ) aplasta cualquier número al rango (0, 1); tanh lo
 aplasta a (−1, 1); ReLU deja pasar lo positivo tal cual y anula lo negativo. (La $e$ es
 el número de Euler ≈ 2.718; $e^{-z}$ solo es una forma suave de "decaer hacia cero".)
 
@@ -290,7 +290,7 @@ en probabilidades en dos movimientos:
 
 ![softmax paso a paso: logits → exponenciar → dividir por la suma](../docs/assets/figuras/softmax_pasos.png)
 
-1. **Exponenciar** ($e^z$): todo se vuelve positivo y las diferencias se agrandan — el
+1. **Exponenciar** (eᶻ): todo se vuelve positivo y las diferencias se agrandan — el
    favorito se separa del pelotón.
 2. **Dividir por la suma**: ahora el total es exactamente 1. Cada clase se queda con su
    "porción de la torta": una **distribución de probabilidad**.
@@ -304,7 +304,7 @@ $$
 — arriba, el paso 1 aplicado a la clase $k$; abajo, la suma de todos para repartir.
 
 > 🔧 **Detalle de implementación:** antes de exponenciar se le resta a todos los logits
-> el más grande ($\max(z)$). El resultado no cambia — softmax solo mira las *diferencias*
+> el más grande, `max(z)`. El resultado no cambia — softmax solo mira las *diferencias*
 > entre logits — pero evita que $e^z$ desborde con logits grandes.
 
 🕹️ **Simulador:** [Softmax y temperatura](https://felmco.github.io/deeplearning-class/interactivos/softmax-temperatura.html) — ajusta los logits y la temperatura y observa la distribución. (*Temperatura*: divide los logits antes del softmax — T alta aplana la distribución, T baja la afila. La usarás para generar texto en la Sesión 3.)
@@ -380,7 +380,7 @@ Ejemplo numérico: si subo $w$ de 3.00 a 3.01 y la loss baja de 9.00 a 8.88 (cam
 - **Derivada parcial** ($\partial$, la "d curvada"): lo mismo, pero moviendo *solo una*
   variable y dejando el resto quieto. $\partial L/\partial w$ = "¿cuánto cambia $L$ si
   muevo solo $w$?"
-- **Gradiente** ($\nabla$): el paquete con todas las derivadas parciales juntas, una por
+- **Gradiente** (∇): el paquete con todas las derivadas parciales juntas, una por
   parámetro. Apunta hacia donde la loss *sube* más rápido.
 - Derivada ≈ 0 significa "mover esto casi no cambia nada" → no hay señal para aprender.
 
