@@ -627,6 +627,19 @@ train–validation**, y las curvas de aprendizaje solo pueden contar tres histor
 
 ### Regularización (control de capacidad)
 
+**Definición.** Regularizar es ponerle obstáculos deliberados al modelo durante el
+entrenamiento para que **no pueda memorizar** el train set y le salga más barato
+aprender el patrón general. La **capacidad** es cuánto puede memorizar un modelo
+(más parámetros = más capacidad); la regularización es el freno de esa capacidad.
+
+**Intuición.** Piensa en un estudiante preparando un examen. Si estudia siempre el
+mismo cuestionario con respuestas, memoriza las respuestas (overfitting). Los métodos
+de la tabla le cambian las condiciones: preguntas ligeramente distintas cada vez
+(augmentation), no poder depender siempre del mismo compañero (dropout), penalizar
+respuestas rebuscadas (weight decay) y cortar la sesión de estudio antes de que
+empiece a memorizar de más (early stopping). En todos los casos, la única estrategia
+que sobrevive es *entender el tema*.
+
 | Método | Qué hace | Riesgo si se abusa |
 |---|---|---|
 | **Weight decay** | penaliza pesos grandes ("L2": castigar la suma de los cuadrados de los pesos, empujándolos hacia valores pequeños) | underfitting |
@@ -635,6 +648,18 @@ train–validation**, y las curvas de aprendizaje solo pueden contar tres histor
 | **Data augmentation** | crea variantes plausibles de los datos | destruir la señal de la etiqueta |
 
 ### Splits y data leakage
+
+Un **split** es partir el dataset en montones separados, cada uno con un rol distinto:
+**train** para ajustar los parámetros, **validation** para tomar decisiones (elegir
+hiperparámetros, quedarse con el mejor checkpoint) y **test** para medir, una única
+vez al final, cómo le irá al modelo con datos que jamás influyeron en él. Siguiendo
+la analogía del estudiante: train es el libro de ejercicios, validation son los
+simulacros con los que decides cómo estudiar, y test es el examen real — solo puedes
+rendirlo una vez, y si practicaste con sus preguntas, tu nota ya no mide nada.
+
+Eso último tiene nombre: **data leakage** (fuga de datos) — cualquier camino por el
+que información de validation o test se "filtra" al entrenamiento. El resultado es
+siempre el mismo: métricas infladas en tu máquina y decepción con datos reales.
 
 ```mermaid
 flowchart LR
