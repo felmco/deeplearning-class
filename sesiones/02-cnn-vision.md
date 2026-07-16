@@ -318,11 +318,18 @@ splits y misma seed:
 
 ## 🎟️ Exit ticket de la Sesión 2
 
+Responde sin mirar notas — y solo después despliega cada respuesta para validarte:
+
 1. Calcula la salida de una conv con `H=28, K=3, P=1, S=2`.
+   <details><summary>Ver respuesta</summary>⌊(28 + 2·1 − 3)/2⌋ + 1 = ⌊27/2⌋ + 1 = 13 + 1 = 14. La imagen de 28×28 sale de 14×14.</details>
 2. ¿Por qué una CNN usa menos parámetros que una capa densa sobre una imagen?
+   <details><summary>Ver respuesta</summary>Porque el kernel es pequeño (mira solo una ventana local) y se COMPARTE en toda la imagen: los mismos pesos se reutilizan en cada posición. El ejemplo de la sesión: Conv2d(1→32, 3×3) = 320 parámetros vs Linear(784→128) = 100 480.</details>
 3. ¿Qué cambia en BatchNorm entre entrenamiento e inferencia?
+   <details><summary>Ver respuesta</summary>En entrenamiento normaliza con la media y varianza del mini-batch actual; en inferencia usa los promedios acumulados durante el entrenamiento. Por eso evaluar sin model.eval() da métricas erráticas.</details>
 4. ¿Qué evidencia mostraría que el augmentation fue demasiado agresivo?
+   <details><summary>Ver respuesta</summary>Underfitting inducido: la train loss deja de bajar (o ambas curvas quedan altas) porque las transformaciones destruyen la señal de la etiqueta — por ejemplo, rotaciones tan fuertes que la prenda ya no se reconoce.</details>
 5. ¿Cuándo congelarías el backbone y cuándo harías full fine-tuning?
+   <details><summary>Ver respuesta</summary>Backbone congelado (solo entrenar la cabeza) con pocos datos; full fine-tuning con muchos datos y presupuesto de cómputo, siempre con learning rate pequeño (o diferencial por capas) para no destruir las features preentrenadas.</details>
 
 ---
 

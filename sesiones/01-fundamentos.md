@@ -562,7 +562,7 @@ La implementación completa y comentada del curso vive en [`src/train.py`](../sr
   tiene dos trampas, explicadas justo abajo.
 - **Learning rate:** el hiperparámetro más importante. Alto → diverge; bajo → eterno.
 
-### La inicialización: dónde nacen los pesos (2 minutos)
+### La inicialización: dónde nacen los pesos
 
 Antes del primer paso de entrenamiento los pesos tienen que valer *algo*. Ese "algo"
 tiene dos trampas:
@@ -606,16 +606,24 @@ nn.init.kaiming_normal_(capa.weight, nonlinearity='relu')   # regla He
 
 ## 7. Generalización: la única cosa que de verdad importa
 
-Un modelo que memoriza el train set no sirve. La evidencia clave es la **brecha
-train–validation**:
+Un modelo que memoriza el train set no sirve: lo que importa es que funcione con
+**datos que nunca vio** — eso es **generalizar**. La evidencia clave es la **brecha
+train–validation**, y las curvas de aprendizaje solo pueden contar tres historias:
+
+- **Underfitting** (subajuste): el modelo ni siquiera aprende el train set — le falta
+  capacidad, entrenamiento o un mejor learning rate.
+- **Good fit** (buen ajuste): aprende el patrón *y* generaliza — lo que funciona en
+  train funciona (casi igual de bien) en validation.
+- **Overfitting** (sobreajuste): memoriza el train set, ruido incluido, en vez de
+  aprender el patrón — brilla en train y empeora en datos nuevos.
 
 ![Curvas de aprendizaje: underfitting, good fit, overfitting](../docs/assets/figuras/curvas_aprendizaje.png)
 
-| Régimen | Síntoma | Remedios típicos |
+| Régimen | Síntoma en las curvas | Qué hacer |
 |---|---|---|
-| **Underfitting** | ambas curvas altas | más capacidad, más epochs, mejor LR |
-| **Good fit** | brecha pequeña y estable | 🎉 guardar checkpoint |
-| **Overfitting** | val sube mientras train baja | regularización, más datos, early stopping |
+| **Underfitting** | ambas curvas quedan altas y estancadas | más capacidad, más epochs, mejor LR |
+| **Good fit** | ambas bajan; brecha pequeña y estable | guardar el checkpoint y detenerse |
+| **Overfitting** | train sigue bajando; validation se estanca o sube | regularización, más datos, early stopping |
 
 ### Regularización (control de capacidad)
 
@@ -687,13 +695,26 @@ Cada equipo ejecuta dos variantes cambiando **una sola variable**:
 
 ### Las métricas que vas a reportar
 
-- **Matriz de confusión**: una tabla real-vs-predicho — cada celda cuenta cuántos
-  ejemplos de la clase X el modelo clasificó como Y. La diagonal son los aciertos.
-- **Precision**: de lo que marqué como positivo, ¿cuánto era verdad?
-- **Recall**: de lo positivo real, ¿cuánto encontré?
-- **F1**: el promedio (armónico) de precision y recall — solo es alto si *ambas* lo son.
+Ejemplo guía para todas: un detector de spam revisa 100 correos. Detecta bien 40 spam
+(TP), deja pasar 45 correos buenos (TN), marca como spam 5 correos buenos (FP) y se le
+escapan 10 spam (FN).
 
-Todo sale de la misma tabla. Con un detector de spam sobre 100 correos:
+- **Matriz de confusión**: la tabla que cruza clase *real* (filas) contra clase
+  *predicha* (columnas); cada celda cuenta cuántos ejemplos cayeron ahí. La diagonal
+  son los aciertos; todo lo demás, errores — y te dice *de qué tipo*. Los cuatro
+  números del ejemplo (40, 45, 5, 10) son exactamente sus cuatro celdas.
+- **Precision** (precisión): la fracción de los ejemplos que el modelo *marcó* como
+  positivos que realmente lo eran. Aquí: 40 / (40 + 5) ≈ 0.89 — "cuando dice spam,
+  acierta el 89% de las veces". Mide las **falsas alarmas**.
+- **Recall** (exhaustividad): la fracción de los positivos *reales* que el modelo
+  logró encontrar. Aquí: 40 / (40 + 10) = 0.80 — "encuentra el 80% del spam que
+  existe". Mide lo que **se le escapa**.
+- **F1**: el promedio armónico de precision y recall: 2·P·R/(P+R). Aquí:
+  2·0.89·0.80/1.69 ≈ 0.84. ¿Por qué armónico y no el promedio normal? Porque castiga
+  el desbalance: con precision 1.0 y recall 0.1, el promedio normal daría un engañoso
+  0.55, pero el F1 da 0.18 — solo es alto si *ambas* lo son.
+
+Todo sale de la misma tabla. El mismo ejemplo, dibujado:
 
 ![Matriz de confusión de un detector de spam y las métricas calculadas de ella](../docs/assets/figuras/matriz_confusion_metricas.png)
 
@@ -717,13 +738,18 @@ las obliga a negociar.
 
 ## 🎟️ Exit ticket de la Sesión 1
 
-Responde sin mirar notas:
+Responde sin mirar notas — y solo después despliega cada respuesta para validarte:
 
 1. ¿Por qué una red sin activaciones no lineales equivale a una transformación lineal?
+   <details><summary>Ver respuesta</summary>Porque componer transformaciones lineales da otra transformación lineal: W₂(W₁x) = (W₂W₁)x. Cien capas sin activación tienen exactamente el poder de una sola; la no linealidad entre capas es lo que permite doblar el espacio y crear fronteras curvas.</details>
 2. ¿Por qué `CrossEntropyLoss` debe recibir logits?
+   <details><summary>Ver respuesta</summary>Porque ya aplica softmax por dentro (de forma numéricamente estable). Si le pasas probabilidades, el softmax se aplica dos veces: los "logits" llegan aplastados al rango (0, 1), los gradientes se encogen y el modelo aprende peor — sin lanzar ningún error.</details>
 3. ¿Qué ocurre si no se limpian los gradientes?
+   <details><summary>Ver respuesta</summary>PyTorch ACUMULA los gradientes por diseño: sin optimizer.zero_grad(), el gradiente de cada iteración se suma al de las anteriores y el update usa una dirección corrupta (la mezcla de todos los batches vistos).</details>
 4. ¿Qué diferencia hay entre `model.train()` y `model.eval()`?
+   <details><summary>Ver respuesta</summary>train() activa dropout y hace que BatchNorm use las estadísticas del mini-batch actual; eval() apaga dropout y usa las estadísticas acumuladas. Evaluar en modo train da métricas erráticas — es el bug silencioso clásico.</details>
 5. ¿Qué evidencia permite distinguir underfitting de overfitting?
+   <details><summary>Ver respuesta</summary>Las curvas train/validation. Underfitting: ambas quedan altas y estancadas. Overfitting: la brecha crece — train sigue bajando mientras validation se estanca o empieza a subir.</details>
 
 ---
 

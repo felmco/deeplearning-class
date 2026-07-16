@@ -400,11 +400,18 @@ entre tokens y qué parte transforma cada token por separado?
 
 ## 🎟️ Exit ticket de la Sesión 3
 
+Responde sin mirar notas — y solo después despliega cada respuesta para validarte:
+
 1. ¿Qué representan Q, K y V?
+   <details><summary>Ver respuesta</summary>Query = lo que este token busca; Key = lo que este token ofrece para ser encontrado; Value = la información que transporta si resulta elegido. La compatibilidad entre una query y una key se mide con su producto punto.</details>
 2. ¿Por qué se divide por $\sqrt{d_k}$?
+   <details><summary>Ver respuesta</summary>Cada score suma d_k productos: con d_k grande los scores crecen, el softmax se satura (concentra todo en un token) y los gradientes mueren. Dividir por √d_k mantiene los scores en un rango estable (varianza ≈ 1).</details>
 3. ¿Cuál es la diferencia entre padding mask y causal mask?
+   <details><summary>Ver respuesta</summary>La padding mask oculta los tokens de relleno (pad) — cambia con cada batch. La causal mask bloquea el futuro (triángulo inferior) — es estructural del decoder y no depende de los datos. Pueden combinarse en la misma atención.</details>
 4. ¿Dónde se mezcla información entre tokens y dónde se transforma cada token?
+   <details><summary>Ver respuesta</summary>La attention es la ÚNICA parte que mezcla información entre tokens (comunicación); la FFN transforma cada token por separado, posición por posición (computación). Los residuals y LayerNorm estabilizan ambas.</details>
 5. ¿Por qué un decoder causal no puede usar información futura durante el entrenamiento?
+   <details><summary>Ver respuesta</summary>Porque en entrenamiento la secuencia completa está en la entrada: sin máscara causal, la posición t podría "copiar" el token t+1 que debe predecir. El objetivo se volvería trivial y el modelo sería inútil al generar, cuando el futuro no existe.</details>
 
 ---
 

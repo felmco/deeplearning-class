@@ -322,11 +322,18 @@ la rúbrica de 100 puntos y la plantilla de model card.
 
 ## 🎟️ Exit ticket de la Sesión 4
 
+Responde sin mirar notas — y solo después despliega cada respuesta para validarte:
+
 1. ¿Qué debe coincidir entre tokenizer y modelo, y por qué?
+   <details><summary>Ver respuesta</summary>Deben venir del MISMO checkpoint: el modelo aprendió con un vocabulario y unas reglas de segmentación concretas. Con otro tokenizer, los IDs apuntan a embeddings equivocados — y falla en silencio, sin lanzar error.</details>
 2. ¿Por qué dynamic padding ahorra cómputo?
+   <details><summary>Ver respuesta</summary>Porque rellena cada batch solo hasta su secuencia más larga, no hasta la más larga del dataset: se procesan muchos menos tokens de relleno inútiles.</details>
 3. ¿Qué dataset se usa para ajustar y cuál para reportar el resultado final?
+   <details><summary>Ver respuesta</summary>Validation para ajustar (hiperparámetros, elegir el mejor checkpoint); test se toca UNA sola vez, al final, para reportar. Iterar contra test es benchmark overfitting: el "récord" deja de medir generalización.</details>
 4. ¿Qué reduce LoRA y qué no garantiza?
+   <details><summary>Ver respuesta</summary>Reduce parámetros entrenables, memoria del optimizador y tamaño del artifact (entrena las dos matrices flacas B y A en vez de W completa). NO garantiza calidad, ni ausencia de sesgos, ni sustituye la validación con datos y métricas.</details>
 5. ¿Qué debe incluir una model card?
+   <details><summary>Ver respuesta</summary>Arquitectura/checkpoint, datos de entrenamiento y su licencia, uso previsto y fuera de alcance, procedimiento y seed, métricas con resultados (y baselines), limitaciones conocidas, y riesgos con mitigaciones.</details>
 
 ---
 

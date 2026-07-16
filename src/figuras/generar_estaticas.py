@@ -846,7 +846,8 @@ def fig_curvas_aprendizaje() -> None:
         ax.text(0.5, 0.95, nota, transform=ax.transAxes, fontsize=8.5,
                 va="top", ha="center", color=GRIS, style="italic")
     axes[0].set_ylabel("loss")
-    axes[0].legend()
+    # loc fijo: el 'best' automático la ponía encima de la nota del panel
+    axes[0].legend(loc="lower left")
     fig.suptitle("Diagnóstico por curvas de aprendizaje", fontweight="bold", y=1.04)
     fig.savefig(DESTINO / "curvas_aprendizaje.png")
     plt.close(fig)
