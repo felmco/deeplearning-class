@@ -265,8 +265,9 @@ a la red:
   **número libre**, sin límites, y la red lo entrega tal cual (sin activación final).
   Esto se llama **regresión**.
 - **"¿Sí o no?"** — ¿es spam?, ¿hay un gato en la foto? La respuesta útil es una
-  **probabilidad entre 0 y 1**: la red produce un logit y **sigmoid** lo aplasta a ese
-  rango. **Clasificación binaria**.
+  **probabilidad entre 0 y 1**: la red produce un logit (recuerda la §2: el puntaje
+  crudo, cualquier número real) y **sigmoid** lo aplasta a ese rango.
+  **Clasificación binaria**.
 - **"¿Cuál de estas K opciones?"** — ¿qué dígito es?, ¿qué animal aparece? La respuesta
   útil es **una probabilidad por opción, y que sumen 1**: la red produce K logits y
   **softmax** los reparte. **Clasificación multiclase**.
