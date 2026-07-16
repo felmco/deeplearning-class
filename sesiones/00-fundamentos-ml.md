@@ -89,15 +89,15 @@ contra un baseline, regla de oro del curso).
 
 ### La fórmula esencial de cada modelo
 
-| Modelo | La fórmula | Cómo leerla |
+| Modelo | La fórmula | Variables y cómo leerla |
 |---|---|---|
-| Regresión lineal | $\hat{y} = wx + b$ | la recta; entrenar = minimizar el error cuadrático (MSE) de sus residuos |
-| Regresión logística | $p = \sigma(wx + b)$ | la misma recta pasada por la sigmoide σ → una probabilidad entre 0 y 1 |
-| k-NN | $d(a,b)=\sqrt{\sum_i (a_i-b_i)^2}$ | distancia euclidiana (Pitágoras generalizado); predice el voto de los k más cercanos |
-| Árbol de decisión | $G = 1 - \sum_k p_k^2$ | impureza Gini del nodo ($p_k$ = proporción de la clase k); cada pregunta se elige para bajarla |
-| Random forest | voto de $B$ árboles | cada árbol ve una muestra *bootstrap* distinta; el voto cancela sus errores individuales |
-| Gradient boosting | $F_m = F_{m-1} + \eta h_m$ | cada árbol nuevo $h_m$ corrige los residuos del acumulado; η es un learning rate |
-| SVM | margen $= 2/\Vert w \Vert$ | de todas las fronteras posibles, la que deja la "calle" más ancha entre clases |
+| Regresión lineal | $\hat{y} = wx + b$ | $\hat{y}$ = la predicción (un número) · $x$ = la feature de entrada · $w$ = la pendiente: cuánto cambia $\hat{y}$ por cada unidad de $x$ · $b$ = el intercepto: el valor base cuando $x=0$. Entrenar = encontrar la $w$ y la $b$ que minimizan el MSE de los residuos. |
+| Regresión logística | $p = \sigma(wx + b)$ | $p$ = probabilidad de la clase positiva · $\sigma$ = la sigmoide: aplasta cualquier número al rango (0, 1) · $w, b$ = los mismos pesos y bias de la lineal. Frontera de decisión donde $p = 0.5$ (es decir, donde $wx+b=0$). |
+| k-NN | $d(a,b)=\sqrt{\sum_i (a_i-b_i)^2}$ | $d(a,b)$ = distancia euclidiana entre los puntos $a$ y $b$ (Pitágoras generalizado) · $a_i, b_i$ = la feature i-ésima de cada punto · $k$ = cuántos vecinos votan. Predicción = el voto mayoritario de los $k$ puntos con menor $d$. |
+| Árbol de decisión | $G = 1 - \sum_k p_k^2$ | $G$ = impureza Gini del nodo: 0 si es puro (una sola clase), 0.5 si está 50/50 · $p_k$ = proporción de ejemplos de la clase $k$ en el nodo. Cada pregunta del árbol se elige para BAJAR $G$ lo más posible. |
+| Random forest | voto de $B$ árboles | $B$ = número de árboles (el `n_estimators`) · cada árbol se entrena con una muestra *bootstrap* distinta (muestrear con reemplazo) y features al azar. Predicción = el voto mayoritario: los errores individuales se cancelan. |
+| Gradient boosting | $F_m = F_{m-1} + \eta h_m$ | $F_m$ = el modelo acumulado tras $m$ árboles · $h_m$ = el árbol nuevo, entrenado sobre los RESIDUOS (errores) de $F_{m-1}$ · $\eta$ = learning rate: cuánto confiar en cada corrección (el mismo concepto de la Sesión 1). |
+| SVM | margen $= 2/\Vert w \Vert$ | margen = el ancho de la "calle" entre las dos clases · $w$ = los pesos que definen la frontera · $\Vert w \Vert$ = el tamaño (norma) de $w$. Maximizar el margen = encontrar la $w$ más pequeña que aún separa; solo los puntos que tocan la calle (vectores de soporte) la definen. |
 
 > 🧑‍🏫 **Para la clase — la guía de campo:** cada uno de estos modelos tiene su
 > sección en el [**notebook 00b**](../notebooks/00b_guia_modelos_clasicos.ipynb), con
@@ -134,9 +134,12 @@ Las dos tareas estrella:
 
 Las fórmulas de ambos, leídas en palabras:
 
-- **k-means** minimiza $J = \sum_i \min_k \Vert x_i - \mu_k \Vert^2$ — *"la suma, para
-  cada punto, del cuadrado de su distancia al centroide más cercano"* ($\mu_k$ = el
-  centroide del grupo k). Buenos grupos = puntos pegados a su centroide.
+- **k-means** minimiza $J = \sum_i \min_k \Vert x_i - \mu_k \Vert^2$ — variables:
+  $J$ = el costo total a minimizar · $x_i$ = cada punto de los datos · $\mu_k$ = el
+  centroide (centro de gravedad) del grupo $k$ · $\min_k$ = "elige el centroide más
+  cercano" · $\Vert \cdot \Vert^2$ = la distancia al cuadrado. **En palabras:** *"la
+  suma, para cada punto, del cuadrado de su distancia al centroide más cercano"* —
+  buenos grupos = puntos pegados a su centroide.
 - **PCA** no necesita fórmula nueva: la componente 1 es *la dirección donde los datos
   más varían*; la 2, la perpendicular que más varía de lo que queda. El número a
   reportar es la **varianza explicada**: "con 2 de 64 dimensiones conservo el X% de
