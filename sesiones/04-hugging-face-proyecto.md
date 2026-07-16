@@ -230,7 +230,7 @@ La conclusión debe recomendar UNA acción para la categoría dominante.
 En lugar de actualizar la matriz completa $W$, se aprende una corrección de **rango bajo**:
 
 $$
-W'=W+\Delta W,\qquad \Delta W\approx BA \quad\text{con } B\in\mathbb{R}^{d\times r},\; A\in\mathbb{R}^{r\times k},\; r\ll d
+W'=W+\Delta W,\qquad \Delta W\approx BA \quad\text{con } B\in\mathbb{R}^{d\times r},\quad A\in\mathbb{R}^{r\times k},\quad r\ll d
 $$
 
 **Intuición.** En vez de corregir la matriz gigante celda por celda, la corrección se

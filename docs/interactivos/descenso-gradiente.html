@@ -11,7 +11,7 @@
 <header class="aula">
   <p class="migas"><a href="../index.html">🏠 Aula</a> · Sesión 1</p>
   <h1>⛰️ Descenso de gradiente interactivo</h1>
-  <p>Haz clic en la superficie para soltar la bolita. El learning rate y el momentum deciden su destino: converger, arrastrarse u oscilar.</p>
+  <p>Haz clic en la superficie para soltar la bolita. El learning rate y el momentum deciden su destino: converger, arrastrarse u oscilar. El panel 3D muestra el mismo paisaje en relieve: la bolita realmente baja por un valle.</p>
 </header>
 
 <main>
@@ -48,7 +48,8 @@
 <div class="panel" style="display:grid; grid-template-columns: 2fr 1fr; gap:1rem; align-items:start;">
   <canvas id="lienzo" class="lienzo" width="640" height="440" style="cursor:crosshair;"></canvas>
   <div>
-    <canvas id="lossCanvas" class="lienzo" width="300" height="220"></canvas>
+    <canvas id="lienzo3d" class="lienzo" width="300" height="235"></canvas>
+    <canvas id="lossCanvas" class="lienzo" width="300" height="180" style="margin-top:.8rem;"></canvas>
     <table class="metrica" style="margin-top:.8rem; width:100%;">
       <tr><th>paso</th><td id="outPaso">0</td></tr>
       <tr><th>loss L(θ)</th><td id="outLoss">—</td></tr>
@@ -65,7 +66,9 @@
   mínimo? Eso es la sensibilidad a la inicialización.
   (3) η diminuto: correcto pero eterno. η enorme: diverge — si la bolita queda rebotando
   pegada al borde, eso ES la divergencia (el dominio del gráfico la contiene).
-  <br><strong>Leyenda:</strong> ★ = mínimo global · flecha verde = dirección −∇L (hacia donde empuja el gradiente).
+  <br><strong>Leyenda:</strong> ★ = mínimo global · flecha verde = dirección −∇L (hacia donde empuja el gradiente)
+  · el mapa grande es el paisaje <em>visto desde arriba</em> (con sombreado de relieve y curvas de nivel,
+  como un mapa topográfico) y el panel 3D es el mismo paisaje en perspectiva.
 </div>
 </main>
 
@@ -93,33 +96,138 @@ const SUP = {
 
 const cv = document.getElementById('lienzo'), ctx = cv.getContext('2d');
 const lcv = document.getElementById('lossCanvas'), lctx = lcv.getContext('2d');
+const cv3 = document.getElementById('lienzo3d'), ctx3 = cv3.getContext('2d');
 let sup = SUP.valle, pos = [-3.4, 1.7], vel = [0, 0], ruta = [], losses = [], animando = null;
 
 const aPx = (x,y) => [ (x/sup.dom/2 + .5) * cv.width, (.5 - y/sup.dom/2) * cv.height ];
 const aMath = (px,py) => [ (px/cv.width - .5) * 2*sup.dom, (.5 - py/cv.height) * 2*sup.dom ];
 
-// ── Fondo: mapa de contorno pintado por píxeles (cacheado) ───────────
+// Altura normalizada [0,1] (sqrt: más contraste cerca del mínimo)
+let fmax = 1;
+const altura = (x,y) => Math.sqrt(Math.min(sup.f(x,y)/fmax, 1));
+
+// ── Fondo: mapa topográfico pintado por píxeles (cacheado) ───────────
+// Sombreado de relieve (hillshade) + curvas de nivel: los valles se VEN
+// hundidos, como en un mapa de montaña.
 let fondo = null;
 function pintarFondo(){
-  const img = ctx.createImageData(cv.width, cv.height);
-  let fmax = 0;
+  const W = cv.width, H = cv.height;
+  fmax = 0;
   for (let i = 0; i < 400; i++){
     const x = -sup.dom + 2*sup.dom*Math.random(), y = -sup.dom + 2*sup.dom*Math.random();
     fmax = Math.max(fmax, sup.f(x,y));
   }
-  for (let py = 0; py < cv.height; py++){
-    for (let px = 0; px < cv.width; px++){
-      const [x, y] = aMath(px, py);
-      const v = Math.sqrt(Math.min(sup.f(x,y)/fmax, 1));   // sqrt: más contraste cerca del mínimo
-      const idx = (py*cv.width + px) * 4;
+  // 1) alturas normalizadas por píxel
+  const h = new Float32Array(W*H);
+  for (let py = 0; py < H; py++)
+    for (let px = 0; px < W; px++)
+      h[py*W + px] = altura(...aMath(px, py));
+
+  // 2) color base × iluminación + curvas de nivel
+  const img = ctx.createImageData(W, H);
+  const NIVELES = 15;                        // curvas de nivel
+  const LX = -0.55, LY = -0.55, LZ = 0.63;   // luz desde el noroeste
+  const K = 150;                              // exageración del relieve
+  for (let py = 0; py < H; py++){
+    for (let px = 0; px < W; px++){
+      const i = py*W + px;
+      const v = h[i];
+      // pendiente local en píxeles (diferencia con el vecino)
+      const dx = (px+1 < W ? h[i+1]   : v) - v;
+      const dy = (py+1 < H ? h[i+W]   : v) - v;
+      // normal ≈ (−K·dx, −K·dy, 1) → iluminación lambertiana,
+      // normalizada para que el terreno plano quede con factor 1
+      const nz = 1 / Math.hypot(K*dx, K*dy, 1);
+      const luz = Math.max(0, (-K*dx*LX - K*dy*LY + LZ) * nz) / LZ;
+      let factor = 0.74 + 0.26*Math.min(luz, 1.5);
+      // curva de nivel: el "escalón" de nivel cambia respecto al vecino
+      const nivel = Math.floor(v*NIVELES);
+      if ((px+1 < W && Math.floor(h[i+1]*NIVELES) !== nivel) ||
+          (py+1 < H && Math.floor(h[i+W]*NIVELES) !== nivel)) factor *= 0.80;
+      const idx = i * 4;
       // gradiente azul: claro (bajo) → oscuro (alto)
-      img.data[idx]   = 235 - 205*v;
-      img.data[idx+1] = 244 - 180*v;
-      img.data[idx+2] = 252 - 130*v;
+      img.data[idx]   = Math.min(255, (235 - 205*v) * factor);
+      img.data[idx+1] = Math.min(255, (244 - 180*v) * factor);
+      img.data[idx+2] = Math.min(255, (252 - 130*v) * factor);
       img.data[idx+3] = 255;
     }
   }
   fondo = img;
+  preparar3D();
+}
+
+// ── Vista 3D: el mismo paisaje, en perspectiva isométrica ────────────
+const N3 = 42;                 // resolución de la malla
+let malla = null;              // alturas normalizadas precalculadas
+
+function preparar3D(){
+  malla = [];
+  for (let i = 0; i <= N3; i++){          // i recorre y (de +dom a −dom)
+    const fila = [];
+    for (let j = 0; j <= N3; j++){        // j recorre x (de −dom a +dom)
+      fila.push(altura(-sup.dom + 2*sup.dom*j/N3, sup.dom - 2*sup.dom*i/N3));
+    }
+    malla.push(fila);
+  }
+}
+
+// Proyección isométrica: (x, y) del plano + v (altura) → píxel del canvas
+function proy3D(x, y, v){
+  const s = cv3.width / (4.35*sup.dom);
+  return [
+    cv3.width/2 + (x - y) * s,
+    cv3.height*0.60 + (x + y) * s * 0.5 - v * cv3.height*0.40,
+  ];
+}
+
+function dibujar3D(){
+  ctx3.clearRect(0, 0, cv3.width, cv3.height);
+  // Quads de la malla, de atrás (x+y mínimo) hacia adelante
+  const quads = [];
+  const paso = 2*sup.dom/N3;
+  for (let i = 0; i < N3; i++){
+    for (let j = 0; j < N3; j++){
+      const x = -sup.dom + paso*j, y = sup.dom - paso*i;
+      quads.push([x + paso/2 + (y - paso/2), i, j]);   // profundidad x+y del centro
+    }
+  }
+  quads.sort((a, b) => a[0] - b[0]);
+  for (const [, i, j] of quads){
+    const x0 = -sup.dom + paso*j, y0 = sup.dom - paso*i;
+    const v00 = malla[i][j],     v01 = malla[i][j+1],
+          v10 = malla[i+1][j],   v11 = malla[i+1][j+1];
+    const p00 = proy3D(x0, y0, v00),          p01 = proy3D(x0+paso, y0, v01),
+          p11 = proy3D(x0+paso, y0-paso, v11), p10 = proy3D(x0, y0-paso, v10);
+    // color base según altura media + sombreado según pendiente
+    const v = (v00 + v01 + v10 + v11) / 4;
+    const luz = Math.max(0.35, Math.min(1.35, 1 + 5.5*((v01 - v00) + (v00 - v10))));
+    const r = (235 - 205*v) * (0.62 + 0.38*luz);
+    const g = (244 - 180*v) * (0.62 + 0.38*luz);
+    const b = (252 - 130*v) * (0.62 + 0.38*luz);
+    ctx3.fillStyle = `rgb(${r|0},${g|0},${b|0})`;
+    ctx3.strokeStyle = ctx3.fillStyle;   // borde del mismo color: sin costuras
+    ctx3.lineWidth = 1;
+    ctx3.beginPath();
+    ctx3.moveTo(...p00); ctx3.lineTo(...p01); ctx3.lineTo(...p11); ctx3.lineTo(...p10);
+    ctx3.closePath(); ctx3.fill(); ctx3.stroke();
+  }
+  // Mínimo global (★), trayectoria y bolita, sobre la superficie
+  const elev = 0.02;   // separarlos un pelo de la superficie
+  const [sx, sy] = proy3D(0, 0, altura(0,0) + elev);
+  ctx3.fillStyle = '#f5c400'; ctx3.strokeStyle = '#333'; ctx3.font = '16px sans-serif';
+  ctx3.fillText('★', sx - 8, sy + 6);
+  ctx3.strokeStyle = '#D55E00'; ctx3.lineWidth = 2; ctx3.beginPath();
+  ruta.forEach(([x, y], k) => {
+    const [a, b] = proy3D(x, y, altura(x, y) + elev);
+    k === 0 ? ctx3.moveTo(a, b) : ctx3.lineTo(a, b);
+  });
+  ctx3.stroke();
+  const [bx, by] = proy3D(pos[0], pos[1], altura(...pos) + elev);
+  ctx3.fillStyle = '#D55E00'; ctx3.beginPath(); ctx3.arc(bx, by, 5.5, 0, 7); ctx3.fill();
+  ctx3.strokeStyle = '#fff'; ctx3.lineWidth = 1.5; ctx3.stroke();
+  // rótulo
+  ctx3.fillStyle = '#1a2332'; ctx3.font = 'bold 12px sans-serif';
+  ctx3.fillText('el paisaje en 3D (L = altura)', 10, 18);
 }
 
 function dibujar(){
@@ -142,6 +250,9 @@ function dibujar(){
   const [tx, ty] = aPx(pos[0] - gx/n*0.9, pos[1] - gy/n*0.9);
   ctx.strokeStyle = '#009E73'; ctx.lineWidth = 2.5;
   ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(tx, ty); ctx.stroke();
+
+  // vista 3D del paisaje
+  dibujar3D();
 
   // panel de curva de loss
   lctx.clearRect(0, 0, lcv.width, lcv.height);

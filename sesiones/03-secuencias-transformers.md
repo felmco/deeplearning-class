@@ -225,7 +225,7 @@ y softmax por filas, con los números recalculándose en cada etapa.
 
 $$
 \mathrm{head}_i=\mathrm{Attention}(QW_i^Q,KW_i^K,VW_i^V) \qquad
-\mathrm{MHA}(Q,K,V)=\mathrm{Concat}(\mathrm{head}_1,\dots,\mathrm{head}_h)\,W^O
+\mathrm{MHA}(Q,K,V)=\mathrm{Concat}(\mathrm{head}_1,\dots,\mathrm{head}_h)W^O
 $$
 
 En lugar de una atención de dimensión $d_{model}$, se ejecutan $h$ atenciones de dimensión

@@ -420,12 +420,32 @@ Ejemplo numérico: si subo $w$ de 3.00 a 3.01 y la loss baja de 9.00 a 8.88 (cam
 ### Descenso por gradiente
 
 $$
-\theta_{t+1}=\theta_t-\eta\,\nabla_\theta \mathcal{L}(\theta_t)
+\theta_{t+1}=\theta_t-\eta \nabla_\theta \mathcal{L}(\theta_t)
 $$
+
+Pieza por pieza:
+
+| Símbolo | Nombre | Qué es |
+|---|---|---|
+| $\theta_t$ | parámetros actuales | todos los pesos y biases de la red en el paso $t$ |
+| $\theta_{t+1}$ | parámetros nuevos | los mismos parámetros, después de dar un paso |
+| $\eta$ | learning rate (se lee "eta") | el tamaño del paso: cuánto nos movemos |
+| $\nabla_\theta \mathcal{L}$ | gradiente de la loss | la dirección en la que la loss más *sube* (§5.0) |
+| $-$ | el signo menos | caminar exactamente al revés del gradiente: cuesta abajo |
+
+**En palabras:** *"los parámetros nuevos son los actuales, menos un paso de tamaño η
+en la dirección donde la loss sube más rápido".* Repetir miles de veces.
 
 **Intuición.** La loss define un paisaje montañoso sobre el espacio de parámetros. El
 gradiente $\nabla_\theta \mathcal{L}$ apunta cuesta *arriba*; caminamos en dirección
 contraria con pasos de tamaño $\eta$ (el **learning rate**, abreviado **LR**).
+
+![El paisaje de la loss: una superficie 3D con montañas y un valle; la bolita baja en contra del gradiente hasta el mínimo, y a la derecha el mismo paisaje visto desde arriba como mapa de contornos](../docs/assets/figuras/paisaje_perdida.png)
+
+El panel derecho es el mismo paisaje **visto desde arriba** — un mapa de contornos, como
+los mapas topográficos. Así dibujaremos el paisaje en el resto del curso (y así lo dibuja
+el simulador): cada anillo es una "curva de nivel" y el centro del anillo más profundo es
+el valle que buscamos.
 
 ![Efecto del learning rate](../docs/assets/figuras/learning_rate.png)
 
@@ -478,7 +498,7 @@ Derivación manual que verificaremos con autograd:
 
 $$
 \hat y=wx+b,\quad L=(\hat y-y)^2 \quad\Rightarrow\quad
-\frac{\partial L}{\partial w}=2(\hat y-y)\,x = -12, \qquad
+\frac{\partial L}{\partial w}=2(\hat y-y)x = -12, \qquad
 \frac{\partial L}{\partial b}=2(\hat y-y) = -6
 $$
 

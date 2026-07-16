@@ -479,6 +479,116 @@ def fig_losses() -> None:
     plt.close(fig)
 
 
+def fig_paisaje_perdida() -> None:
+    """El "paisaje montañoso" de la loss, literal: una superficie 3D con
+    montañas y un valle sobre dos parámetros (θ₁, θ₂), la bolita del
+    descenso bajando en contra del gradiente, y el MISMO paisaje visto
+    desde arriba como mapa de contornos — el puente hacia cómo se dibuja
+    el paisaje en 2D en el resto del curso y en el simulador."""
+
+    def f(x, y):
+        # Un cuenco suave (el valle) + dos colinas gaussianas (las montañas)
+        base = 0.12 * (x**2 + 1.4 * y**2)
+        colina1 = 3.2 * np.exp(-((x + 1.7) ** 2 + (y - 1.4) ** 2) / 1.5)
+        colina2 = 2.6 * np.exp(-((x - 2.1) ** 2 + (y + 1.5) ** 2) / 2.0)
+        return base + colina1 + colina2
+
+    def grad(x, y, h=1e-4):
+        """Gradiente numérico por diferencias centradas."""
+        return np.array([
+            (f(x + h, y) - f(x - h, y)) / (2 * h),
+            (f(x, y + h) - f(x, y - h)) / (2 * h),
+        ])
+
+    # La ruta del descenso: θ ← θ − η∇L desde una ladera
+    p = np.array([-2.7, 2.5])
+    ruta = [p.copy()]
+    for _ in range(260):
+        p = p - 0.14 * grad(*p)
+        ruta.append(p.copy())
+    ruta = np.array(ruta)
+    z_ruta = f(ruta[:, 0], ruta[:, 1])
+
+    xx, yy = np.meshgrid(np.linspace(-3.8, 3.8, 200),
+                         np.linspace(-3.1, 3.1, 200))
+    zz = f(xx, yy)
+
+    fig = plt.figure(figsize=(13.5, 5.6))
+
+    # ── Panel 1: el paisaje en 3D ──
+    ax1 = fig.add_subplot(1, 2, 1, projection="3d")
+    # Sin esto, mplot3d ordena por profundidad y la superficie tapa a la
+    # bolita, la estrella y la ruta; con zorder manual quedan encima.
+    ax1.computed_zorder = False
+    ax1.plot_surface(xx, yy, zz, cmap="Blues_r", rstride=2, cstride=2,
+                     linewidth=0, antialiased=True, alpha=0.92, zorder=1)
+    # La ruta sobre la superficie (levemente elevada para que no se hunda)
+    ax1.plot(ruta[:, 0], ruta[:, 1], z_ruta + 0.06, color=ROJO,
+             linewidth=2.6, zorder=10)
+    ax1.scatter(*ruta[0], z_ruta[0] + 0.10, s=90, color=ROJO,
+                edgecolor="white", linewidth=1.5, zorder=11,
+                depthshade=False)
+    ax1.scatter(*ruta[-1], z_ruta[-1] + 0.10, s=160, color="#f5c400",
+                marker="*", edgecolor="#333", linewidth=0.8, zorder=11,
+                depthshade=False)
+    g0 = grad(*ruta[0])
+    g0n = g0 / np.linalg.norm(g0)
+    ax1.text(ruta[0][0], ruta[0][1] + 0.25, z_ruta[0] + 1.0,
+             "inicio", color=ROJO, fontsize=10, fontweight="bold",
+             ha="center")
+    ax1.text(ruta[-1][0] + 0.3, ruta[-1][1] - 0.4, z_ruta[-1] + 0.7,
+             "mínimo\n(el valle)", fontsize=10, fontweight="bold",
+             color="#7a6200")
+    ax1.set_xlabel("θ₁ (un parámetro)", fontsize=9.5, labelpad=2)
+    ax1.set_ylabel("θ₂ (otro parámetro)", fontsize=9.5, labelpad=2)
+    # El zlabel nativo de mplot3d queda fuera del bbox "tight": anotarlo
+    # como texto 2D anclado a los ejes, que sí se incluye en el recorte.
+    ax1.text2D(-0.04, 0.60, "L(θ) = altura", transform=ax1.transAxes,
+               rotation=90, fontsize=10, ha="center", va="center")
+    ax1.tick_params(labelsize=7.5, pad=1)
+    ax1.view_init(elev=33, azim=-120)
+    ax1.set_title("El paisaje en 3D: montañas, valle\ny la ruta θ ← θ − η·∇L",
+                  fontsize=11.5)
+
+    # ── Panel 2: el mismo paisaje visto desde arriba ──
+    ax2 = fig.add_subplot(1, 2, 2)
+    ax2.contourf(xx, yy, zz, levels=26, cmap="Blues_r", alpha=0.9)
+    ax2.contour(xx, yy, zz, levels=13, colors="white", linewidths=0.6)
+    ax2.plot(ruta[:, 0], ruta[:, 1], color=ROJO, linewidth=2.4)
+    ax2.scatter(*ruta[0], s=80, color=ROJO, edgecolor="white",
+                linewidth=1.5, zorder=5)
+    ax2.scatter(*ruta[-1], s=200, color="#f5c400", marker="*",
+                edgecolor="#333", linewidth=0.8, zorder=5)
+    # Las mismas dos flechas, ahora en el mapa
+    ax2.annotate("", xy=ruta[0] + g0n * 1.0, xytext=ruta[0],
+                 arrowprops=dict(arrowstyle="->", color=VERDE, linewidth=2.4))
+    ax2.text(*(ruta[0] + g0n * 1.0 + [0.15, 0.2]), "∇L", color=VERDE,
+             fontsize=11, fontweight="bold")
+    ax2.annotate("", xy=ruta[0] - g0n * 1.0, xytext=ruta[0],
+                 arrowprops=dict(arrowstyle="->", color=ROJO, linewidth=2.4))
+    ax2.text(*(ruta[0] - g0n * 1.0 + [-1.35, -0.15]), "−η·∇L", color=ROJO,
+             fontsize=11, fontweight="bold")
+    ax2.text(-1.7, 1.35, "montaña", fontsize=9, color="#334",
+             ha="center", style="italic")
+    ax2.text(2.0, -1.5, "montaña", fontsize=9, color="#334",
+             ha="center", style="italic")
+    ax2.text(ruta[-1][0] + 0.3, ruta[-1][1] - 0.55, "el valle",
+             fontsize=10, fontweight="bold", color="white")
+    ax2.set_aspect("equal")
+    ax2.grid(False)
+    ax2.set_xticks([])
+    ax2.set_yticks([])
+    ax2.set_xlabel("θ₁", fontsize=10)
+    ax2.set_ylabel("θ₂", fontsize=10)
+    ax2.set_title("El MISMO paisaje visto desde arriba:\nun mapa de contornos "
+                  "(cada anillo = curva de nivel)", fontsize=11.5)
+
+    fig.suptitle("La loss es un paisaje: el gradiente apunta cuesta arriba "
+                 "y el descenso camina en contra", fontweight="bold", y=1.02)
+    fig.savefig(DESTINO / "paisaje_perdida.png")
+    plt.close(fig)
+
+
 def fig_matriz_confusion() -> None:
     """Matriz de confusión 2×2 con números concretos, y precision, recall y
     F1 calculados de ELLA, con las celdas que usa cada métrica señaladas."""
@@ -1328,7 +1438,8 @@ def main() -> None:
     DESTINO.mkdir(parents=True, exist_ok=True)
     tareas = [
         fig_tensores, fig_neurona_frontera, fig_xor, fig_capa_densa,
-        fig_softmax_pasos, fig_losses, fig_matriz_confusion, fig_lora,
+        fig_softmax_pasos, fig_losses, fig_paisaje_perdida,
+        fig_matriz_confusion, fig_lora,
         fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
         fig_learning_rate, fig_moons_frontera, fig_kernels, fig_padding_stride,
         fig_receptive_field, fig_rnn_gradientes, fig_atencion,

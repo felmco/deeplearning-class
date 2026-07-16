@@ -47,7 +47,7 @@ en un batch de 32 es `(32, 3, 224, 224)`.
 ### Definición (2D, un canal, simplificada)
 
 $$
-Y[i,j]=\sum_m\sum_n X[i+m,\,j+n]\;K[m,n]+b
+Y[i,j]=\sum_m\sum_n X[i+m, j+n] K[m,n]+b
 $$
 
 Una ventana del tamaño del kernel se coloca sobre la imagen, se multiplica **elemento a
@@ -78,7 +78,7 @@ $$
 
 donde $K$ = tamaño del kernel, $P$ = padding, $S$ = stride, $D$ = dilation (*dilation*:
 separar los elementos del kernel dejando huecos; en este curso siempre $D=1$, con lo que
-queda la forma familiar $\lfloor (H+2P-K)/S \rfloor + 1$). Los corchetes $\lfloor\,\rfloor$
+queda la forma familiar $\lfloor (H+2P-K)/S \rfloor + 1$). Los corchetes ⌊ ⌋
 significan "redondear hacia abajo".
 
 ![Efecto de padding y stride](../docs/assets/figuras/padding_stride.png)
@@ -89,7 +89,7 @@ significan "redondear hacia abajo".
 ### Parámetros de una capa Conv2d
 
 $$
-N_\theta=C_{out}\,(C_{in}\,K_h\,K_w+1)
+N_\theta=C_{out}(C_{in}K_hK_w+1)
 $$
 
 $N_\theta$ = número de parámetros de la capa. El `+1` es el bias por canal de salida. Comparación que lo dice todo, para una imagen 28×28:
@@ -184,7 +184,7 @@ Transformers, lo veremos en la Sesión 3).
 calculado sobre mini-batches aleatorios — de ahí lo de "estocástico".
 
 $$
-v_t=\beta v_{t-1}+g_t,\qquad \theta_{t+1}=\theta_t-\eta\, v_t
+v_t=\beta v_{t-1}+g_t,\qquad \theta_{t+1}=\theta_t-\eta v_t
 $$
 
 donde $g_t$ es el gradiente actual y $\beta$ (≈ 0.9) cuánta "velocidad" anterior se
