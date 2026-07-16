@@ -170,10 +170,26 @@ viste: multiplicar cada feature por su peso y sumar todo, $w_1x_1 + w_2x_2 + \do
 El símbolo $\top$ (transpuesta) solo "acuesta" el vector para que la multiplicación
 cuadre — no cambia sus números.
 
-**Intuición.** Cada peso $w_j$ dice *cuánto importa* la feature $x_j$; el bias $b$ desplaza
-el umbral de decisión. Geométricamente, $z = 0$ define un **hiperplano** (en 2D es una
-línea, en 3D un plano): la neurona separa el espacio en dos mitades. Eso es todo lo que
-puede hacer una neurona sola — y por eso el perceptrón nunca pudo con XOR.
+**Intuición.** Una neurona hace algo muy simple: **dibuja una línea recta que parte el
+espacio en dos mitades**. De un lado, $z > 0$ (predice clase 1); del otro, $z < 0$
+(clase 0). La línea misma es donde $z = 0$: la frontera de decisión.
+
+![La geometría de una neurona: la frontera recta, el bias la desplaza, los pesos la giran](../docs/assets/figuras/neurona_bias_hiperplano.png)
+
+Los dos ingredientes tienen roles distintos, y la figura los separa:
+
+- **Los pesos $\mathbf{w}$ GIRAN la línea** (panel derecho): deciden hacia dónde mira la
+  frontera. Además, $\mathbf{w}$ siempre apunta perpendicular a la línea, hacia el lado
+  de la clase 1 (flecha verde del panel izquierdo).
+- **El bias $b$ DESPLAZA la línea** (panel central): la mueve más cerca o más lejos
+  **sin cambiar su ángulo** — como correr una cerca sin rotarla. Sin bias, la línea
+  estaría condenada a pasar por el origen $(0,0)$, estuviera donde estuviera lo que
+  quieres separar.
+
+En 3D la línea se convierte en un plano, y con más dimensiones se llama **hiperplano** —
+el mismo concepto con más ejes; solo que ya no podemos dibujarlo. Y eso es todo lo que
+puede hacer una neurona sola: una frontera recta — por eso el perceptrón nunca pudo
+con XOR.
 
 > 🧩 **¿Qué es XOR?** El "o exclusivo": clase 1 si *exactamente una* de las dos entradas
 > está activa. Sus cuatro puntos — (0,0)→0, (1,1)→0, (0,1)→1, (1,0)→1 — no pueden

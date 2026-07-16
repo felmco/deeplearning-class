@@ -31,6 +31,8 @@ from .estilo import (
     aplicar_estilo,
 )
 
+TINTA_LINEA = "#1a2332"   # color de las fronteras de decisión dibujadas
+
 # Carpeta destino de todas las figuras (relativa a la raíz del repo)
 DESTINO = Path(__file__).resolve().parents[2] / "docs" / "assets" / "figuras"
 
@@ -122,6 +124,92 @@ def fig_tensores() -> None:
             ha="center", fontsize=10, color=GRIS)
 
     fig.savefig(DESTINO / "tensores_evolucion.png")
+    plt.close(fig)
+
+
+def fig_neurona_frontera() -> None:
+    """La geometría de una neurona en 3 paneles: (1) z=0 es una línea que
+    parte el plano en dos mitades; (2) el bias b DESPLAZA esa línea sin
+    girarla; (3) los pesos w la GIRAN. Puntos sintéticos clasificados con
+    la propia neurona, para que la figura sea literal y no un esquema."""
+    rng = np.random.default_rng(7)
+
+    w = np.array([1.0, 0.8])          # pesos de la neurona de ejemplo
+    b0 = -0.4                          # bias del panel 1
+
+    def linea(ax, w, b, **kw):
+        """Dibuja w·x + b = 0 dentro del recuadro [-3, 3]."""
+        xs = np.linspace(-3, 3, 2)
+        # w1*x + w2*y + b = 0  →  y = -(w1*x + b) / w2
+        ax.plot(xs, -(w[0] * xs + b) / w[1], **kw)
+
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.6), sharey=True)
+    for ax in axes:
+        ax.set_xlim(-3, 3)
+        ax.set_ylim(-3, 3)
+        ax.set_aspect("equal")
+        ax.grid(False)
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+    # ── Panel 1: la neurona parte el plano en dos mitades ──
+    ax = axes[0]
+    X = rng.uniform(-2.7, 2.7, size=(90, 2))
+    z = X @ w + b0                     # la propia neurona clasifica los puntos
+    ax.scatter(*X[z > 0].T, s=26, color=AZUL, alpha=0.75, label="z > 0 → clase 1")
+    ax.scatter(*X[z <= 0].T, s=26, color=NARANJA, alpha=0.75, label="z < 0 → clase 0")
+    # Sombrear las dos mitades evaluando z sobre una malla
+    xx, yy = np.meshgrid(np.linspace(-3, 3, 200), np.linspace(-3, 3, 200))
+    zz = w[0] * xx + w[1] * yy + b0
+    ax.contourf(xx, yy, zz, levels=[-99, 0, 99], colors=[NARANJA, AZUL], alpha=0.10)
+    linea(ax, w, b0, color=TINTA_LINEA, linewidth=2.4)
+    # w es perpendicular a la línea y apunta hacia la mitad z>0
+    x_anc = np.array([0.4, -(w[0] * 0.4 + b0) / w[1]])
+    wn = w / np.hypot(*w)
+    ax.annotate("", xy=x_anc + wn * 1.1, xytext=x_anc,
+                arrowprops=dict(arrowstyle="->", color=VERDE, linewidth=2.4))
+    ax.text(*(x_anc + wn * 1.35), r"$\mathbf{w}$", color=VERDE, fontsize=13,
+            fontweight="bold", ha="center")
+    ax.set_title("z = w·x + b = 0 es una línea:\nparte el plano en dos mitades")
+    ax.legend(loc="lower left", fontsize=8.5)
+
+    # ── Panel 2: el bias desplaza la línea (sin girarla) ──
+    ax = axes[1]
+    wn = w / np.hypot(*w)              # dirección perpendicular a las líneas
+    ang = np.degrees(np.arctan2(-w[0], w[1]))   # inclinación real de las líneas
+    etiquetas_b = [(1.6, "--", 1.8, -2.2), (b0, "-", 2.4, -0.7), (-2.4, "--", 1.8, 0.9)]
+    for b, estilo, ancho, x_etq in etiquetas_b:
+        linea(ax, w, b, color=TINTA_LINEA, linestyle=estilo, linewidth=ancho)
+        # Etiqueta anclada SOBRE su línea, desplazada un poco en perpendicular
+        y_etq = -(w[0] * x_etq + b) / w[1]
+        signo = "+" if b > 0 else "−"
+        ax.text(x_etq + wn[0] * 0.34, y_etq + wn[1] * 0.34,
+                f"b = {signo}{abs(b)}", fontsize=10, rotation=ang,
+                ha="center", va="center",
+                fontweight="bold" if b == b0 else "normal")
+    # Doble flecha perpendicular: de la línea b=+1.6 a la línea b=−2.4
+    p1 = -1.6 * wn / np.hypot(*w)
+    p2 = 2.4 * wn / np.hypot(*w)
+    ax.annotate("", xy=tuple(p2), xytext=tuple(p1),
+                arrowprops=dict(arrowstyle="<->", color=ROJO, linewidth=2.0))
+    ax.set_title("El bias b DESPLAZA la línea\n(mismos pesos: no gira)")
+
+    # ── Panel 3: los pesos giran la línea ──
+    ax = axes[2]
+    for ang, estilo, ancho in [(35, "--", 1.8), (65, "-", 2.4), (115, "--", 1.8)]:
+        rad = np.deg2rad(ang)
+        linea(ax, np.array([np.cos(rad), np.sin(rad)]), b0,
+              color=TINTA_LINEA, linestyle=estilo, linewidth=ancho)
+    theta = np.linspace(np.deg2rad(-35), np.deg2rad(35), 50)
+    ax.plot(1.7 * np.cos(theta), 1.7 * np.sin(theta), color=ROJO, linewidth=2.0)
+    ax.annotate("", xy=(1.7 * np.cos(theta[-1]), 1.7 * np.sin(theta[-1])),
+                xytext=(1.7 * np.cos(theta[-3]), 1.7 * np.sin(theta[-3])),
+                arrowprops=dict(arrowstyle="->", color=ROJO, linewidth=2.0))
+    ax.set_title("Los pesos w GIRAN la línea\n(cambian su orientación)")
+
+    fig.suptitle("La geometría de una neurona: una frontera recta que w orienta y b desplaza",
+                 fontweight="bold", y=1.04)
+    fig.savefig(DESTINO / "neurona_bias_hiperplano.png")
     plt.close(fig)
 
 
@@ -823,7 +911,7 @@ def main() -> None:
     aplicar_estilo()
     DESTINO.mkdir(parents=True, exist_ok=True)
     tareas = [
-        fig_tensores, fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
+        fig_tensores, fig_neurona_frontera, fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
         fig_learning_rate, fig_moons_frontera, fig_kernels, fig_padding_stride,
         fig_receptive_field, fig_rnn_gradientes, fig_atencion,
         fig_positional_encoding, fig_embeddings_2d, fig_complejidad,
