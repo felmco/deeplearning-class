@@ -213,6 +213,68 @@ def fig_neurona_frontera() -> None:
     plt.close(fig)
 
 
+def fig_xor() -> None:
+    """XOR en dos paneles: (1) los cuatro puntos y varias líneas candidatas,
+    cada una fallando en al menos un punto; (2) la solución de una MLP con
+    dos neuronas ocultas: una BANDA diagonal (dos líneas cooperando), que es
+    exactamente lo que una neurona sola no puede dibujar."""
+    pts0 = np.array([[0, 0], [1, 1]])   # clase 0
+    pts1 = np.array([[0, 1], [1, 0]])   # clase 1
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 5.0))
+    for ax in (ax1, ax2):
+        ax.set_xlim(-0.55, 1.55)
+        ax.set_ylim(-0.55, 1.55)
+        ax.set_aspect("equal")
+        ax.grid(False)
+        ax.set_xticks([0, 1])
+        ax.set_yticks([0, 1])
+        # Los 4 puntos, grandes y con su etiqueta al lado
+        ax.scatter(*pts1.T, s=260, color=AZUL, zorder=5)
+        ax.scatter(*pts0.T, s=260, color=NARANJA, zorder=5)
+        for x, y in pts0:
+            ax.text(x, y, "0", ha="center", va="center", fontsize=11,
+                    fontweight="bold", color="white", zorder=6)
+        for x, y in pts1:
+            ax.text(x, y, "1", ha="center", va="center", fontsize=11,
+                    fontweight="bold", color="white", zorder=6)
+
+    # ── Panel 1: cada línea recta deja al menos un punto mal ──
+    xs = np.linspace(-0.55, 1.55, 2)
+    ax1.plot(xs, 0.5 + 0 * xs, "--", color=GRIS, linewidth=2.0)
+    ax1.text(1.52, 0.56, "✗", fontsize=15, color=ROJO, fontweight="bold")
+    ax1.plot(0.5 + 0 * xs, xs, "--", color=GRIS, linewidth=2.0)
+    ax1.text(0.56, 1.44, "✗", fontsize=15, color=ROJO, fontweight="bold")
+    ax1.plot(xs, xs - 0.5, "--", color=GRIS, linewidth=2.0)
+    ax1.text(1.30, 0.92, "✗", fontsize=15, color=ROJO, fontweight="bold")
+    ax1.plot(xs, 1.5 - xs, "--", color=GRIS, linewidth=2.0)
+    ax1.text(0.12, 1.44, "✗", fontsize=15, color=ROJO, fontweight="bold")
+    ax1.set_title("Ninguna recta funciona: toda línea\ndeja algún punto del lado equivocado", fontsize=11.5)
+
+    # ── Panel 2: dos neuronas ocultas = una banda diagonal ──
+    xx, yy = np.meshgrid(np.linspace(-0.55, 1.55, 300),
+                         np.linspace(-0.55, 1.55, 300))
+    # MLP mínima hecha a mano: h1 = "x+y > 0.5" (OR), h2 = "x+y > 1.5" (AND),
+    # salida = h1 AND (NO h2) → la banda 0.5 < x+y < 1.5, que es XOR.
+    banda = ((xx + yy > 0.5) & (xx + yy < 1.5)).astype(float)
+    ax2.contourf(xx, yy, banda, levels=[0.5, 1.5], colors=[AZUL], alpha=0.16)
+    ax2.plot(xs, 0.5 - xs, "--", color=TINTA_LINEA, linewidth=2.0)
+    ax2.plot(xs, 1.5 - xs, "--", color=TINTA_LINEA, linewidth=2.0)
+    ax2.text(0.5, 0.62, "zona clase 1", fontsize=10, color=AZUL,
+             rotation=-45, ha="center", va="center", fontweight="bold")
+    ax2.text(-0.30, 0.62, "neurona A:\nx+y > 0.5", fontsize=8.5, color=GRIS,
+             rotation=-45, ha="center", va="center")
+    ax2.text(1.28, 0.42, "neurona B:\nx+y > 1.5", fontsize=8.5, color=GRIS,
+             rotation=-45, ha="center", va="center")
+    ax2.set_title("Dos neuronas ocultas SÍ pueden: juntas\ndibujan una banda — eso ya no es una recta", fontsize=11.5)
+
+    fig.subplots_adjust(wspace=0.3)
+    fig.suptitle("XOR: clase 1 (azul) si exactamente UNA de las dos entradas está activa",
+                 fontweight="bold", y=1.04)
+    fig.savefig(DESTINO / "xor_no_separable.png")
+    plt.close(fig)
+
+
 def fig_activaciones() -> None:
     """Funciones de activación y sus derivadas, lado a lado.
 
@@ -911,7 +973,7 @@ def main() -> None:
     aplicar_estilo()
     DESTINO.mkdir(parents=True, exist_ok=True)
     tareas = [
-        fig_tensores, fig_neurona_frontera, fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
+        fig_tensores, fig_neurona_frontera, fig_xor, fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
         fig_learning_rate, fig_moons_frontera, fig_kernels, fig_padding_stride,
         fig_receptive_field, fig_rnn_gradientes, fig_atencion,
         fig_positional_encoding, fig_embeddings_2d, fig_complejidad,

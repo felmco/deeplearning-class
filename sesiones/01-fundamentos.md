@@ -196,6 +196,15 @@ con XOR.
 > separarse con ninguna línea recta. Pruébalo en el
 > [MLP Playground](https://felmco.github.io/deeplearning-class/interactivos/mlp-playground.html).
 
+![XOR: ninguna recta separa las clases; dos neuronas ocultas dibujan una banda que sí](../docs/assets/figuras/xor_no_separable.png)
+
+Míralo tú mismo: en el panel izquierdo, prueba mentalmente cualquier recta — horizontal,
+vertical, diagonal — y siempre queda un punto del color equivocado en cada lado. El panel
+derecho es el adelanto de toda la sesión: **dos neuronas ocultas cooperando** (una traza
+la línea "x+y > 0.5", la otra "x+y > 1.5") encierran una **banda diagonal** que separa
+XOR perfectamente. Eso es exactamente lo que ganas al apilar capas: fronteras que una
+recta sola jamás podría dibujar.
+
 ### Capa densa (muchas neuronas en paralelo)
 
 $$
