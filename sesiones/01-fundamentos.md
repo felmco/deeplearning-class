@@ -376,9 +376,18 @@ asignar probabilidad alta a la respuesta correcta es lo que los estadísticos ll
 > 🎥 Si quieres la historia completa de por qué el logaritmo:
 > [StatQuest — Cross Entropy claramente explicado](https://www.youtube.com/watch?v=6ArSys5qHAU).
 
-> ⚠️ **Error clásico #1 del curso:** `CrossEntropyLoss` recibe **logits**, no probabilidades.
-> Aplicar softmax antes de la loss es un bug que *casi* funciona — el modelo aprende, pero
-> peor, y nadie entiende por qué.
+> ⚠️ **Error clásico #1 del curso** (el detalle prometido en la §3):
+> `CrossEntropyLoss` **ya aplica softmax por dentro** — por eso recibe **logits crudos**.
+>
+> ```python
+> loss = criterion(softmax(logits), y)   # ✗ BUG: softmax dos veces
+> loss = criterion(logits, y)            # ✓ la loss hace el softmax por ti
+> ```
+>
+> Es un bug traicionero porque *casi* funciona: el modelo aprende, pero peor. ¿Por qué?
+> El doble softmax aplasta los logits al rango (0, 1) — la loss recibe "logits" diminutos,
+> los gradientes se encogen y el aprendizaje queda lento y con techo. Como no lanza ningún
+> error, puede vivir semanas sin que nadie lo note.
 
 ---
 
