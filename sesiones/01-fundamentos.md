@@ -558,11 +558,49 @@ La implementación completa y comentada del curso vive en [`src/train.py`](../sr
 - **Batch / iteración / epoch:** un *batch* es un subconjunto de muestras; una *iteración*
   procesa un batch; un *epoch* recorre todo el dataset. Batches pequeños → gradiente ruidoso
   pero regularizador; grandes → estable pero costoso en memoria.
-- **Inicialización:** romper la simetría con valores aleatorios bien escalados.
-  *Xavier* y *He* son reglas para elegir el tamaño típico de los pesos iniciales según
-  la activación (Xavier para tanh/sigmoid, He para ReLU). Inicializar todo en cero =
-  todas las neuronas aprenden lo mismo = red inútil.
+- **Inicialización:** romper la simetría con valores aleatorios bien escalados —
+  tiene dos trampas, explicadas justo abajo.
 - **Learning rate:** el hiperparámetro más importante. Alto → diverge; bajo → eterno.
+
+### La inicialización: dónde nacen los pesos (2 minutos)
+
+Antes del primer paso de entrenamiento los pesos tienen que valer *algo*. Ese "algo"
+tiene dos trampas:
+
+**Trampa 1 — la simetría.** Si todos los pesos nacen iguales (por ejemplo, todos en
+cero), todas las neuronas de una capa son **clones**: calculan lo mismo en el forward,
+la loss las "ve" idénticas, autograd les entrega el mismo gradiente y el update las
+mueve exactamente igual — siguen siendo gemelas, y así para siempre. Tu capa de 64
+neuronas se comporta como UNA. Ejemplo mínimo: dos neuronas ocultas que parten con
+pesos (0, 0) producen la misma salida para cualquier entrada → reciben el mismo
+gradiente → tras el update vuelven a tener pesos idénticos. La cura es nacer
+aleatorio: valores distintos → gradientes distintos → cada neurona puede
+especializarse en un patrón diferente.
+
+**Trampa 2 — la escala.** Aleatorio sí, pero ¿qué tan grande? Recuerda que cada
+neurona suma d_in productos (d_in = cuántas entradas recibe). Si los pesos nacen
+grandes, esa suma crece capa tras capa y sigmoid/tanh se saturan (derivada ≈ 0, §3:
+el aprendizaje se detiene); si nacen diminutos, la señal se va apagando hasta
+desaparecer. *Xavier* y *He* son simplemente recetas para el **tamaño típico** que
+mantiene la señal estable:
+
+| Regla | Tamaño típico del peso | Para qué activación |
+|---|---|---|
+| **Xavier** (Glorot, 2010) | ≈ 1/√d_in | tanh, sigmoid |
+| **He** (He et al., 2015) | ≈ √(2/d_in) | ReLU — el ×2 compensa la mitad que ReLU apaga |
+
+Con números: para una capa que recibe d_in = 100 entradas, Xavier propone pesos
+típicos de ±1/√100 = ±0.1.
+
+En la práctica **PyTorch ya inicializa `nn.Linear` y `nn.Conv2d` con variantes
+razonables de estas reglas** — por eso no lo hicimos a mano en ningún lab. Solo se
+ajusta cuando hay evidencia de problema:
+
+```python
+capa = nn.Linear(256, 128)
+nn.init.kaiming_normal_(capa.weight, nonlinearity='relu')   # regla He
+# nn.init.xavier_normal_(capa.weight)                       # regla Xavier
+```
 
 ---
 
