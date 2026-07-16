@@ -437,6 +437,198 @@ def fig_softmax_pasos() -> None:
     plt.close(fig)
 
 
+def fig_losses() -> None:
+    """Las dos losses del curso como CURVAS DE CASTIGO: MSE castiga el error
+    en cuadrático (errores grandes duelen desproporcionadamente); BCE castiga
+    con −log(p) la probabilidad asignada a la respuesta correcta (estar
+    confiado y equivocado explota)."""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.4))
+
+    # ── MSE: parábola del error ──
+    err = np.linspace(-3, 3, 300)
+    ax1.plot(err, err**2, color=AZUL, linewidth=2.6)
+    for e, nota, xytext in [
+        (0.5, "error 0.5 → castigo 0.25", (0.9, 0.9)),
+        (2.0, "error 2.0 → castigo 4.0\n(4× el error, 16× el castigo)", (-2.6, 5.6)),
+    ]:
+        ax1.scatter([e], [e**2], s=70, color=ROJO, zorder=5)
+        ax1.annotate(nota, xy=(e, e**2), xytext=xytext,
+                     fontsize=9.5, arrowprops=dict(arrowstyle="->", color=ROJO))
+    ax1.set(title="MSE: el castigo crece al CUADRADO del error",
+            xlabel="error  (ŷ − y)", ylabel="castigo  (ŷ − y)²")
+    ax1.axhline(0, color=GRIS, linewidth=0.8)
+    ax1.axvline(0, color=GRIS, linewidth=0.8)
+
+    # ── BCE: −log(p) sobre la probabilidad de la respuesta correcta ──
+    p = np.linspace(0.01, 1.0, 300)
+    ax2.plot(p, -np.log(p), color=AZUL, linewidth=2.6)
+    for pi, nota, xytext in [
+        (0.9, "p=0.9 → castigo 0.11\n(casi seguro y correcto: apenas duele)", (0.42, 1.1)),
+        (0.1, "p=0.1 → castigo 2.3\n(confiado y equivocado: duele MUCHO)", (0.22, 3.1)),
+    ]:
+        ax2.scatter([pi], [-np.log(pi)], s=70, color=ROJO, zorder=5)
+        ax2.annotate(nota, xy=(pi, -np.log(pi)), xytext=xytext, fontsize=9.5,
+                     arrowprops=dict(arrowstyle="->", color=ROJO))
+    ax2.set(title="Cross-entropy: −log(p) explota cuando p → 0",
+            xlabel="probabilidad asignada a la respuesta CORRECTA",
+            ylabel="castigo  −log(p)", ylim=(0, 5))
+
+    fig.suptitle("Una loss es una curva de castigo: dime cuánto te equivocaste "
+                 "y te digo cuánto duele", fontweight="bold", y=1.05)
+    fig.savefig(DESTINO / "losses_castigo.png")
+    plt.close(fig)
+
+
+def fig_matriz_confusion() -> None:
+    """Matriz de confusión 2×2 con números concretos, y precision, recall y
+    F1 calculados de ELLA, con las celdas que usa cada métrica señaladas."""
+    from matplotlib.patches import Rectangle
+
+    # Ejemplo: detector de spam sobre 100 correos
+    TP, FN, FP, TN = 40, 10, 5, 45
+    prec = TP / (TP + FP)
+    rec = TP / (TP + FN)
+    f1 = 2 * prec * rec / (prec + rec)
+
+    fig, (ax, axm) = plt.subplots(1, 2, figsize=(12, 4.6),
+                                  gridspec_kw={"width_ratios": [1, 1.25]})
+
+    # ── La matriz ──
+    ax.set_xlim(0, 2)
+    ax.set_ylim(0, 2)
+    ax.set_aspect("equal")
+    ax.grid(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    celdas = [
+        (0, 1, TP, "TP = 40", "spam marcado spam ✓", "#CBE8DC"),
+        (1, 1, FN, "FN = 10", "spam que se escapó ✗", "#F6D9CE"),
+        (0, 0, FP, "FP = 5", "bueno marcado spam ✗", "#F6D9CE"),
+        (1, 0, TN, "TN = 45", "bueno dejado pasar ✓", "#CBE8DC"),
+    ]
+    for cx, cy, n, sigla, nota, color in celdas:
+        ax.add_patch(Rectangle((cx, cy), 1, 1, facecolor=color,
+                               edgecolor=TINTA_LINEA, linewidth=1.6))
+        ax.text(cx + 0.5, cy + 0.62, sigla, ha="center", fontsize=13,
+                fontweight="bold")
+        ax.text(cx + 0.5, cy + 0.30, nota, ha="center", fontsize=8.2,
+                color="#333333")
+    ax.text(0.5, 2.12, "predijo: spam", ha="center", fontsize=10.5,
+            fontweight="bold")
+    ax.text(1.5, 2.12, "predijo: no spam", ha="center", fontsize=10.5,
+            fontweight="bold")
+    ax.text(-0.10, 1.5, "real:\nspam", ha="right", va="center", fontsize=10.5,
+            fontweight="bold")
+    ax.text(-0.10, 0.5, "real:\nno spam", ha="right", va="center", fontsize=10.5,
+            fontweight="bold")
+    ax.text(1.0, -0.22, "100 correos · la diagonal verde son los aciertos",
+            ha="center", fontsize=10, color=GRIS, style="italic")
+
+    # ── Las métricas calculadas de la matriz ──
+    axm.axis("off")
+    axm.grid(False)
+    lineas = [
+        ("Precision", "de lo que marqué spam, ¿cuánto era spam?",
+         f"TP / (TP + FP) = {TP} / {TP + FP} = {prec:.2f}", VERDE),
+        ("Recall", "del spam real, ¿cuánto atrapé?",
+         f"TP / (TP + FN) = {TP} / {TP + FN} = {rec:.2f}", AZUL),
+        ("F1", "promedio armónico: solo es alto si AMBAS lo son",
+         f"2·P·R / (P + R) = {f1:.2f}", NARANJA),
+        ("Accuracy", "aciertos totales — engañosa si hay desbalance",
+         f"(TP + TN) / 100 = {(TP + TN) / 100:.2f}", GRIS),
+    ]
+    for i, (nombre, pregunta, formula, color) in enumerate(lineas):
+        y = 0.88 - i * 0.24
+        axm.text(0.02, y, nombre, fontsize=13, fontweight="bold", color=color,
+                 transform=axm.transAxes)
+        axm.text(0.30, y, pregunta, fontsize=9.5, style="italic",
+                 color="#333333", transform=axm.transAxes)
+        axm.text(0.30, y - 0.09, formula, fontsize=10.5, family="monospace",
+                 transform=axm.transAxes)
+    axm.set_title("Las métricas salen de la matriz", fontsize=11.5)
+
+    fig.suptitle("Matriz de confusión → precision, recall y F1 (detector de spam)",
+                 fontweight="bold", y=1.02)
+    fig.savefig(DESTINO / "matriz_confusion_metricas.png")
+    plt.close(fig)
+
+
+def fig_lora() -> None:
+    """LoRA a escala: la matriz W congelada (d×d) versus las dos matrices
+    flacas B (d×r) y A (r×d) que aprenden la corrección. Con d=768 y r=8,
+    los rectángulos a escala real hacen visible el ahorro (~2%)."""
+    from matplotlib.patches import FancyArrowPatch, Rectangle
+
+    d, r = 768, 8
+    D = 7.0                              # lado de W en unidades de lienzo
+    R = max(D * r / d, 0.30)             # grosor de B y A (mínimo visible)
+    y0 = 1.6                             # base de los rectángulos
+    ymed = y0 + D / 2                    # línea media vertical
+
+    fig, ax = plt.subplots(figsize=(13.5, 5.4))
+    ax.set_xlim(0, 28.5)
+    ax.set_ylim(0, 11.3)
+    ax.axis("off")
+    ax.grid(False)
+
+    # ── W congelada ──
+    ax.add_patch(Rectangle((0.8, y0), D, D, facecolor="#E3E6EA",
+                           edgecolor=GRIS, linewidth=1.8, hatch="///", zorder=2))
+    ax.text(0.8 + D / 2, ymed, "W\n(congelada:\nno se toca)",
+            ha="center", va="center", fontsize=12, color="#444444", zorder=3)
+    ax.text(0.8 + D / 2, y0 - 0.6, f"{d}×{d} = {d * d:,} parámetros",
+            ha="center", fontsize=9.5, family="monospace")
+
+    ax.text(8.7, ymed, "+", fontsize=26, ha="center", va="center")
+
+    # ── B (flaca vertical) × A (flaca horizontal), centradas en la línea media ──
+    ax.add_patch(Rectangle((9.7, y0), R, D, facecolor="#CBE8DC",
+                           edgecolor=VERDE, linewidth=1.8, zorder=2))
+    ax.text(9.7 + R / 2, y0 + D + 0.42, "B", ha="center", fontsize=13,
+            fontweight="bold", color=VERDE)
+    ax.text(9.7 + R / 2, y0 - 0.6, f"{d}×{r}", ha="center", fontsize=9.5,
+            family="monospace")
+
+    ax.text(11.4, ymed, "×", fontsize=20, ha="center", va="center")
+
+    ax.add_patch(Rectangle((12.4, ymed - R / 2), D, R, facecolor="#D6E9F8",
+                           edgecolor=AZUL, linewidth=1.8, zorder=2))
+    ax.text(12.4 + D + 0.45, ymed, "A", va="center", fontsize=13,
+            fontweight="bold", color=AZUL)
+    ax.text(12.4 + D / 2, ymed - R / 2 - 0.6, f"{r}×{d}", ha="center",
+            fontsize=9.5, family="monospace")
+
+    # ── ΔW: mismo tamaño que W, pero descrito con pocos números ──
+    ax.add_patch(FancyArrowPatch((20.4, ymed), (21.2, ymed),
+                                 arrowstyle="->", mutation_scale=15,
+                                 color=NARANJA, linewidth=2.2))
+    ax.text(20.8, ymed + 0.6, "=", fontsize=15, ha="center",
+            color=NARANJA, fontweight="bold")
+    ax.add_patch(Rectangle((21.5, y0), D, D, facecolor="#FDF3D0",
+                           edgecolor=NARANJA, linewidth=1.8, zorder=2))
+    ax.text(21.5 + D / 2, ymed, "ΔW = B·A\n(la corrección:\ndel tamaño de W,\n"
+            "pero descrita con\nmuy pocos números)",
+            ha="center", va="center", fontsize=10.5, zorder=3)
+
+    n_lora = r * (d + d)
+    ax.text(14.25, 10.8,
+            "LoRA: W queda congelada y la corrección ΔW = B·A se aprende "
+            "con dos matrices flacas",
+            ha="center", fontsize=12.5, fontweight="bold")
+    ax.text(14.25, 10.05,
+            f"entrenables: {d}×{r} + {r}×{d} = {n_lora:,} parámetros "
+            f"= {100 * n_lora / (d * d):.1f}% de los {d * d:,} de W "
+            f"(grosores a escala real)",
+            ha="center", fontsize=10.5, color=GRIS)
+    ax.text(14.25, 0.3,
+            'r = 8 es el "rango": el ancho de las matrices flacas. '
+            "Subir r da más capacidad de corrección a cambio de más parámetros.",
+            ha="center", fontsize=9.5, style="italic", color=GRIS)
+
+    fig.savefig(DESTINO / "lora_matrices.png")
+    plt.close(fig)
+
+
 def fig_activaciones() -> None:
     """Funciones de activación y sus derivadas, lado a lado.
 
@@ -1136,7 +1328,8 @@ def main() -> None:
     DESTINO.mkdir(parents=True, exist_ok=True)
     tareas = [
         fig_tensores, fig_neurona_frontera, fig_xor, fig_capa_densa,
-        fig_softmax_pasos, fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
+        fig_softmax_pasos, fig_losses, fig_matriz_confusion, fig_lora,
+        fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
         fig_learning_rate, fig_moons_frontera, fig_kernels, fig_padding_stride,
         fig_receptive_field, fig_rnn_gradientes, fig_atencion,
         fig_positional_encoding, fig_embeddings_2d, fig_complejidad,

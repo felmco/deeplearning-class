@@ -239,6 +239,12 @@ $\ll$ significa "muchísimo menor que"). Con $r=8$ describes el cambio completo 
 pocos números — como comprimir una foto. "Rango bajo" quiere decir exactamente eso: el
 cambio cabe en pocas direcciones independientes.
 
+![LoRA a escala: W congelada vs las dos matrices flacas B y A que aprenden la corrección](../docs/assets/figuras/lora_matrices.png)
+
+Los grosores de la figura están **a escala real** con $d=768$ y $r=8$: las dos tiras
+flacas suman 12,288 parámetros entrenables — el **2.1%** de los 589,824 que tiene la
+matriz que corrigen. Ese es todo el truco de LoRA.
+
 ```python
 from peft import LoraConfig, TaskType, get_peft_model
 

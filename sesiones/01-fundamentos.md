@@ -315,9 +315,24 @@ $$
 
 ## 4. La función de pérdida: la brújula
 
+La red ya sabe producir predicciones. El siguiente eslabón: **medir qué tan malas
+son** — sin esa medida no hay nada que mejorar.
+
 **Intuición.** La loss NO es la métrica que reportas (accuracy, F1): es la **señal de
 aprendizaje**, la brújula diferenciable que le dice al optimizador hacia dónde moverse.
 Métrica = tablero de resultados; loss = brújula.
+
+La idea más simple para entender cualquier loss: es una **curva de castigo**. Le dices
+cuánto te equivocaste y te devuelve cuánto duele. Lo único que cambia entre una loss y
+otra es la *forma* de ese castigo:
+
+![MSE castiga el error al cuadrado; cross-entropy castiga con −log(p) la probabilidad de la respuesta correcta](../docs/assets/figuras/losses_castigo.png)
+
+- **Izquierda (MSE, para regresión):** duplicar el error *cuadruplica* el castigo —
+  fíjate en los dos puntos rojos: un error 4× más grande recibe un castigo 16× mayor.
+- **Derecha (cross-entropy, para clasificación):** el castigo depende solo de la
+  probabilidad que le diste a la respuesta correcta. Con $p = 0.9$ casi no duele; con
+  $p = 0.1$ — confiado y equivocado — la curva explota.
 
 ### MSE — Mean Squared Error (regresión)
 
@@ -368,6 +383,10 @@ asignar probabilidad alta a la respuesta correcta es lo que los estadísticos ll
 ---
 
 ## 5. Gradiente, regla de la cadena y backpropagation
+
+Ya sabemos *cuánto* nos equivocamos (la loss). Este es el eslabón que faltaba: saber
+**en qué dirección mover cada peso** para equivocarnos menos. Para eso necesitamos una
+sola herramienta matemática.
 
 ### 5.0 — ¿Qué es una derivada? (2 minutos)
 
@@ -484,7 +503,9 @@ forward pass (azul, valores), luego el backward pass (naranja, gradientes).
 
 ## 6. El training loop: el corazón de todo
 
-Este pseudocódigo es **universal** — desde una MLP de juguete hasta GPT:
+Ya están todas las piezas: predicción (§3), medida del error (§4) y dirección de
+mejora (§5). El training loop solo las repite en círculo, miles de veces. Este
+pseudocódigo es **universal** — desde una MLP de juguete hasta GPT:
 
 ```python
 for epoch in range(epochs):
@@ -604,6 +625,15 @@ Cada equipo ejecuta dos variantes cambiando **una sola variable**:
 - **Precision**: de lo que marqué como positivo, ¿cuánto era verdad?
 - **Recall**: de lo positivo real, ¿cuánto encontré?
 - **F1**: el promedio (armónico) de precision y recall — solo es alto si *ambas* lo son.
+
+Todo sale de la misma tabla. Con un detector de spam sobre 100 correos:
+
+![Matriz de confusión de un detector de spam y las métricas calculadas de ella](../docs/assets/figuras/matriz_confusion_metricas.png)
+
+Nota cómo precision y recall miran celdas *distintas*: precision divide entre lo que el
+modelo **marcó** como spam (columna izquierda); recall divide entre lo que **era** spam
+de verdad (fila superior). Un modelo puede tener una alta y la otra baja — por eso el F1
+las obliga a negociar.
 
 > 🎥 Profundiza con el [Google ML Crash Course en español — clasificación](https://developers.google.com/machine-learning/crash-course/classification?hl=es).
 
