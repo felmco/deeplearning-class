@@ -11,15 +11,37 @@ cada neurona, desliza pequeños detectores por la imagen.
 
 **Objetivos de la sesión**
 
-1. Explicar convolución, kernels, feature maps, stride, padding y receptive field.
-2. Calcular shapes y número de parámetros de una CNN.
-3. Entrenar una CNN y diagnosticar errores con curvas y matriz de confusión.
-4. Comparar regularización, optimizadores y schedules mediante experimentos controlados.
-5. Comprender conexiones residuales y aplicar transfer learning.
+1. Identificar los componentes de una CNN de extremo a extremo.
+2. Explicar convolución, kernels, feature maps, stride, padding y receptive field.
+3. Calcular shapes y número de parámetros de una CNN.
+4. Entrenar una CNN y diagnosticar errores con curvas y matriz de confusión.
+5. Comparar regularización, optimizadores y schedules mediante experimentos controlados.
+6. Comprender conexiones residuales y aplicar transfer learning.
 
 ---
 
-## 1. Del MLP a la visión: por qué aplanar es destruir
+## 1. La anatomía de una CNN, de un vistazo
+
+El mapa completo antes de entrar pieza por pieza — una CNN es una **línea de
+ensamblaje con dos mitades**:
+
+![Anatomía de una CNN: la imagen pasa por bloques de convolución+ReLU y pooling que extraen features; flatten y capas densas clasifican; softmax entrega una probabilidad por clase](../docs/assets/figuras/cnn_anatomia.png)
+
+- **Mitad 1 — extraer features** (lo nuevo de esta sesión): bloques de **convolución
+  + ReLU + pooling** que responden *"¿qué patrones hay en la imagen y dónde?"*. Cada
+  bloque produce **feature maps** — mapas de dónde se activó cada detector — cada vez
+  más pequeños y más abstractos (de bordes a formas, de formas a partes de objeto).
+  La §3 desarma esta mitad pieza por pieza.
+- **Mitad 2 — clasificar** (ya la conoces completa): **Flatten** estira los feature
+  maps finales a un vector, unas **capas densas** — la MLP de la Sesión 1 — producen
+  los logits, y **softmax** los convierte en una probabilidad por clase.
+
+La sesión entera cabe en una frase: *la mitad izquierda aprende QUÉ mirar; la mitad
+derecha decide QUÉ ES con lo que se miró.*
+
+---
+
+## 2. Del MLP a la visión: por qué aplanar es destruir
 
 Una imagen tiene **estructura espacial**: un píxel se parece a sus vecinos, un borde es una
 relación local, un ojo está *cerca* de otro ojo. Al aplanar `(28, 28) → (784,)`, el píxel
@@ -37,18 +59,36 @@ son locales y se repiten en cualquier parte de la imagen").
 
 ### La imagen como tensor
 
+Un **canal** (channel) es una "capa" completa de la imagen: una imagen en escala de
+grises tiene 1 canal; una RGB tiene 3 (uno por color). Dentro de la red la idea se
+generaliza: cada filtro produce su propio canal de salida, así que una capa intermedia
+puede tener 32, 64 o 128 canales — ya no son colores, son **detectores activados**.
+
 Convención PyTorch **NCHW**: `(batch, channels, height, width)`. Una imagen RGB de 224×224
 en un batch de 32 es `(32, 3, 224, 224)`.
 
 ---
 
-## 2. La convolución, en cámara lenta
+## 3. La convolución, en cámara lenta
+
+Dos términos primero, porque aparecen en cada párrafo que sigue:
+
+- El **kernel** (también llamado **filtro** — son sinónimos) es una matriz pequeña de
+  pesos, típicamente 3×3: un detector de UN patrón concreto (un borde, una textura).
+- El **feature map** (mapa de características) es la imagen de salida que produce ese
+  kernel: cada celda dice cuánto "respondió" el detector en esa posición.
 
 ### Definición (2D, un canal, simplificada)
 
 $$
 Y[i,j]=\sum_m\sum_n X[i+m, j+n] K[m,n]+b
 $$
+
+**Cómo leerla:** $X$ = la imagen de entrada, como matriz de píxeles · $K$ = el kernel ·
+$Y[i,j]$ = la celda del feature map en la fila $i$, columna $j$ · $m, n$ = recorren la
+ventana — para un kernel 3×3 van de 0 a 2 · $b$ = el bias del filtro. **En palabras:**
+*"parado en la posición (i, j), multiplica la ventana por el kernel celda a celda,
+suma todo y agrega el bias — ese número es una celda de la salida"*.
 
 Una ventana del tamaño del kernel se coloca sobre la imagen, se multiplica **elemento a
 elemento** con el kernel, se suma todo y ese número es UNA celda del **feature map**. Luego
@@ -72,11 +112,24 @@ computadora. La revolución de las CNN: los valores del kernel son **parámetros
 
 ### Stride, padding y el tamaño de salida
 
+Dos perillas controlan cómo se desliza la ventana:
+
+- **Stride (S):** cuántos píxeles salta la ventana entre una posición y la siguiente.
+  Stride 1 = revisar cada posición; stride 2 = una de cada dos → el feature map sale
+  de la mitad del tamaño (y las capas siguientes cuestan ~4× menos).
+- **Padding (P):** un anillo de píxeles extra (normalmente ceros) que se agrega
+  alrededor de la imagen antes de convolucionar. Sin padding, la salida encoge en
+  cada capa y los píxeles del borde participan en menos ventanas que los del centro;
+  con P=1 y kernel 3×3 ("same"), el tamaño se conserva.
+
+Con eso, el tamaño de salida es pura aritmética:
+
 $$
 H_{out}=\left\lfloor\frac{H_{in}+2P-D(K-1)-1}{S}\right\rfloor+1
 $$
 
-donde $K$ = tamaño del kernel, $P$ = padding, $S$ = stride, $D$ = dilation (*dilation*:
+donde $H_{in}$ y $H_{out}$ = alto de entrada y de salida (para el ancho aplica la misma
+fórmula), $K$ = tamaño del kernel, $P$ = padding, $S$ = stride, $D$ = dilation (*dilation*:
 separar los elementos del kernel dejando huecos; en este curso siempre $D=1$, con lo que
 queda la forma familiar $\lfloor (H+2P-K)/S \rfloor + 1$). Los corchetes ⌊ ⌋
 significan "redondear hacia abajo".
@@ -92,7 +145,11 @@ $$
 N_\theta=C_{out}(C_{in}K_hK_w+1)
 $$
 
-$N_\theta$ = número de parámetros de la capa. El `+1` es el bias por canal de salida. Comparación que lo dice todo, para una imagen 28×28:
+**Cómo leerla:** $N_\theta$ = número de parámetros de la capa · $C_{in}, C_{out}$ =
+canales de entrada y de salida (C_out = cuántos filtros tiene la capa) · $K_h, K_w$ =
+alto y ancho del kernel · el `+1` es el bias por canal de salida. **En palabras:**
+*cada uno de los $C_{out}$ filtros necesita $C_{in}\cdot K_h\cdot K_w$ pesos, más su
+bias*. Comparación que lo dice todo, para una imagen 28×28:
 
 | Capa | Parámetros |
 |---|---:|
@@ -101,8 +158,22 @@ $N_\theta$ = número de parámetros de la capa. El `+1` es el bias por canal de 
 
 ### Pooling y receptive field
 
-**MaxPool 2×2** toma el máximo de cada ventana: reduce resolución a la mitad, aporta
-invariancia local a traslaciones pequeñas y abarata las capas siguientes.
+El **pooling** es el paso de "resumir y encoger": una ventana (típicamente 2×2, con
+stride 2) recorre el feature map y reduce cada ventana a UN solo número. No tiene
+pesos — no aprende nada; solo comprime.
+
+![Max pooling vs average pooling: la misma entrada 4×4 reducida a 2×2, cada ventana de color produce una celda de la salida](../docs/assets/figuras/pooling.png)
+
+- **Max pooling** se queda con el máximo de la ventana: "¿el detector se activó en
+  esta zona? me importa el pico, no el promedio". Es el estándar entre bloques
+  convolucionales.
+- **Average pooling** promedia la ventana: más suave. Su variante *global* (promediar
+  el feature map COMPLETO a un número) aparece al final de la arquitectura del lab,
+  en la §4.
+
+Efectos: la resolución cae a la mitad (≈4× menos cómputo en las capas siguientes) y
+aporta **invariancia local** — si la prenda se corre un píxel, el máximo de la ventana
+suele ser el mismo y la red ni se entera.
 
 **Receptive field:** la región de la imagen *original* que influye en una activación
 profunda. Crece con la profundidad — por eso las capas tempranas detectan bordes y las
@@ -112,7 +183,7 @@ profundas, objetos.
 
 ---
 
-## 3. Arquitectura CNN del laboratorio
+## 4. Arquitectura CNN del laboratorio
 
 ```mermaid
 flowchart LR
@@ -122,6 +193,18 @@ flowchart LR
     C3 -->|"(B, 128, 1, 1)"| H["Flatten + Dropout<br/>Linear 128 → 10"]
     H -->|"(B, 10) logits"| OUT["CrossEntropyLoss"]
 ```
+
+Los tres actores del diagrama que aún no habíamos nombrado:
+
+- **BatchNorm** normaliza las activaciones de cada mini-batch: estabiliza y acelera
+  el entrenamiento. Su mecánica completa está en la §5 — por ahora basta saber que
+  es un "estabilizador" entre la convolución y la ReLU.
+- **AdaptiveAvgPool2d((1,1))** es el *global average pooling* que anticipamos en §3:
+  promedia cada feature map COMPLETO a un solo número. De `(B, 128, 7, 7)` sale
+  `(B, 128, 1, 1)` — un "resumen de activación" por filtro, funcione con el tamaño
+  de imagen que funcione.
+- **Flatten** solo reacomoda, sin parámetros: `(B, 128, 1, 1)` → `(B, 128)`, el
+  vector que la capa densa final convierte en 10 logits.
 
 Implementación comentada línea por línea: [`src/models.py → FashionCNN`](../src/models.py).
 El **shape tracing** (anotar la shape tras cada capa, como en el diagrama) es la técnica #1
@@ -135,7 +218,7 @@ honesto de visión: lo bastante fácil para entrenar en CPU, lo bastante difíci
 
 ---
 
-## 4. Entrenamiento robusto
+## 5. Entrenamiento robusto
 
 ### Normalización de entradas
 
@@ -163,20 +246,29 @@ $$
 \hat x=\frac{x-\mu_B}{\sqrt{\sigma_B^2+\epsilon}} \qquad y=\gamma\hat x+\beta
 $$
 
-Normaliza las activaciones con las estadísticas del mini-batch (la μ y la σ calculadas sobre ese batch) y luego
-las re-escala con parámetros aprendibles $\gamma, \beta$. Efecto práctico: estabiliza y
-acelera el entrenamiento, tolera learning rates mayores.
+Normaliza las activaciones con las estadísticas del mini-batch (la μ y la σ calculadas
+sobre ese batch) y luego las re-escala con parámetros aprendibles $\gamma, \beta$ — la
+red puede "deshacer" la normalización si le conviene. La $\epsilon$ es una constante
+diminuta (≈10⁻⁵) que solo evita dividir por cero cuando la varianza del batch es casi
+nula. Efecto práctico: estabiliza y acelera el entrenamiento, tolera learning rates
+mayores.
 
 > ⚠️ **Train vs eval:** en entrenamiento usa estadísticas del batch; en evaluación usa
 > promedios acumulados. Evaluar en modo train da métricas erráticas — bug clásico.
 
-**LayerNorm vs BatchNorm:** BatchNorm normaliza a través del *batch* (típico en CNN);
-LayerNorm normaliza a través de las *features de cada muestra* (el estándar en
-Transformers, lo veremos en la Sesión 3).
+**LayerNorm vs BatchNorm:** misma fórmula, distinto **eje** — y el eje lo cambia todo:
+
+![BatchNorm normaliza cada feature a través del batch (una columna comparte μ y σ); LayerNorm normaliza cada muestra a través de sus features (una fila)](../docs/assets/figuras/layernorm_batchnorm.png)
+
+**BatchNorm** normaliza cada feature *a través del batch* (una columna de la figura
+comparte μ, σ): necesita el batch, y por eso se comporta distinto en train y eval —
+típico en CNN. **LayerNorm** normaliza cada muestra *a través de sus propias features*
+(una fila): no depende del batch en absoluto — el estándar en Transformers, la
+reencontrarás en la Sesión 3.
 
 ---
 
-## 5. Optimizadores y schedules
+## 6. Optimizadores y schedules
 
 ### SGD con momentum
 
@@ -209,18 +301,30 @@ curso.
 
 ### Learning-rate schedules
 
-El LR óptimo no es constante: **warmup** al inicio (evita explosiones tempranas),
-decaimiento después (afinar la convergencia). Formas típicas: step, **cosine**, one-cycle.
-El laboratorio usa `CosineAnnealingLR`.
+Un **schedule** convierte el learning rate en una **función del tiempo**: pasos
+grandes mientras se explora, pasos finos al aterrizar. El LR óptimo no es constante:
+**warmup** al inicio (crecer desde ~0 durante las primeras epochs, para no dar pasos
+enormes con una red recién inicializada) y decaimiento después (afinar la
+convergencia).
+
+![Cuatro schedules de learning rate: constante, step decay, cosine y warmup+cosine, sobre 60 epochs](../docs/assets/figuras/lr_schedules.png)
+
+- **Constante:** el punto de partida; suele dejar la convergencia "vibrando".
+- **Step decay:** recortes bruscos (p. ej. ×0.1) cada N epochs.
+- **Cosine:** descenso suave siguiendo un coseno, sin saltos. El laboratorio usa
+  `CosineAnnealingLR` — exactamente esta curva.
+- **Warmup + cosine:** el estándar al entrenar Transformers (la verás en la Sesión 4).
 
 ### Early stopping + checkpoint
 
-Guardar el modelo **cuando la validation loss mejora**; si no mejora en `patience` epochs,
-detener y restaurar el mejor. Implementado en [`src/train.py → entrenar()`](../src/train.py).
+Guardar el modelo **cuando la validation loss mejora**; si no mejora durante
+`patience` epochs seguidas (la **paciencia**: cuántas epochs sin mejora estamos
+dispuestos a tolerar antes de rendirnos — el lab usa 15–20), detener y **restaurar el
+mejor** (no el último). Implementado en [`src/train.py → entrenar()`](../src/train.py).
 
 ---
 
-## 6. Diagnóstico: curvas, confusión y errores
+## 7. Diagnóstico: curvas, confusión y errores
 
 El flujo de evidencia del curso, en orden:
 
@@ -234,7 +338,7 @@ Herramientas listas en [`src/evaluate.py`](../src/evaluate.py):
 
 ---
 
-## 7. Conexiones residuales y ResNet
+## 8. Conexiones residuales y ResNet
 
 **El problema:** apilar más capas *debería* ayudar, pero las redes muy profundas entrenaban
 *peor* — el gradiente se degrada al atravesar decenas de transformaciones.
@@ -259,7 +363,7 @@ flowchart LR
 
 Esta idea reaparecerá **idéntica** en los bloques Transformer de la Sesión 3.
 
-## 8. Transfer learning
+## 9. Transfer learning
 
 **Intuición.** Una ResNet entrenada en ImageNet ya sabe ver: bordes, texturas, formas,
 partes. Ese conocimiento se **transfiere**: se reemplaza la **cabeza** de clasificación
@@ -284,13 +388,17 @@ model.fc = nn.Linear(model.fc.in_features, 10)      # nueva cabeza (entrenable)
 | Moderados | descongelar las últimas capas, LR pequeño |
 | Muchos | full fine-tuning con LR diferencial |
 
+(*LR diferencial*: un learning rate distinto por profundidad — pequeño en las capas
+tempranas, que traen conocimiento general que no queremos destruir, y mayor en las
+finales, que deben adaptarse a la tarea nueva.)
+
 > ⚠️ Para FashionMNIST habría que convertir 1 canal a 3 y redimensionar según los
 > transforms de los pesos; para practicar transferencia es preferible CIFAR-10 o un dataset
 > RGB propio (ver reto opcional del notebook).
 
 ---
 
-## 9. 🧪 Laboratorio 2 — CNN para FashionMNIST
+## 10. 🧪 Laboratorio 2 — CNN para FashionMNIST
 
 **Notebook:** [`03_cnn_fashionmnist.ipynb`](../notebooks/03_cnn_fashionmnist.ipynb) ·
 **Config:** [`configs/cnn.yaml`](../configs/cnn.yaml)

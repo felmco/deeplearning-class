@@ -1029,6 +1029,333 @@ def fig_padding_stride() -> None:
     plt.close(fig)
 
 
+def fig_cnn_anatomia() -> None:
+    """La anatomía completa de una CNN en una sola imagen: entrada →
+    bloques [conv+ReLU → pooling] que extraen features → flatten →
+    capas densas (la MLP de la Sesión 1) → softmax → probabilidades.
+    Es el mapa que abre la Sesión 2: las dos mitades (extraer features /
+    clasificar) quedan delimitadas con llaves abajo."""
+    from matplotlib.patches import Circle, FancyArrowPatch, Rectangle
+
+    fig, ax = plt.subplots(figsize=(14.5, 6.0))
+    ax.set_xlim(0, 30)
+    ax.set_ylim(1.4, 12)
+    ax.axis("off")
+    ax.grid(False)
+
+    y_mid = 6.6          # eje vertical de la línea de ensamblaje
+    Y_TITULO = 9.55      # banda de títulos de etapa
+    Y_SUB = 4.15         # banda de sub-etiquetas
+
+    def titulo_etapa(xc, texto):
+        ax.text(xc, Y_TITULO, texto, ha="center", fontsize=10.5,
+                fontweight="bold", color="#1a2332")
+
+    def sub_etapa(xc, texto):
+        ax.text(xc, Y_SUB, texto, ha="center", va="top", fontsize=8.5,
+                color=GRIS, style="italic")
+
+    def flecha(x0, x1, texto=None):
+        ax.add_patch(FancyArrowPatch((x0, y_mid), (x1, y_mid),
+                                     arrowstyle="->", mutation_scale=14,
+                                     color=NARANJA, linewidth=2.0, zorder=2))
+        if texto:
+            ax.text((x0 + x1) / 2, y_mid + 0.55, texto, ha="center",
+                    fontsize=8, color=NARANJA, fontweight="bold")
+
+    def pila(x0, n, lado, color, off=0.28):
+        """n cuadrados apilados en diagonal (feature maps); devuelve
+        (x_centro, x_fin)."""
+        for k in range(n - 1, -1, -1):    # de atrás hacia adelante
+            ax.add_patch(Rectangle(
+                (x0 + k * off, y_mid - lado / 2 + k * off * 0.75),
+                lado, lado, facecolor=color, edgecolor=AZUL,
+                linewidth=1.1, zorder=3 + (n - k)))
+        ancho = lado + (n - 1) * off
+        return x0 + ancho / 2, x0 + ancho
+
+    # ── Entrada: una "camiseta" en pixel-art ──
+    rng = np.random.default_rng(3)
+    img = np.full((14, 14), 0.06)
+    img[2:4, 1:13] = 0.92                     # hombros y mangas
+    img[4:6, 1:4] = 0.92                      # manga izquierda
+    img[4:6, 10:13] = 0.92                    # manga derecha
+    img[4:12, 4:10] = 0.92                    # cuerpo
+    img[2, 6:8] = 0.06                        # cuello
+    img += rng.uniform(0, 0.06, img.shape)    # textura leve
+    ax.imshow(img, extent=(0.7, 3.7, y_mid - 1.5, y_mid + 1.5),
+              cmap="gray", vmin=0, vmax=1, zorder=2)
+    titulo_etapa(2.2, "Entrada")
+    sub_etapa(2.2, "imagen 28×28\n(1 canal)")
+    # kernel recorriendo la imagen
+    ax.add_patch(Rectangle((1.15, y_mid - 1.0), 0.64, 0.64, facecolor="none",
+                           edgecolor="#f5c400", linewidth=2.2, zorder=4))
+    ax.plot([1.79, 4.95], [y_mid - 0.68, y_mid - 1.1], linestyle="--",
+            color="#b89000", linewidth=1.1, zorder=2)
+    ax.text(1.45, y_mid - 1.75, "kernel 3×3", fontsize=8, color="#8a6d00",
+            ha="center", fontweight="bold")
+
+    # ── Bloque 1: conv + ReLU → pooling ──
+    flecha(3.85, 4.85)
+    c1, fin = pila(4.95, 4, 2.5, "#BBDEF5")
+    titulo_etapa(c1, "Convolución + ReLU")
+    sub_etapa(c1, "feature maps\n(uno por filtro)")
+    flecha(fin + 0.2, fin + 1.15)
+    p1, fin = pila(fin + 1.25, 4, 1.7, "#A7D9C9", off=0.26)
+    titulo_etapa(p1, "MaxPool 2×2")
+    sub_etapa(p1, "mitad de\nresolución")
+
+    # ── Bloque 2: conv + ReLU → pooling (más filtros, más chicos) ──
+    flecha(fin + 0.2, fin + 1.05)
+    c2, fin = pila(fin + 1.15, 7, 1.5, "#BBDEF5", off=0.19)
+    titulo_etapa(c2, "Conv + ReLU")
+    sub_etapa(c2, "más filtros, patrones\nmás abstractos")
+    flecha(fin + 0.2, fin + 1.05)
+    p2, fin = pila(fin + 1.15, 7, 1.0, "#A7D9C9", off=0.15)
+    titulo_etapa(p2, "MaxPool")
+
+    # ── Flatten: los mapas se estiran a un vector ──
+    flecha(fin + 0.2, fin + 1.05, "flatten")
+    x_flat = fin + 1.35
+    ys_flat = np.linspace(y_mid - 1.9, y_mid + 1.9, 9)
+    for y in ys_flat:
+        ax.add_patch(Rectangle((x_flat, y - 0.19), 0.42, 0.38,
+                               facecolor="#EFEFEF", edgecolor=AZUL,
+                               linewidth=1.0, zorder=3))
+    titulo_etapa(x_flat + 0.21, "Flatten")
+    sub_etapa(x_flat + 0.21, "vector")
+
+    # ── Capas densas (la MLP de la Sesión 1) ──
+    x_d1, x_d2 = x_flat + 2.0, x_flat + 3.6
+    ys_d1 = np.linspace(y_mid - 2.0, y_mid + 2.0, 6)
+    ys_d2 = np.linspace(y_mid - 1.2, y_mid + 1.2, 4)
+    for y0 in ys_flat:                        # conexiones flatten → capa 1
+        for y1 in ys_d1:
+            ax.plot([x_flat + 0.42, x_d1], [y0, y1], color="#ccd4de",
+                    linewidth=0.4, zorder=1)
+    for y0 in ys_d1:                          # conexiones capa 1 → capa 2
+        for y1 in ys_d2:
+            ax.plot([x_d1, x_d2], [y0, y1], color="#ccd4de",
+                    linewidth=0.4, zorder=1)
+    for x, ys in [(x_d1, ys_d1), (x_d2, ys_d2)]:
+        for y in ys:
+            ax.add_patch(Circle((x, y), 0.26, facecolor=CELESTE,
+                                edgecolor=AZUL, linewidth=1.2, zorder=3))
+    xc_dense = (x_d1 + x_d2) / 2
+    titulo_etapa(xc_dense, "Capas densas")
+    sub_etapa(xc_dense, "la MLP de la\nSesión 1")
+
+    # ── Salida: softmax → una probabilidad por clase ──
+    x_bar = x_d2 + 2.6
+    ax.add_patch(FancyArrowPatch((x_d2 + 0.45, y_mid), (x_bar - 1.55, y_mid),
+                                 arrowstyle="->", mutation_scale=14,
+                                 color=NARANJA, linewidth=2.0, zorder=2))
+    ax.text(x_d2 + 1.0, y_mid - 0.62, "softmax", ha="center", fontsize=8,
+            color=NARANJA, fontweight="bold")
+    clases = [("camiseta", 0.72, NARANJA), ("zapato", 0.19, CELESTE),
+              ("bolso", 0.09, CELESTE)]
+    for fila, (nombre, p, color) in enumerate(clases):
+        y = y_mid + 1.0 - fila * 1.0
+        ax.add_patch(Rectangle((x_bar, y - 0.28), 2.6 * p, 0.56,
+                               facecolor=color, edgecolor="none", zorder=3))
+        ax.text(x_bar - 0.12, y, nombre, ha="right", va="center", fontsize=9)
+        ax.text(x_bar + 2.6 * p + 0.12, y, f"{p:.2f}", ha="left",
+                va="center", fontsize=9, fontweight="bold")
+    titulo_etapa(x_bar + 1.1, "Probabilidades")
+    sub_etapa(x_bar + 1.1, "suman 1\n(softmax, Sesión 1)")
+
+    # ── Las dos mitades, delimitadas abajo ──
+    def llave(x0, x1, texto):
+        ax.plot([x0, x0, x1, x1], [2.95, 2.7, 2.7, 2.95],
+                color="#1a2332", linewidth=1.4)
+        ax.text((x0 + x1) / 2, 2.25, texto, ha="center", va="top",
+                fontsize=10.5, fontweight="bold", color="#1a2332")
+
+    llave(4.7, x_flat - 0.6, "EXTRACCIÓN DE FEATURES — aprende QUÉ mirar (§3)")
+    llave(x_flat - 0.2, x_bar + 2.9, "CLASIFICACIÓN — decide QUÉ ES (Sesión 1)")
+
+    ax.text(14.5, 11.3,
+            "La anatomía de una CNN: de píxeles a probabilidades",
+            ha="center", fontsize=13.5, fontweight="bold")
+    fig.savefig(DESTINO / "cnn_anatomia.png")
+    plt.close(fig)
+
+
+def fig_pooling() -> None:
+    """Max pooling vs average pooling sobre la MISMA entrada 4×4:
+    cada ventana 2×2 de color produce UNA celda de la salida 2×2."""
+    from matplotlib.patches import FancyArrowPatch, Rectangle
+
+    X = np.array([[1, 3, 2, 0],
+                  [5, 6, 1, 2],
+                  [7, 2, 9, 4],
+                  [3, 1, 4, 8]], float)
+    tintes = [CELESTE, VERDE, NARANJA, MORADO]   # TL, TR, BL, BR
+
+    def cuadrante(i, j):
+        return (i // 2) * 2 + (j // 2)
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6))
+    for ax, (nombre, reduce) in zip(axes, [
+        ("Max pooling 2×2 — se queda el pico", np.max),
+        ("Average pooling 2×2 — el promedio", np.mean),
+    ]):
+        ax.set_xlim(-0.5, 9.2)
+        ax.set_ylim(-0.6, 4.6)
+        ax.set_aspect("equal")
+        ax.axis("off")
+        ax.grid(False)
+
+        # Entrada 4×4 con tinte por ventana
+        for i in range(4):
+            for j in range(4):
+                ax.add_patch(Rectangle((j, 3 - i), 1, 1,
+                                       facecolor=tintes[cuadrante(i, j)],
+                                       alpha=0.30, edgecolor="#888",
+                                       linewidth=0.8))
+                ax.text(j + 0.5, 3 - i + 0.5, f"{X[i, j]:.0f}", ha="center",
+                        va="center", fontsize=11)
+        # Bordes gruesos de las 4 ventanas
+        for qi in range(2):
+            for qj in range(2):
+                ax.add_patch(Rectangle((qj * 2, 2 - qi * 2), 2, 2,
+                                       facecolor="none",
+                                       edgecolor=tintes[qi * 2 + qj],
+                                       linewidth=2.6))
+        ax.text(2, 4.25, "feature map 4×4", ha="center", fontsize=9.5,
+                color=GRIS)
+
+        ax.add_patch(FancyArrowPatch((4.5, 2), (5.6, 2), arrowstyle="->",
+                                     mutation_scale=16, color=NARANJA,
+                                     linewidth=2.2))
+
+        # Salida 2×2: una celda por ventana, mismo color
+        for qi in range(2):
+            for qj in range(2):
+                valor = reduce(X[qi * 2:qi * 2 + 2, qj * 2:qj * 2 + 2])
+                ax.add_patch(Rectangle((6.0 + qj * 1.3, 1.05 + (1 - qi) * 1.3),
+                                       1.3, 1.3,
+                                       facecolor=tintes[qi * 2 + qj],
+                                       alpha=0.45,
+                                       edgecolor=tintes[qi * 2 + qj],
+                                       linewidth=2.2))
+                ax.text(6.65 + qj * 1.3, 1.7 + (1 - qi) * 1.3,
+                        f"{valor:.2f}".rstrip("0").rstrip("."),
+                        ha="center", va="center", fontsize=12,
+                        fontweight="bold")
+        ax.text(7.3, 4.25, "salida 2×2", ha="center", fontsize=9.5,
+                color=GRIS)
+        ax.set_title(nombre, fontsize=11.5)
+
+    fig.suptitle("Pooling: resumir y encoger — cada ventana se reduce a UN "
+                 "número (sin pesos que aprender)", fontweight="bold", y=1.04)
+    fig.savefig(DESTINO / "pooling.png")
+    plt.close(fig)
+
+
+def fig_layernorm_batchnorm() -> None:
+    """El único punto donde difieren BatchNorm y LayerNorm: el EJE sobre
+    el que calculan media y desviación. Misma matriz de activaciones
+    (B muestras × d features): BatchNorm resalta una columna, LayerNorm
+    una fila."""
+    from matplotlib.patches import Rectangle
+
+    rng = np.random.default_rng(5)
+    B, D = 5, 7
+    vals = rng.normal(0, 1, (B, D))
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.4))
+    escenarios = [
+        ("BatchNorm — típico en CNN", "columna", VERDE,
+         "una μ, σ POR FEATURE,\ncalculadas a través del BATCH"),
+        ("LayerNorm — estándar en Transformers", "fila", NARANJA,
+         "una μ, σ POR MUESTRA,\ncalculadas a través de sus FEATURES"),
+    ]
+    for ax, (titulo, modo, color, nota) in zip(axes, escenarios):
+        ax.set_xlim(-1.8, D + 3.6)
+        ax.set_ylim(-1.9, B + 1.4)
+        ax.set_aspect("equal")
+        ax.axis("off")
+        ax.grid(False)
+
+        for i in range(B):
+            for j in range(D):
+                resaltada = (j == 2) if modo == "columna" else (i == 1)
+                ax.add_patch(Rectangle((j, B - 1 - i), 1, 1,
+                                       facecolor=color if resaltada else "#EDEFF3",
+                                       alpha=0.55 if resaltada else 1.0,
+                                       edgecolor="#999", linewidth=0.7))
+                ax.text(j + 0.5, B - 1 - i + 0.5, f"{vals[i, j]:+.1f}",
+                        ha="center", va="center", fontsize=8,
+                        color="#333")
+        # marco grueso del grupo que comparte μ, σ
+        if modo == "columna":
+            ax.add_patch(Rectangle((2, 0), 1, B, facecolor="none",
+                                   edgecolor=color, linewidth=3))
+            ax.text(2.5, B + 0.55, "↓ este grupo comparte μ, σ", ha="center",
+                    fontsize=9, color=color, fontweight="bold")
+        else:
+            ax.add_patch(Rectangle((0, B - 2), D, 1, facecolor="none",
+                                   edgecolor=color, linewidth=3))
+            ax.text(D + 0.25, B - 1.5, "← este grupo\ncomparte μ, σ",
+                    ha="left", va="center", fontsize=9, color=color,
+                    fontweight="bold")
+
+        ax.text(-0.45, B / 2, "muestras del batch (B)", rotation=90,
+                ha="center", va="center", fontsize=9, color=GRIS)
+        ax.text(D / 2, -0.55, "features / canales (d)", ha="center",
+                va="top", fontsize=9, color=GRIS)
+        ax.text(D / 2, -1.45, nota, ha="center", va="top", fontsize=9.5,
+                color="#1a2332", style="italic")
+        ax.set_title(titulo, fontsize=11.5)
+
+    fig.suptitle("BatchNorm y LayerNorm: la misma fórmula, distinto eje — "
+                 "por eso una depende del batch y la otra no",
+                 fontweight="bold", y=1.05)
+    fig.savefig(DESTINO / "layernorm_batchnorm.png")
+    plt.close(fig)
+
+
+def fig_lr_schedules() -> None:
+    """El learning rate como función del tiempo: constante, step decay,
+    cosine y warmup+cosine, sobre el mismo presupuesto de 60 epochs."""
+    T = 60
+    t = np.arange(T + 1)
+    base, eta_min = 1e-3, 1e-5
+
+    constante = np.full_like(t, base, dtype=float)
+    step = base * 0.1 ** np.minimum(t // 20, 2)
+    cosine = eta_min + 0.5 * (base - eta_min) * (1 + np.cos(np.pi * t / T))
+    calent = 5
+    warmup = np.where(
+        t <= calent,
+        base * t / calent,
+        eta_min + 0.5 * (base - eta_min) * (1 + np.cos(np.pi * (t - calent) / (T - calent))),
+    )
+    warmup[0] = base / 50   # evitar 0 en escala log
+
+    fig, ax = plt.subplots(figsize=(8.5, 4.4))
+    ax.plot(t, constante, color=GRIS, linewidth=2, linestyle=":",
+            label="constante (punto de partida)")
+    ax.plot(t, step, color=MORADO, linewidth=2.2,
+            label="step decay (recortes ×0.1)")
+    ax.plot(t, cosine, color=AZUL, linewidth=2.4,
+            label="cosine (el del Lab 2)")
+    ax.plot(t, warmup, color=NARANJA, linewidth=2.4,
+            label="warmup + cosine (Transformers, Sesión 4)")
+    ax.axvspan(0, calent, color=NARANJA, alpha=0.10)
+    ax.annotate("warmup: crecer desde ~0\ncon la red recién inicializada",
+                xy=(2.5, 4e-4), xytext=(12, 1.1e-4), fontsize=8.5,
+                color="#8a5a00",
+                arrowprops=dict(arrowstyle="->", color="#8a5a00"))
+    ax.set(title="El learning rate como función del tiempo (schedules)",
+           xlabel="epoch", ylabel="learning rate η (escala log)",
+           yscale="log")
+    ax.legend(fontsize=8.5, loc="lower left")
+    fig.savefig(DESTINO / "lr_schedules.png")
+    plt.close(fig)
+
+
 def fig_receptive_field() -> None:
     """Crecimiento del receptive field con la profundidad: una activación
     profunda 've' una región cada vez mayor de la imagen original."""
@@ -1443,6 +1770,8 @@ def main() -> None:
         fig_matriz_confusion, fig_lora,
         fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
         fig_learning_rate, fig_moons_frontera, fig_kernels, fig_padding_stride,
+        fig_cnn_anatomia, fig_pooling, fig_layernorm_batchnorm,
+        fig_lr_schedules,
         fig_receptive_field, fig_rnn_gradientes, fig_atencion,
         fig_positional_encoding, fig_embeddings_2d, fig_complejidad,
         fig_neurona_vs_perceptron,
