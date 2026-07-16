@@ -6,9 +6,9 @@
 **Stack principal:** Python, PyTorch, Jupyter en VS Code, Git/GitHub y Hugging Face  
 **Fecha de actualización de la guía:** 16 de julio de 2026  
 **Idioma:** español, conservando términos técnicos estándar en inglés  
-**Alineación institucional:** el mapeo con el syllabus oficial (R-FAC-002, Maestría en
-Ciencia de Datos, U. del Sinú) está en [docs/alineacion-syllabus.md](docs/alineacion-syllabus.md);
-incluye la Sesión 0 de nivelación de ML que cubre la semana 1 del syllabus.
+**Adaptable:** el curso está diseñado para dictarse en distintas universidades y
+programas; la Sesión 0 de nivelación, el ensayo y los pesos de evaluación se ajustan
+a cada contexto.
 
 > Esta guía sirve simultáneamente como programa académico, guion docente, especificación de slides, manual de laboratorios y brief del proyecto final. No pretende convertir cada bloque de código en una diapositiva: los slides deben presentar la intuición, la fórmula, la visualización y el contrato del ejercicio; el código completo debe vivir en notebooks o scripts del repositorio.
 
@@ -302,10 +302,9 @@ No subir tokens, credenciales, datos personales ni checkpoints grandes directame
 
 # SESIÓN 0 — Nivelación: fundamentos de Machine Learning
 
-> Sesión corta (4 horas sugeridas, antes de la Sesión 1 o como primera mitad de la
-> semana 1). Cubre el eje "Fundamentos de aprendizaje automático; aprendizaje
-> supervisado, no supervisado y reforzado" del syllabus institucional
-> (ver [docs/alineacion-syllabus.md](docs/alineacion-syllabus.md)).
+> Sesión corta (4 horas sugeridas, antes de la Sesión 1). Nivela los fundamentos de
+> aprendizaje automático — supervisado, no supervisado y reforzado — para cohortes
+> que llegan sin base de ML.
 > Material del estudiante: [sesiones/00-fundamentos-ml.md](sesiones/00-fundamentos-ml.md) ·
 > Laboratorio: [notebooks/00_ml_clasico.ipynb](notebooks/00_ml_clasico.ipynb) ·
 > Guía de campo por modelo (para proyectar en clase):

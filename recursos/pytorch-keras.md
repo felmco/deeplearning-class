@@ -3,8 +3,9 @@
 Este curso usa **PyTorch** (por su grafo visible y su ecosistema de investigación —
 ver la justificación en el [programa](../Programa_Completo_Deep_Learning_Transformers_32h.md)).
 El otro gran framework de la industria es **TensorFlow** con su API de alto nivel
-**Keras** — y la bibliografía del syllabus lo usa. La buena noticia: **los conceptos
-son idénticos**; solo cambia la sintaxis. Quien domina uno lee el otro en una tarde.
+**Keras** — y buena parte de la bibliografía en español lo usa. La buena noticia:
+**los conceptos son idénticos**; solo cambia la sintaxis. Quien domina uno lee el
+otro en una tarde.
 
 > Este documento es de **lectura**: TensorFlow no está en `requirements.txt` ni en la
 > CI del curso. Si quieres ejecutar el ejemplo Keras, `pip install tensorflow` en un

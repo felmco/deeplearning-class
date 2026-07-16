@@ -151,10 +151,8 @@ python -m src.utils
 | Participación / revisión de pares | 5% | Pull request y feedback técnico |
 
 **Criterio de aprobación:** 70/100 y entrega reproducible del proyecto.
-
-> 🏛️ Para la ponderación **institucional** (taller teórico, [ensayo](proyecto/ensayo.md)
-> y avances del proyecto con exposiciones), ver la
-> [alineación con el syllabus oficial](docs/alineacion-syllabus.md).
+El [ensayo del curso](proyecto/ensayo.md) puede incorporarse a la ponderación
+según la institución donde se dicte.
 
 ## 📚 Recursos
 
@@ -163,7 +161,6 @@ python -m src.utils
 - [🌿 Flujo de Git/GitHub del curso](recursos/git-flujo.md)
 - [🩺 Checklist de debugging de modelos](recursos/debugging.md)
 - [🌉 Puente PyTorch ↔ TensorFlow/Keras](recursos/pytorch-keras.md)
-- [📋 Alineación con el syllabus oficial](docs/alineacion-syllabus.md)
 
 ## 📜 Licencia y autoría
 

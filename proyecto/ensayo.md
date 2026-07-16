@@ -1,8 +1,8 @@
 # ✍️ Ensayo — Automatizar una decisión: implicaciones éticas, económicas y sociales
 
-> Evidencia escrita del curso (según el syllabus: **15%** de la evaluación, junto al
-> taller teórico). Se entrega antes del inicio del proyecto final y se retoma en la
-> model card.
+> Evidencia escrita del curso (peso sugerido: **15%** de la evaluación, ajustable a la
+> institución donde se dicte). Se entrega antes del inicio del proyecto final y se
+> retoma en la model card.
 
 ## La consigna
 
