@@ -101,9 +101,27 @@ salida = tokenizer('Deep learning is fascinating!')
 | **truncation** | cortar secuencias al máximo del modelo |
 | **Dynamic padding** | `DataCollatorWithPadding` rellena al máximo del *batch*, no del dataset → menos cómputo |
 
+Todo el contrato de entrada, en una sola imagen:
+
+![La frase tokenizada: subwords, tokens especiales CLS y SEP, padding, y las dos filas que ve el modelo: input_ids y attention_mask](../docs/assets/figuras/tokenizacion_hf.png)
+
+Y el último renglón de la tabla — dynamic padding — se ve mejor de lo que se explica:
+
+![Padding global vs dynamic padding: rellenar al máximo del dataset procesa muchas más celdas que rellenar al máximo de cada batch](../docs/assets/figuras/dynamic_padding.png)
+
 ---
 
 ## 4. Fine-tuning con `Trainer`
+
+Antes del código, ¿qué construye exactamente `AutoModelForSequenceClassification`?
+El encoder Transformer de la Sesión 3 — **preentrenado** — más una **cabeza de
+clasificación nueva**, y el fine-tuning trata a cada parte distinto:
+
+![Anatomía del fine-tuning: los bloques Transformer preentrenados se ajustan apenas con LR pequeño, y una cabeza de clasificación nueva sobre el vector del token CLS aprende la tarea](../docs/assets/figuras/finetuning_anatomia.png)
+
+De ahí sale el hiperparámetro más importante de la sesión: el **learning rate pequeño
+(2e-5)**. El encoder ya sabe; un LR grande destruiría ese conocimiento para
+complacer a una cabeza recién nacida.
 
 Flujo completo del laboratorio ([notebook 06](../notebooks/06_hf_finetuning.ipynb),
 [config](../configs/transformer.yaml)) sobre **rotten_tomatoes** (reseñas de cine, binario):
@@ -158,7 +176,8 @@ trainer.train()
 ```
 
 **Qué automatiza `Trainer` y qué NO:** automatiza el loop (que ya sabes escribir a mano
-desde la Sesión 1 — por eso lo escribiste primero), el mixed precision, los checkpoints y
+desde la Sesión 1 — por eso lo escribiste primero), el mixed precision (entrenar en
+números de 16 bits donde es seguro — detalle en §6), los checkpoints y
 el logging. **No** automatiza el diseño experimental: splits, baseline, métricas y análisis
 de errores siguen siendo tu trabajo.
 

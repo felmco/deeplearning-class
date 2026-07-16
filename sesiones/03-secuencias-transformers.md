@@ -8,16 +8,39 @@
 
 **Objetivos de la sesión**
 
-1. Comprender tokenización, vocabulario, embeddings y máscaras.
-2. Explicar RNN, BPTT, LSTM/GRU y sus limitaciones.
-3. Derivar scaled dot-product attention con shapes.
-4. Explicar multi-head attention, positional encoding, residuals y LayerNorm.
-5. Diferenciar encoder, decoder causal y encoder–decoder.
-6. Implementar y probar attention y un bloque Transformer simplificado.
+1. Identificar el circuito completo de un Transformer: texto → tokens → embeddings → bloques → siguiente token.
+2. Comprender tokenización, vocabulario, embeddings y máscaras.
+3. Explicar RNN, BPTT, LSTM/GRU y sus limitaciones.
+4. Derivar scaled dot-product attention con shapes.
+5. Explicar multi-head attention, positional encoding, residuals y LayerNorm.
+6. Diferenciar encoder, decoder causal y encoder–decoder.
+7. Implementar y probar attention y un bloque Transformer simplificado.
 
 ---
 
-## 1. De texto a tensores
+## 1. La anatomía de un Transformer, de un vistazo
+
+El mapa completo antes de entrar pieza por pieza — el circuito que recorre TODO texto
+que le das a un modelo tipo GPT:
+
+![Anatomía de un Transformer tipo GPT: el texto se tokeniza a IDs, cada ID busca su embedding y se le suma la posición, N bloques (attention + FFN) lo procesan, y los logits del último token pasan por softmax para elegir el siguiente](../docs/assets/figuras/transformer_anatomia.png)
+
+- **De texto a vectores (§2):** el tokenizer parte el texto en tokens y los vuelve
+  IDs enteros; cada ID busca su **embedding** (su vector) y se le suma la señal de
+  **posición**.
+- **El Transformer (§4–§6):** N copias del mismo bloque; en cada una, la **attention**
+  mezcla información ENTRE tokens y la **FFN** transforma cada token por separado.
+- **Predicción (pura Sesión 1):** los logits del último token pasan por softmax — una
+  probabilidad por token del vocabulario. **Generar texto = repetir este circuito**:
+  el token elegido se pega a la entrada y se vuelve a empezar.
+
+En el medio del camino visitaremos también a las **RNN/LSTM** (§3): la solución
+anterior al problema secuencial, cuyas limitaciones explican por qué la attention
+existe.
+
+---
+
+## 2. De texto a tensores
 
 ### Tokenización
 
@@ -44,6 +67,12 @@ $$
 e_i=E[i]\in\mathbb{R}^{d}
 $$
 
+**Cómo leerla:** $|V|$ = tamaño del vocabulario (cuántos tokens distintos conoce el
+modelo) · $d$ = dimensión del embedding (cuántos números describen a cada token) ·
+la notación $E\in\mathbb{R}^{|V|\times d}$ se lee *"E es una tabla de |V| filas por
+d columnas de números reales"* · $E[i]$ = tomar la fila $i$ — por eso se llama
+**lookup** (consulta en tabla).
+
 Un **lookup diferenciable**: cada token es una fila de una matriz *entrenable*. Con el
 entrenamiento, tokens de uso similar terminan geométricamente cerca — la **semántica
 distribuida**.
@@ -67,7 +96,7 @@ mask = [  1,   1,  1,  0,  0 ]      1 = token real
 
 ---
 
-## 2. RNN: la primera respuesta al problema secuencial
+## 3. RNN: la primera respuesta al problema secuencial
 
 Una **RNN** (*Recurrent Neural Network*, red neuronal recurrente) procesa la secuencia
 token a token, arrastrando un "estado" que resume lo leído hasta el momento.
@@ -80,6 +109,12 @@ siempre con los mismos pesos.
 $$
 h_t=\tanh(W_{xh}x_t+W_{hh}h_{t-1}+b_h) \qquad y_t=W_{hy}h_t+b_y
 $$
+
+**Cómo leerla:** $x_t$ = el embedding del token del paso $t$ · $h_{t-1}$ = el estado
+anterior (la memoria) · los subíndices de cada $W$ dicen "de dónde → hacia dónde":
+$W_{xh}$ lee la entrada, $W_{hh}$ recicla el estado y $W_{hy}$ produce la salida
+$y_t$ · $b_h, b_y$ = biases. La tanh aplasta el estado a (−1, 1) para que no crezca
+sin control.
 
 ```mermaid
 flowchart LR
@@ -140,6 +175,8 @@ $f_t$ (forget) decide qué **borrar**, $i_t$ (input) qué **escribir**, $o_t$ (o
 **leer**. La suma $c_t=f_t\odot c_{t-1}+i_t\odot\tilde c_t$ crea un camino aditivo para el
 gradiente — la misma medicina que las conexiones residuales.
 
+![La celda LSTM como cinta transportadora de memoria: la compuerta f borra, la i escribe y la o decide qué se lee hacia h_t](../docs/assets/figuras/lstm_compuertas.png)
+
 **GRU** (*Gated Recurrent Unit*): la versión compacta (2 compuertas, sin celda separada).
 Menos parámetros, desempeño a menudo comparable.
 
@@ -155,7 +192,7 @@ Aun con LSTM, quedan dos límites estructurales:
 
 ---
 
-## 3. Attention: acceso directo a todo el contexto
+## 4. Attention: acceso directo a todo el contexto
 
 ### La intuición Query–Key–Value
 
@@ -219,7 +256,7 @@ y softmax por filas, con los números recalculándose en cada etapa.
 
 ---
 
-## 4. Multi-head attention y la cuestión de la posición
+## 5. Multi-head attention y la cuestión de la posición
 
 ### Varias miradas en paralelo
 
@@ -228,11 +265,22 @@ $$
 \mathrm{MHA}(Q,K,V)=\mathrm{Concat}(\mathrm{head}_1,\dots,\mathrm{head}_h)W^O
 $$
 
+**Cómo leerla:** $h$ = número de heads · $W_i^Q, W_i^K, W_i^V$ = las proyecciones
+PROPIAS de la head $i$ — matrices aprendidas que traducen la entrada a las
+preguntas/ofertas/contenidos de esa mirada · Concat = pegar las salidas una tras
+otra · $W^O$ = la proyección final que mezcla lo que vieron todas las heads.
+
 En lugar de una atención de dimensión $d_{model}$, se ejecutan $h$ atenciones de dimensión
 $d_{model}/h$: cada head puede especializarse en relaciones distintas (sintaxis cercana,
 correferencia lejana — saber que "ella" refiere a "María" cinco palabras atrás —,
 posición). Sus salidas se concatenan y se proyectan con $W^O$. **MHA** = *multi-head
 attention*, el nombre de todo este mecanismo.
+
+![Multi-head attention: la entrada se proyecta a h heads paralelas, cada una con un patrón de atención distinto; sus salidas se concatenan y W^O las mezcla](../docs/assets/figuras/multihead.png)
+
+Los mini-mapas de la figura son el punto: **cada head aprende un patrón distinto** —
+mirarse a sí mismo, el token anterior, el primer token, todo el pasado. Ninguna se
+programó así: emergen del entrenamiento.
 
 > 🎥 **Si esta sección se te movió el piso, dos refuerzos excelentes:**
 > [The Illustrated Transformer, de Jay Alammar](https://jalammar.github.io/illustrated-transformer/)
@@ -263,7 +311,7 @@ frecuencias: dimensiones bajas oscilan rápido (los "segundos"), altas oscilan l
 
 ---
 
-## 5. El bloque Transformer completo
+## 6. El bloque Transformer completo
 
 $$
 x'=x+\mathrm{MHA}(\mathrm{LN}(x)) \qquad
@@ -326,13 +374,17 @@ así la traducción "consulta" la oración original mientras genera.
 
 ![Costo attention vs RNN](../docs/assets/figuras/complejidad_attention.png)
 
+> 📐 **La notación O( )** ("del orden de") describe cómo *crece* el costo, no cuánto
+> vale exactamente: O(T²d) significa "si duplicas la longitud T, el cómputo se
+> multiplica por ~4". Es el lenguaje estándar para comparar algoritmos.
+
 Self-attention: $O(T^2 d)$ pero **paralelo** en $T$. RNN: $O(T d^2)$ pero **secuencial**.
 Con hardware masivamente paralelo, el Transformer gana en la práctica — pagando el costo
 cuadrático en la longitud de secuencia (de ahí toda la investigación en atención eficiente).
 
 ---
 
-## 6. ✍️ Actividad manual — una fila de attention
+## 7. ✍️ Actividad manual — una fila de attention
 
 Con tres tokens y $d_k=2$:
 
@@ -345,7 +397,7 @@ Calcula a mano: (1) `scores = Q @ K.T`, (2) `scores/√2`, (3) softmax de la pri
 (4) la combinación ponderada de $V$, (5) el efecto de una máscara causal. Luego verifica
 cada paso en el [simulador de attention](https://felmco.github.io/deeplearning-class/interactivos/atencion.html).
 
-## 7. 🔬 Laboratorio visual — Transformer Explainer
+## 8. 🔬 Laboratorio visual — Transformer Explainer
 
 **URL:** <https://poloclub.github.io/transformer-explainer/> (GPT-2 small corriendo en tu navegador)
 
@@ -379,7 +431,7 @@ entre tokens y qué parte transforma cada token por separado?
 
 ---
 
-## 8. 🧪 Laboratorio 3 — Attention y bloque Transformer desde cero
+## 9. 🧪 Laboratorio 3 — Attention y bloque Transformer desde cero
 
 **Notebook:** [`05_attention_from_scratch.ipynb`](../notebooks/05_attention_from_scratch.ipynb) ·
 **Implementación de referencia:** [`src/models.py`](../src/models.py) ·

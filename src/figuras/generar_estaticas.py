@@ -1524,6 +1524,567 @@ def fig_complejidad() -> None:
     plt.close(fig)
 
 
+def fig_transformer_anatomia() -> None:
+    """La anatomía de un Transformer tipo GPT en una sola imagen:
+    texto → tokens/IDs → embeddings + posición → N bloques (MHA + FFN)
+    → logits → softmax → probabilidad del siguiente token. Es el mapa
+    que abre la Sesión 3, gemelo de cnn_anatomia para la Sesión 2."""
+    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
+
+    fig, ax = plt.subplots(figsize=(14.5, 6.0))
+    ax.set_xlim(0, 30)
+    ax.set_ylim(1.4, 12)
+    ax.axis("off")
+    ax.grid(False)
+
+    y_mid = 6.8
+    Y_TITULO, Y_SUB = 9.7, 4.0
+
+    def titulo_etapa(xc, texto):
+        ax.text(xc, Y_TITULO, texto, ha="center", fontsize=10.5,
+                fontweight="bold", color="#1a2332")
+
+    def sub_etapa(xc, texto):
+        ax.text(xc, Y_SUB, texto, ha="center", va="top", fontsize=8.5,
+                color=GRIS, style="italic")
+
+    def flecha(x0, x1, texto=None, y_texto=None):
+        ax.add_patch(FancyArrowPatch((x0, y_mid), (x1, y_mid),
+                                     arrowstyle="->", mutation_scale=14,
+                                     color=NARANJA, linewidth=2.0, zorder=2))
+        if texto:
+            ax.text((x0 + x1) / 2, y_texto or y_mid + 0.55, texto,
+                    ha="center", fontsize=8, color=NARANJA,
+                    fontweight="bold")
+
+    def caja(x, y, w, h, color, texto="", fs=9, **kw):
+        ax.add_patch(FancyBboxPatch((x, y), w, h,
+                                    boxstyle="round,pad=0.06",
+                                    facecolor=color, edgecolor=AZUL,
+                                    linewidth=1.2, **kw))
+        if texto:
+            ax.text(x + w / 2, y + h / 2, texto, ha="center", va="center",
+                    fontsize=fs)
+
+    # ── 1 · Texto crudo ──
+    caja(0.5, y_mid - 0.9, 2.7, 1.8, "#F3F3F3", '"El gato\ncome…"', fs=10)
+    titulo_etapa(1.85, "Texto")
+    sub_etapa(1.85, "la entrada\ncruda")
+
+    # ── 2 · Tokens → IDs ──
+    flecha(3.4, 4.3, "tokenizer", y_texto=8.55)
+    tokens = [("El", "12"), ("gato", "843"), ("come", "7")]
+    for k, (tok, idd) in enumerate(tokens):
+        y = y_mid + 0.95 - k * 0.95
+        ax.add_patch(Rectangle((4.5, y - 0.36), 1.35, 0.72,
+                               facecolor="#F3F3F3", edgecolor=AZUL,
+                               linewidth=1.0))
+        ax.text(5.17, y, tok, ha="center", va="center", fontsize=9)
+        ax.add_patch(Rectangle((5.85, y - 0.36), 0.95, 0.72,
+                               facecolor="#DCE9F6", edgecolor=AZUL,
+                               linewidth=1.0))
+        ax.text(6.32, y, idd, ha="center", va="center", fontsize=9,
+                family="monospace")
+    titulo_etapa(5.65, "Tokens → IDs")
+    sub_etapa(5.65, "el vocabulario asigna\nun entero a cada token")
+
+    # ── 3 · Embeddings + posición ──
+    flecha(7.05, 7.95, "lookup en E", y_texto=8.55)
+    rng = np.random.default_rng(7)
+    for k in range(3):
+        y = y_mid + 0.95 - k * 0.95
+        for j in range(6):
+            ax.add_patch(Rectangle((8.15 + j * 0.4, y - 0.3), 0.4, 0.6,
+                                   facecolor=AZUL,
+                                   alpha=0.15 + 0.75 * rng.random(),
+                                   edgecolor="white", linewidth=0.5))
+    # la señal de posición que se SUMA
+    xs = np.linspace(8.15, 10.55, 80)
+    ax.plot(xs, y_mid - 2.1 + 0.28 * np.sin(2.2 * np.pi *
+            (xs - 8.15) / 2.4), color=MORADO, linewidth=1.8)
+    ax.text(9.35, y_mid - 2.75, "⊕ posición (PE)", ha="center", fontsize=8,
+            color=MORADO, fontweight="bold")
+    titulo_etapa(9.35, "Embeddings")
+    sub_etapa(9.35, "cada ID → su vector\n+ la señal de posición")
+
+    # ── 4 · N bloques Transformer ──
+    flecha(10.85, 11.75)
+    for k in range(2, -1, -1):     # pila con offset
+        caja(11.95 + k * 0.3, y_mid - 1.7 + k * 0.25, 4.6, 3.4,
+             "#EAF2FA" if k else "#DCE9F6", zorder=3 + (2 - k))
+    caja(12.35, y_mid + 0.15, 3.8, 1.05, "#BBDEF5",
+         "Multi-Head Attention\nmezcla ENTRE tokens", fs=8, zorder=7)
+    caja(12.35, y_mid - 1.35, 3.8, 1.05, "#A7D9C9",
+         "FFN\ntransforma cada token", fs=8, zorder=7)
+    ax.text(17.35, 8.75, "×N", fontsize=12, fontweight="bold",
+            color=AZUL)
+    titulo_etapa(14.15, "Bloques Transformer")
+    sub_etapa(14.15, "N copias apiladas\n(GPT-2 small: N = 12)")
+
+    # ── 5 · Logits del último token ──
+    flecha(17.1, 18.0)
+    alturas = [2.6, 1.6, 1.0, 0.6, 0.35]
+    for k, hbar in enumerate(alturas):
+        ax.add_patch(Rectangle((18.25 + k * 0.5, y_mid - 1.4), 0.36, hbar,
+                               facecolor=AZUL if k == 0 else CELESTE,
+                               edgecolor="none"))
+    ax.plot([18.1, 20.8], [y_mid - 1.4, y_mid - 1.4], color=GRIS,
+            linewidth=0.8)
+    titulo_etapa(19.45, "Logits")
+    sub_etapa(19.45, "un puntaje por token\ndel vocabulario")
+
+    # ── 6 · softmax → siguiente token ──
+    flecha(21.1, 22.0, "softmax")
+    clases = [("pescado", 0.62, NARANJA), ("croquetas", 0.21, CELESTE),
+              ("siesta", 0.07, CELESTE)]
+    for fila, (nombre, p, color) in enumerate(clases):
+        y = y_mid + 1.0 - fila * 1.0
+        ax.add_patch(Rectangle((23.7, y - 0.28), 3.4 * p, 0.56,
+                               facecolor=color, edgecolor="none"))
+        ax.text(23.58, y, nombre, ha="right", va="center", fontsize=9)
+        ax.text(23.82 + 3.4 * p, y, f"{p:.2f}", ha="left", va="center",
+                fontsize=9, fontweight="bold")
+    titulo_etapa(25.3, "Siguiente token")
+    sub_etapa(25.3, "generar texto = elegir\nuno y volver a empezar")
+
+    # ── Las tres zonas ──
+    def llave(x0, x1, texto):
+        ax.plot([x0, x0, x1, x1], [2.95, 2.7, 2.7, 2.95],
+                color="#1a2332", linewidth=1.4)
+        ax.text((x0 + x1) / 2, 2.25, texto, ha="center", va="top",
+                fontsize=10, fontweight="bold", color="#1a2332")
+
+    llave(0.5, 10.6, "DE TEXTO A VECTORES (§2)")
+    llave(11.6, 16.9, "EL TRANSFORMER (§4–§6)")
+    llave(17.9, 27.6, "PREDICCIÓN (Sesión 1: logits → softmax)")
+
+    ax.text(15, 11.35,
+            "La anatomía de un Transformer (tipo GPT): del texto a la "
+            "probabilidad del siguiente token",
+            ha="center", fontsize=13.5, fontweight="bold")
+    fig.savefig(DESTINO / "transformer_anatomia.png")
+    plt.close(fig)
+
+
+def fig_lstm_compuertas() -> None:
+    """La celda LSTM como cinta transportadora de memoria: la compuerta
+    f borra (⊗), la i escribe (⊕) y la o decide qué se lee hacia h_t.
+    La cinta cruza el tiempo con SUMAS — la autopista del gradiente."""
+    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+
+    fig, ax = plt.subplots(figsize=(12.5, 5.8))
+    ax.set_xlim(0, 24)
+    ax.set_ylim(0, 11.5)
+    ax.axis("off")
+    ax.grid(False)
+
+    def caja(x, y, w, h, color, texto, fs=9.5):
+        ax.add_patch(FancyBboxPatch((x, y), w, h,
+                                    boxstyle="round,pad=0.08",
+                                    facecolor=color, edgecolor="#666",
+                                    linewidth=1.1))
+        ax.text(x + w / 2, y + h / 2, texto, ha="center", va="center",
+                fontsize=fs)
+
+    def valvula(x, simbolo, color):
+        ax.add_patch(plt.Circle((x, 8.4), 0.45, facecolor="white",
+                                edgecolor=color, linewidth=2.6, zorder=5))
+        ax.text(x, 8.4, simbolo, ha="center", va="center", fontsize=15,
+                color=color, fontweight="bold", zorder=6)
+
+    def flecha(p0, p1, color="#666", ls="-"):
+        ax.add_patch(FancyArrowPatch(p0, p1, arrowstyle="->",
+                                     mutation_scale=13, color=color,
+                                     linewidth=1.6, linestyle=ls, zorder=4))
+
+    # ── La cinta de memoria ──
+    ax.add_patch(FancyArrowPatch((1.2, 8.4), (22.8, 8.4), arrowstyle="->",
+                                 mutation_scale=22, color=AZUL,
+                                 linewidth=5, zorder=3))
+    ax.text(1.0, 9.15, "cₜ₋₁", fontsize=13, fontweight="bold", color=AZUL)
+    ax.text(22.0, 9.15, "cₜ", fontsize=13, fontweight="bold", color=AZUL)
+    ax.text(11.5, 10.0, "la cinta de memoria atraviesa el tiempo casi sin tocarse",
+            ha="center", fontsize=9.5, color=AZUL, style="italic")
+
+    # ── Compuerta 1: olvidar ──
+    valvula(6, "⊗", ROJO)
+    caja(4.4, 5.4, 3.2, 1.15, "#F6D9CE", "fₜ = σ( W·[xₜ, hₜ₋₁] )")
+    flecha((6, 6.55), (6, 7.9), ROJO)
+    ax.text(6, 4.85, "OLVIDAR: ¿qué borro?", ha="center",
+            fontsize=9, color=ROJO, fontweight="bold")
+
+    # ── Compuerta 2: escribir ──
+    valvula(11, "⊕", VERDE)
+    caja(9.3, 5.4, 3.4, 1.15, "#CBE8DC", "iₜ ⊙ c̃ₜ  (cuánto × qué)")
+    flecha((11, 6.55), (11, 7.9), VERDE)
+    ax.text(11, 4.85, "ESCRIBIR: ¿qué anoto?", ha="center",
+            fontsize=9, color=VERDE, fontweight="bold")
+
+    # ── Compuerta 3: leer ──
+    ax.plot([16, 16], [8.4, 6.75], color="#666", linewidth=1.6, zorder=2)
+    caja(15.1, 5.9, 1.8, 0.85, "#EFEFEF", "tanh")
+    ax.plot([16, 16], [5.9, 5.05], color="#666", linewidth=1.6)
+    ax.add_patch(plt.Circle((16, 4.6), 0.45, facecolor="white",
+                            edgecolor=NARANJA, linewidth=2.6, zorder=5))
+    ax.text(16, 4.6, "⊗", ha="center", va="center", fontsize=15,
+            color=NARANJA, fontweight="bold", zorder=6)
+    caja(17.6, 4.15, 2.4, 0.9, "#F9E3C8", "oₜ = σ(...)")
+    flecha((17.55, 4.6), (16.5, 4.6), NARANJA)
+    flecha((16, 4.1), (16, 2.9), NARANJA)
+    ax.text(16, 2.35, "hₜ — lo que ve el resto de la red",
+            ha="center", fontsize=9.5, fontweight="bold", color=NARANJA)
+    ax.text(18.8, 5.45, "LEER — ¿qué comparto?", ha="center", fontsize=9,
+            color=NARANJA, fontweight="bold")
+
+    # ── La entrada alimenta a las tres compuertas ──
+    caja(1.4, 0.7, 7.6, 1.0, "#F3F3F3",
+         "[xₜ, hₜ₋₁] = el token actual + el estado anterior", fs=9)
+    for origen, destino in [((3.0, 1.75), (6, 5.35)),
+                            ((5.2, 1.75), (11, 5.35)),
+                            ((8.6, 1.75), (18.8, 4.1))]:
+        flecha(origen, destino, "#999", ls="--")
+
+    ax.text(12, 11.15,
+            "La celda LSTM: una cinta transportadora de memoria con tres compuertas",
+            ha="center", fontsize=13, fontweight="bold")
+    ax.text(20.9, 1.0,
+            "La cinta avanza con SUMAS,\nno multiplicaciones repetidas:\n"
+            "la autopista del gradiente\n(la misma idea que ResNet)",
+            ha="center", fontsize=8.5, color=GRIS, style="italic")
+    fig.savefig(DESTINO / "lstm_compuertas.png")
+    plt.close(fig)
+
+
+def fig_multihead() -> None:
+    """Multi-head attention: la entrada se proyecta a h heads paralelas
+    — cada una con su patrón de atención DISTINTO —, se concatenan y
+    W^O las mezcla. Los mini-heatmaps muestran la especialización."""
+    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
+
+    fig, ax = plt.subplots(figsize=(13, 5.6))
+    ax.set_xlim(0, 26)
+    ax.set_ylim(0, 11)
+    ax.axis("off")
+    ax.grid(False)
+
+    colores_head = [CELESTE, VERDE, NARANJA, MORADO]
+    # Cuatro patrones de atención distintos (causales), 4 tokens
+    diag = np.eye(4)
+    prev = np.zeros((4, 4))
+    prev[0, 0] = 1
+    for i in range(1, 4):
+        prev[i, i - 1] = 1
+    primero = np.zeros((4, 4))
+    primero[:, 0] = 1
+    amplio = np.tril(np.ones((4, 4)))
+    amplio = amplio / amplio.sum(axis=1, keepdims=True)
+    patrones = [
+        (diag, "se mira\na sí mismo"),
+        (prev, "mira el token\nanterior"),
+        (primero, "mira el\nprimer token"),
+        (amplio, "reparte en todo\nel pasado"),
+    ]
+
+    def barra(x, color, texto):
+        ax.add_patch(FancyBboxPatch((x, 2.4), 1.5, 6.2,
+                                    boxstyle="round,pad=0.06",
+                                    facecolor=color, edgecolor=AZUL,
+                                    linewidth=1.3))
+        ax.text(x + 0.75, 5.5, texto, ha="center", va="center", fontsize=9,
+                rotation=90)
+
+    barra(0.8, "#DCE9F6", "x — (B, T, d_model)")
+
+    # ── Las h heads en paralelo ──
+    ys = [8.9, 6.65, 4.4, 2.15]           # centro vertical de cada head
+    for k, (yc, color, (patron, nota)) in enumerate(
+            zip(ys, colores_head, patrones)):
+        ax.add_patch(FancyBboxPatch((5.6, yc - 1.0), 5.8, 2.0,
+                                    boxstyle="round,pad=0.06",
+                                    facecolor="#FAFAFA", edgecolor=color,
+                                    linewidth=1.8))
+        ax.text(6.9, yc + 0.35, f"head {k + 1}", fontsize=9.5,
+                fontweight="bold", color=color, ha="center")
+        ax.text(6.9, yc - 0.45, nota, fontsize=7.5, color=GRIS,
+                ha="center", style="italic")
+        # mini-heatmap 4×4 del patrón de atención
+        lado = 0.42
+        x0, y0 = 9.0, yc - 0.88
+        for i in range(4):
+            for j in range(4):
+                ax.add_patch(Rectangle((x0 + j * lado, y0 + (3 - i) * lado),
+                                       lado, lado, facecolor=color,
+                                       alpha=0.08 + 0.8 * patron[i, j],
+                                       edgecolor="white", linewidth=0.5))
+        # entrada → head y head → concat
+        ax.add_patch(FancyArrowPatch((2.4, 5.5 + (yc - 5.5) * 0.35),
+                                     (5.5, yc), arrowstyle="->",
+                                     mutation_scale=11, color="#999",
+                                     linewidth=1.2))
+        ax.add_patch(FancyArrowPatch((11.5, yc),
+                                     (13.8, 8.15 - k * 1.55 - 0.75),
+                                     arrowstyle="->", mutation_scale=11,
+                                     color=color, linewidth=1.4))
+
+    ax.text(3.9, 0.9, "cada head con sus PROPIAS proyecciones\n"
+            "Wᵢᵠ, Wᵢᴷ, Wᵢᵛ (aprendidas)", ha="center", fontsize=8,
+            color=GRIS, style="italic")
+
+    # ── Concat: las salidas se apilan ──
+    for k, color in enumerate(colores_head):
+        ax.add_patch(Rectangle((13.9, 8.15 - k * 1.55 - 1.5), 1.3, 1.5,
+                               facecolor=color, alpha=0.55,
+                               edgecolor="white", linewidth=1.2))
+    ax.text(14.55, 8.7, "Concat", ha="center", fontsize=9.5,
+            fontweight="bold")
+
+    # ── W^O mezcla ──
+    ax.add_patch(FancyArrowPatch((15.4, 5.25), (17.1, 5.25),
+                                 arrowstyle="->", mutation_scale=13,
+                                 color=NARANJA, linewidth=2))
+    ax.add_patch(FancyBboxPatch((17.3, 4.25), 2.4, 2.0,
+                                boxstyle="round,pad=0.06",
+                                facecolor="#F9E3C8", edgecolor=NARANJA,
+                                linewidth=1.5))
+    ax.text(18.5, 5.25, "W^O\nmezcla", ha="center", va="center",
+            fontsize=9.5)
+    ax.add_patch(FancyArrowPatch((19.9, 5.25), (21.6, 5.25),
+                                 arrowstyle="->", mutation_scale=13,
+                                 color=NARANJA, linewidth=2))
+    barra(21.8, "#BBDEF5", "salida — (B, T, d_model)")
+
+    ax.text(13, 10.55,
+            "Multi-head attention: h miradas en paralelo, concatenadas y "
+            "mezcladas por W^O", ha="center", fontsize=13,
+            fontweight="bold")
+    ax.text(16.0, 0.30, "cada head aprende una relación DISTINTA — sus "
+            "salidas juntas describen al token desde varios ángulos",
+            ha="center", fontsize=8.5, color=GRIS, style="italic")
+    fig.savefig(DESTINO / "multihead.png")
+    plt.close(fig)
+
+
+def fig_tokenizacion_hf() -> None:
+    """El contrato de entrada de un modelo HF, en una imagen: la frase
+    tokenizada en subwords, los tokens especiales [CLS]/[SEP], el
+    padding y las dos filas que ve el modelo: input_ids y attention_mask."""
+    from matplotlib.patches import Rectangle
+
+    tokens = ["[CLS]", "deep", "learning", "is", "fascin", "##ating",
+              "!", "[SEP]", "[PAD]", "[PAD]"]
+    ids = ["101", "2784", "4083", "2003", "27596", "5844", "999", "102",
+           "0", "0"]
+    mask = ["1", "1", "1", "1", "1", "1", "1", "1", "0", "0"]
+    anchos = [1.6, 1.4, 2.1, 0.9, 1.6, 1.9, 0.7, 1.5, 1.5, 1.5]
+
+    def color_token(t):
+        if t in ("[CLS]", "[SEP]"):
+            return "#BBDEF5"
+        if t in ("fascin", "##ating"):
+            return "#F9E3C8"
+        if t == "[PAD]":
+            return "#E4E4E4"
+        return "#F5F5F5"
+
+    fig, ax = plt.subplots(figsize=(13, 4.9))
+    ax.set_xlim(0, 21.5)
+    ax.set_ylim(1.7, 11)
+    ax.axis("off")
+    ax.grid(False)
+
+    xs = [3.4]
+    for w in anchos[:-1]:
+        xs.append(xs[-1] + w + 0.14)
+
+    for fila, (y, h, valores, fs) in enumerate([
+        (6.3, 1.0, tokens, 9.5),
+        (4.9, 0.8, ids, 8.5),
+        (3.6, 0.8, mask, 9),
+    ]):
+        for x, w, v, tok in zip(xs, anchos, valores, tokens):
+            if fila == 0:
+                color = color_token(tok)
+            elif fila == 2:
+                color = "#CBE8DC" if v == "1" else "#E4E4E4"
+            else:
+                color = "#FFFFFF"
+            ax.add_patch(Rectangle((x, y), w, h, facecolor=color,
+                                   edgecolor="#999", linewidth=0.8))
+            ax.text(x + w / 2, y + h / 2, v, ha="center", va="center",
+                    fontsize=fs,
+                    family="monospace" if fila else "sans-serif",
+                    color="#888" if tok == "[PAD]" and fila == 0 else "#222")
+    for y, nombre in [(6.8, "tokens"), (5.3, "input_ids"),
+                      (4.0, "attention_mask")]:
+        ax.text(3.15, y, nombre, ha="right", va="center", fontsize=9.5,
+                fontweight="bold")
+
+    # Anotaciones: qué es cada cosa
+    def nota(x0, x1, y_llave, y_texto, texto, color):
+        ax.plot([x0, x0, x1, x1], [y_llave - 0.15, y_llave, y_llave,
+                                   y_llave - 0.15], color=color,
+                linewidth=1.3)
+        ax.text((x0 + x1) / 2, y_texto, texto, ha="center", va="bottom",
+                fontsize=8.3, color=color, fontweight="bold")
+
+    nota(xs[0], xs[0] + anchos[0], 7.7, 7.85,
+         "resumen de\nla frase", AZUL)
+    nota(xs[4], xs[5] + anchos[5], 7.7, 7.85,
+         "una palabra rara se parte en subwords\n('##' = continúa la palabra)",
+         "#B96D00")
+    nota(xs[7], xs[7] + anchos[7], 7.7, 7.85, "separador", AZUL)
+    nota(xs[8], xs[9] + anchos[9], 7.7, 7.85,
+         "relleno hasta el máximo\ndel batch", GRIS)
+
+    ax.text(12.1, 2.25,
+            "attention_mask: 1 = token real, 0 = padding (≠ la máscara causal "
+            "de la Sesión 3) · IDs ilustrativos: dependen del vocabulario del "
+            "checkpoint", ha="center", fontsize=8.5, color=GRIS,
+            style="italic")
+    ax.text(12.1, 10.6,
+            'Lo que realmente entra al modelo: "Deep learning is fascinating!" '
+            "tokenizada", ha="center", fontsize=12.5, fontweight="bold")
+    fig.savefig(DESTINO / "tokenizacion_hf.png")
+    plt.close(fig)
+
+
+def fig_dynamic_padding() -> None:
+    """Padding global vs dynamic padding: el mismo batch de 6 frases
+    rellenado al máximo del dataset (16) o al máximo del batch (9).
+    El gris es cómputo desperdiciado."""
+    from matplotlib.patches import Rectangle
+
+    lens = [4, 7, 5, 9, 3, 6]
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.2))
+    escenarios = [
+        ("Padding global — al máximo del DATASET", 16),
+        ("Dynamic padding — al máximo del BATCH", 9),
+    ]
+    for ax, (titulo, ancho) in zip(axes, escenarios):
+        ax.set_xlim(-0.4, 16.4)
+        ax.set_ylim(-1.9, len(lens) + 0.4)
+        ax.set_aspect("equal")
+        ax.axis("off")
+        ax.grid(False)
+        for i, ln in enumerate(lens):
+            y = len(lens) - 1 - i
+            for j in range(ancho):
+                real = j < ln
+                ax.add_patch(Rectangle((j, y), 0.92, 0.85,
+                                       facecolor=AZUL if real else "#E0E0E0",
+                                       alpha=0.6 if real else 1.0,
+                                       edgecolor="white", linewidth=0.6))
+        total = len(lens) * ancho
+        utiles = sum(lens)
+        ax.set_title(f"{titulo} ({ancho})", fontsize=11)
+        ax.text(ancho / 2 - 0.5, -1.0,
+                f"celdas procesadas: {len(lens)}×{ancho} = {total}  "
+                f"(útiles: {utiles})",
+                ha="center", fontsize=9.5, fontweight="bold")
+
+    fig.suptitle("El mismo batch de 6 frases — el gris es puro relleno "
+                 "(cómputo desperdiciado). DataCollatorWithPadding aplica "
+                 "el dinámico por ti.", fontweight="bold", y=1.02)
+    fig.savefig(DESTINO / "dynamic_padding.png")
+    plt.close(fig)
+
+
+def fig_finetuning_anatomia() -> None:
+    """Qué construye AutoModelForSequenceClassification: el encoder
+    Transformer PREENTRENADO (se ajusta apenas, LR pequeño) + una cabeza
+    de clasificación NUEVA sobre el token [CLS] (nace aleatoria y
+    aprende la tarea)."""
+    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
+
+    fig, ax = plt.subplots(figsize=(11.5, 6.6))
+    ax.set_xlim(0, 23)
+    ax.set_ylim(0, 14)
+    ax.axis("off")
+    ax.grid(False)
+
+    # ── Tokens de entrada ──
+    tokens = ["[CLS]", "this", "movie", "is", "great", "[SEP]"]
+    anchos = [1.7, 1.2, 1.7, 0.9, 1.6, 1.6]
+    xs = [4.0]
+    for w in anchos[:-1]:
+        xs.append(xs[-1] + w + 0.15)
+    for x, w, t in zip(xs, anchos, tokens):
+        especial = t.startswith("[")
+        ax.add_patch(Rectangle((x, 1.1), w, 0.95,
+                               facecolor="#BBDEF5" if t == "[CLS]"
+                               else ("#DCE9F6" if especial else "#F5F5F5"),
+                               edgecolor="#999", linewidth=0.9))
+        ax.text(x + w / 2, 1.575, t, ha="center", va="center", fontsize=9)
+    x_cls = xs[0] + anchos[0] / 2          # la columna del [CLS]
+
+    ax.add_patch(FancyArrowPatch((9.0, 2.25), (9.0, 3.1), arrowstyle="->",
+                                 mutation_scale=13, color=NARANJA,
+                                 linewidth=1.8))
+    ax.text(9.6, 2.6, "tokenizer + embeddings", fontsize=8.5,
+            color=NARANJA, fontweight="bold", ha="left")
+
+    # ── El encoder preentrenado (pila de bloques) ──
+    for k in range(2, -1, -1):
+        ax.add_patch(FancyBboxPatch((3.7 + k * 0.28, 3.3 + k * 0.24),
+                                    10.6, 4.3, boxstyle="round,pad=0.08",
+                                    facecolor="#DCE9F6" if k == 0
+                                    else "#EAF2FA",
+                                    edgecolor=AZUL, linewidth=1.3,
+                                    zorder=3 + (2 - k)))
+    ax.text(9.0, 5.85, "bloques Transformer ×6", ha="center", fontsize=11,
+            fontweight="bold", zorder=7)
+    ax.text(9.0, 5.0, "Multi-Head Attention + FFN + residuals + LayerNorm\n"
+            "(exactamente los de la Sesión 3)", ha="center", fontsize=8.5,
+            color=GRIS, zorder=7)
+    ax.text(15.6, 5.5,
+            "PREENTRENADO\nya \"sabe inglés\".\nEn fine-tuning se ajusta\n"
+            "apenas: LR pequeño (2e-5)", fontsize=9, color=AZUL,
+            fontweight="bold", va="center")
+    ax.plot([15.3, 15.3], [3.6, 7.4], color=AZUL, linewidth=1.6)
+
+    # ── Del [CLS] a la cabeza nueva ──
+    ax.add_patch(FancyArrowPatch((x_cls + 0.6, 7.9), (x_cls + 0.6, 8.9),
+                                 arrowstyle="->", mutation_scale=13,
+                                 color=NARANJA, linewidth=1.8))
+    ax.text(x_cls + 1.2, 8.35, "el vector del [CLS] — 768 números:\n"
+            "el resumen de toda la frase", fontsize=8.5, color=GRIS,
+            ha="left", style="italic")
+    ax.add_patch(FancyBboxPatch((2.0, 9.0), 6.8, 1.15,
+                                boxstyle="round,pad=0.08",
+                                facecolor="#F9E3C8", edgecolor=NARANJA,
+                                linewidth=1.6, zorder=4))
+    ax.text(5.4, 9.575, "cabeza nueva: Linear(768 → 2)", ha="center",
+            va="center", fontsize=9.5, fontweight="bold", zorder=5)
+    ax.text(10.4, 9.55, "NUEVA — nace aleatoria;\naprende TU tarea",
+            fontsize=9, color="#B96D00", fontweight="bold", va="center")
+
+    # ── Logits → softmax → probabilidades ──
+    ax.add_patch(FancyArrowPatch((5.4, 10.25), (5.4, 11.1), arrowstyle="->",
+                                 mutation_scale=13, color=NARANJA,
+                                 linewidth=1.8))
+    ax.text(6.0, 10.6, "softmax", fontsize=8.5, color=NARANJA,
+            fontweight="bold", ha="left")
+    for fila, (nombre, p, color) in enumerate([
+            ("POSITIVE", 0.92, VERDE), ("NEGATIVE", 0.08, "#E0E0E0")]):
+        y = 12.3 - fila * 0.95
+        ax.add_patch(Rectangle((5.0, y - 0.3), 4.2 * p, 0.6,
+                               facecolor=color, edgecolor="none"))
+        ax.text(4.86, y, nombre, ha="right", va="center", fontsize=9)
+        ax.text(5.12 + 4.2 * p, y, f"{p:.2f}", ha="left", va="center",
+                fontsize=9, fontweight="bold")
+
+    ax.text(11.5, 13.5,
+            "La anatomía del fine-tuning: encoder preentrenado + cabeza nueva",
+            ha="center", fontsize=13, fontweight="bold")
+    ax.text(11.5, 0.35,
+            "Esto es exactamente lo que construye "
+            "AutoModelForSequenceClassification(num_labels=2)",
+            ha="center", fontsize=9, color=GRIS, style="italic")
+    fig.savefig(DESTINO / "finetuning_anatomia.png")
+    plt.close(fig)
+
+
 def fig_neurona_vs_perceptron() -> None:
     """Anatomía comparada: neurona biológica (izquierda) vs perceptrón (derecha).
 
@@ -1774,6 +2335,8 @@ def main() -> None:
         fig_lr_schedules,
         fig_receptive_field, fig_rnn_gradientes, fig_atencion,
         fig_positional_encoding, fig_embeddings_2d, fig_complejidad,
+        fig_transformer_anatomia, fig_lstm_compuertas, fig_multihead,
+        fig_tokenizacion_hf, fig_dynamic_padding, fig_finetuning_anatomia,
         fig_neurona_vs_perceptron,
     ]
     for tarea in tareas:
