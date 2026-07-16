@@ -275,6 +275,121 @@ def fig_xor() -> None:
     plt.close(fig)
 
 
+def fig_capa_densa() -> None:
+    """La capa densa como multiplicación de matrices, celda por celda.
+
+    H (B, d_in) por W (d_in, d_out) más b produce Z (B, d_out); φ se aplica
+    elemento a elemento. Se resalta UNA fila de H (una muestra) y UNA
+    columna de W (una neurona): su producto punto es UNA celda de Z — la
+    neurona j evaluada en la muestra i. Números concretos incluidos.
+    """
+    from matplotlib.patches import FancyArrowPatch, Rectangle
+
+    fig, ax = plt.subplots(figsize=(13.5, 6.0))
+    ax.set_xlim(0, 16.6)
+    ax.set_ylim(0, 9.6)
+    ax.axis("off")
+    ax.grid(False)
+
+    L = 0.9                    # lado de celda
+    FILA_H, COL_W = 1, 0       # fila de H y columna de W resaltadas
+    vals_h = ["2", "1", "0"]   # la muestra resaltada
+    vals_w = ["1", "−1", "3"]  # la neurona resaltada
+    B, DIN, DOUT = 4, 3, 2
+
+    def grid(x0, y0, filas, cols, color, textos=None):
+        """Cuadrícula con origen (x0, y0) arriba-izquierda; devuelve centro."""
+        for i in range(filas):
+            for j in range(cols):
+                ax.add_patch(Rectangle((x0 + j * L, y0 - (i + 1) * L), L, L,
+                                       facecolor=color, edgecolor=AZUL,
+                                       linewidth=1.2, zorder=2))
+                if textos and textos.get((i, j)):
+                    ax.text(x0 + j * L + L / 2, y0 - (i + 1) * L + L / 2,
+                            textos[(i, j)], ha="center", va="center",
+                            fontsize=10, zorder=4)
+        return x0 + cols * L / 2
+
+    def marco(x0, y0, filas, cols, color):
+        """Resalta un bloque (fila o columna o celda) con borde grueso."""
+        ax.add_patch(Rectangle((x0, y0 - filas * L), cols * L, filas * L,
+                               facecolor="none", edgecolor=color,
+                               linewidth=3.0, zorder=3))
+
+    def etiqueta(xc, nombre, shape, nota=None):
+        ax.text(xc, 2.55, nombre, ha="center", fontsize=12.5, fontweight="bold")
+        ax.text(xc, 1.95, shape, ha="center", fontsize=10.5,
+                family="monospace", color=AZUL, fontweight="bold")
+        if nota:
+            ax.text(xc, 1.35, nota, ha="center", fontsize=9, color=GRIS,
+                    style="italic")
+
+    y_top = 7.0                # borde superior de H y Z
+
+    # ── H⁽ˡ⁻¹⁾: (B, d_in), cada fila una muestra ──
+    tx = {(FILA_H, j): v for j, v in enumerate(vals_h)}
+    xc = grid(0.9, y_top, B, DIN, "#D6E9F8", tx)
+    marco(0.9, y_top - FILA_H * L, 1, DIN, NARANJA)
+    etiqueta(xc, "H⁽ˡ⁻¹⁾", "(B, d_in)", "cada FILA es\nuna muestra")
+    ax.text(0.55, y_top - FILA_H * L - L / 2, "muestra i →", ha="right",
+            va="center", fontsize=9, color=NARANJA, fontweight="bold")
+
+    ax.text(4.25, y_top - B * L / 2, "×", fontsize=22, ha="center", va="center")
+
+    # ── W⁽ˡ⁾: (d_in, d_out), cada columna una neurona ──
+    y_w = y_top - (B - DIN) * L / 2    # centrar verticalmente respecto a H
+    tx = {(i, COL_W): v for i, v in enumerate(vals_w)}
+    xc = grid(5.0, y_w, DIN, DOUT, "#CBE8DC", tx)
+    marco(5.0 + COL_W * L, y_w, DIN, 1, VERDE)
+    etiqueta(xc, "W⁽ˡ⁾", "(d_in, d_out)", "cada COLUMNA es\nuna neurona")
+    ax.text(5.0 + COL_W * L + L / 2, y_w + 0.35, "neurona j\n↓", ha="center",
+            va="bottom", fontsize=9, color=VERDE, fontweight="bold")
+
+    ax.text(7.6, y_top - B * L / 2, "+", fontsize=22, ha="center", va="center")
+
+    # ── b⁽ˡ⁾: un bias por neurona ──
+    y_b = y_top - B * L / 2 + L / 2
+    xc = grid(8.1, y_b, 1, DOUT, "#EFEFEF", {(0, COL_W): "0.5"})
+    etiqueta(xc, "b⁽ˡ⁾", "(d_out,)", "un bias\npor neurona")
+
+    ax.text(10.7, y_top - B * L / 2, "=", fontsize=22, ha="center", va="center")
+
+    # ── Z⁽ˡ⁾: (B, d_out) con la celda resultado resaltada ──
+    xc = grid(11.2, y_top, B, DOUT, "#FDF3D0", {(FILA_H, COL_W): "1.5"})
+    marco(11.2 + COL_W * L, y_top - FILA_H * L, 1, 1, ROJO)
+    etiqueta(xc, "Z⁽ˡ⁾", "(B, d_out)")
+
+    # ── φ elemento a elemento → H⁽ˡ⁾ ──
+    ax.add_patch(FancyArrowPatch((13.35, y_top - B * L / 2),
+                                 (14.15, y_top - B * L / 2),
+                                 arrowstyle="->", mutation_scale=15,
+                                 color=NARANJA, linewidth=2.2))
+    ax.text(13.75, y_top - B * L / 2 + 0.55, "φ", fontsize=15, ha="center",
+            color=NARANJA, fontweight="bold")
+    xc = grid(14.4, y_top, B, DOUT, "#F9E3C8")
+    etiqueta(xc, "H⁽ˡ⁾ = φ(Z⁽ˡ⁾)", "(B, d_out)", "entrada de la\ncapa siguiente")
+
+    # ── La celda roja, explicada con los números de la figura ──
+    ax.text(8.3, 0.45,
+            "celda roja = (fila naranja) · (columna verde) + bias "
+            "= 2·1 + 1·(−1) + 0·3 + 0.5 = 1.5   —   la neurona j evaluada en la muestra i",
+            ha="center", fontsize=10.5,
+            bbox=dict(boxstyle="round,pad=0.4", facecolor="#FDF3D0",
+                      edgecolor=ROJO, linewidth=1.4))
+
+    ax.text(8.3, 9.15,
+            "Una capa densa es UNA multiplicación de matrices: evalúa las "
+            "d_out neuronas sobre las B muestras de un solo golpe",
+            ha="center", fontsize=12.5, fontweight="bold")
+    ax.text(8.3, 8.45,
+            "El superíndice (l) numera la capa · φ se aplica número a número "
+            "· por esto la GPU vuela: todo es un solo producto de matrices",
+            ha="center", fontsize=10, color=GRIS)
+
+    fig.savefig(DESTINO / "capa_densa_matmul.png")
+    plt.close(fig)
+
+
 def fig_activaciones() -> None:
     """Funciones de activación y sus derivadas, lado a lado.
 
@@ -973,7 +1088,8 @@ def main() -> None:
     aplicar_estilo()
     DESTINO.mkdir(parents=True, exist_ok=True)
     tareas = [
-        fig_tensores, fig_neurona_frontera, fig_xor, fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
+        fig_tensores, fig_neurona_frontera, fig_xor, fig_capa_densa,
+        fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
         fig_learning_rate, fig_moons_frontera, fig_kernels, fig_padding_stride,
         fig_receptive_field, fig_rnn_gradientes, fig_atencion,
         fig_positional_encoding, fig_embeddings_2d, fig_complejidad,

@@ -216,6 +216,15 @@ $$
 neurona; la multiplicación matricial calcula *todas las neuronas para todas las muestras
 del batch* de un solo golpe — por eso es tan rápida en GPU.
 
+![La capa densa como multiplicación de matrices: fila × columna = una celda de Z](../docs/assets/figuras/capa_densa_matmul.png)
+
+Sigue los colores: la **fila naranja** de $H$ es una muestra, la **columna verde** de $W$
+es una neurona, y su producto punto (más el bias) produce la **celda roja** de $Z$ — esa
+neurona evaluada en esa muestra. La multiplicación matricial hace eso para *todas* las
+combinaciones fila×columna a la vez, y $\phi$ luego pasa número por número. Verifica el
+cálculo de la celda roja a mano: es el mismo producto punto de la neurona lineal de
+arriba.
+
 **Contrato de shapes** (batch-first): si $H$ es `(B, d_in)` y $W$ es `(d_in, d_out)`,
 la salida es `(B, d_out)`.
 
