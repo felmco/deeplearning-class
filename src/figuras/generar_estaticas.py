@@ -390,6 +390,53 @@ def fig_capa_densa() -> None:
     plt.close(fig)
 
 
+def fig_softmax_pasos() -> None:
+    """El mecanismo de softmax en 3 pasos con números reales: logits
+    (pueden ser negativos) → e^z (todo positivo, diferencias agrandadas)
+    → dividir por la suma (probabilidades que suman 1)."""
+    clases = ["gato", "perro", "pez"]
+    z = np.array([2.0, 1.0, -1.0])
+    ez = np.exp(z)
+    p = ez / ez.sum()
+
+    fig, axes = plt.subplots(1, 3, figsize=(12.5, 4.2))
+    datos = [
+        (z, "1 · Logits z\n(salida cruda de la red)",
+         "pueden ser negativos\ny no suman nada especial"),
+        (ez, "2 · Exponenciar: e^z\n(todo positivo)",
+         "las diferencias\nse agrandan"),
+        (p, "3 · Dividir por la suma\n(probabilidades)",
+         f"suman {p.sum():.2f} ✓\n¡una distribución!"),
+    ]
+    for ax, (vals, titulo, nota) in zip(axes, datos):
+        colores = [AZUL if v == vals.max() else CELESTE for v in vals]
+        barras = ax.bar(clases, vals, color=colores)
+        ax.set_title(titulo, fontsize=11.5)
+        ax.axhline(0, color=GRIS, linewidth=0.9)
+        for barra, v in zip(barras, vals):
+            va = "bottom" if v >= 0 else "top"
+            dy = 0.04 * max(abs(vals.max()), 1) * (1 if v >= 0 else -1)
+            ax.text(barra.get_x() + barra.get_width() / 2, v + dy,
+                    f"{v:.2f}", ha="center", va=va, fontsize=10,
+                    fontweight="bold")
+        ax.text(0.97, 0.86, nota, transform=ax.transAxes, fontsize=9,
+                ha="right", color=GRIS, style="italic")
+        ax.margins(y=0.22)
+
+    # Flechas entre paneles, con la operación que se aplica
+    for x_fig, texto in [(0.365, "e^z"), (0.655, "÷ suma")]:
+        fig.text(x_fig, 0.5, "→", fontsize=24, ha="center", va="center",
+                 color=NARANJA, fontweight="bold")
+        fig.text(x_fig, 0.60, texto, fontsize=11, ha="center",
+                 color=NARANJA, fontweight="bold")
+
+    fig.suptitle("softmax paso a paso: de puntajes sueltos a porciones de una torta",
+                 fontweight="bold", y=1.04)
+    fig.subplots_adjust(wspace=0.35)
+    fig.savefig(DESTINO / "softmax_pasos.png")
+    plt.close(fig)
+
+
 def fig_activaciones() -> None:
     """Funciones de activación y sus derivadas, lado a lado.
 
@@ -1089,7 +1136,7 @@ def main() -> None:
     DESTINO.mkdir(parents=True, exist_ok=True)
     tareas = [
         fig_tensores, fig_neurona_frontera, fig_xor, fig_capa_densa,
-        fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
+        fig_softmax_pasos, fig_activaciones, fig_softmax_temperatura, fig_curvas_aprendizaje,
         fig_learning_rate, fig_moons_frontera, fig_kernels, fig_padding_stride,
         fig_receptive_field, fig_rnn_gradientes, fig_atencion,
         fig_positional_encoding, fig_embeddings_2d, fig_complejidad,

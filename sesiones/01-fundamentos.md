@@ -256,25 +256,55 @@ el número de Euler ≈ 2.718; $e^{-z}$ solo es una forma suave de "decaer hacia
 
 ### La capa de salida depende de la tarea
 
-| Tarea | Salida | Activación final | Loss |
-|---|---|---|---|
-| Regresión | 1 número real | identidad (ninguna) | MSE |
-| Clasificación binaria | 1 logit | *(sigmoid dentro de la loss)* | `BCEWithLogitsLoss` |
-| Clasificación multiclase | K logits | *(softmax dentro de la loss)* | `CrossEntropyLoss` |
+Hasta aquí, las capas ocultas transforman las features en representaciones cada vez más
+útiles. Falta la última pieza: la **capa de salida**, la que traduce todo ese trabajo al
+formato de la respuesta que buscas. Y ese formato depende de la *pregunta* que le haces
+a la red:
 
-### Softmax: de logits a probabilidades
+- **"¿Cuánto?"** — el precio de una casa, la temperatura de mañana. La respuesta es un
+  **número libre**, sin límites, y la red lo entrega tal cual (sin activación final).
+  Esto se llama **regresión**.
+- **"¿Sí o no?"** — ¿es spam?, ¿hay un gato en la foto? La respuesta útil es una
+  **probabilidad entre 0 y 1**: la red produce un logit y **sigmoid** lo aplasta a ese
+  rango. **Clasificación binaria**.
+- **"¿Cuál de estas K opciones?"** — ¿qué dígito es?, ¿qué animal aparece? La respuesta
+  útil es **una probabilidad por opción, y que sumen 1**: la red produce K logits y
+  **softmax** los reparte. **Clasificación multiclase**.
+
+| Tarea | Pregunta típica | La red entrega | Cómo se vuelve respuesta |
+|---|---|---|---|
+| Regresión | "¿cuánto costará?" | 1 número real | se usa tal cual |
+| Clasificación binaria | "¿es spam?" | 1 logit | sigmoid → probabilidad |
+| Clasificación multiclase | "¿qué dígito es?" | K logits | softmax → K probabilidades que suman 1 |
+
+> ⚠️ **En PyTorch, la sigmoid/softmax final vive DENTRO de la loss**
+> (`BCEWithLogitsLoss`, `CrossEntropyLoss`) por estabilidad numérica — los detalles en
+> la sección 4. Por ahora recuerda solo esto: **la red entrega logits crudos**.
+
+### Softmax: de logits a porciones de una torta
+
+Supón que la red mira una foto y dice: *gato: 2.0, perro: 1.0, pez: −1.0*. Puntajes
+útiles, pero incómodos — hay negativos y no suman nada especial. Softmax los convierte
+en probabilidades en dos movimientos:
+
+![softmax paso a paso: logits → exponenciar → dividir por la suma](../docs/assets/figuras/softmax_pasos.png)
+
+1. **Exponenciar** ($e^z$): todo se vuelve positivo y las diferencias se agrandan — el
+   favorito se separa del pelotón.
+2. **Dividir por la suma**: ahora el total es exactamente 1. Cada clase se queda con su
+   "porción de la torta": una **distribución de probabilidad**.
+
+La fórmula dice exactamente eso y nada más:
 
 $$
 p_k = \frac{e^{z_k}}{\sum_{j=1}^{K}e^{z_j}}
 $$
 
-**En palabras:** exponenciar vuelve todos los puntajes positivos y agranda las
-diferencias; dividir por la suma obliga a que el total sea 1. De puntajes sueltos a
-"porciones de una torta": una **distribución de probabilidad** (lista de números ≥ 0
-que suman exactamente 1, uno por clase).
+— arriba, el paso 1 aplicado a la clase $k$; abajo, la suma de todos para repartir.
 
-En implementación se resta $\max(z)$ antes de exponenciar (estabilidad numérica); softmax es
-invariante a esa traslación.
+> 🔧 **Detalle de implementación:** antes de exponenciar se le resta a todos los logits
+> el más grande ($\max(z)$). El resultado no cambia — softmax solo mira las *diferencias*
+> entre logits — pero evita que $e^z$ desborde con logits grandes.
 
 🕹️ **Simulador:** [Softmax y temperatura](https://felmco.github.io/deeplearning-class/interactivos/softmax-temperatura.html) — ajusta los logits y la temperatura y observa la distribución. (*Temperatura*: divide los logits antes del softmax — T alta aplana la distribución, T baja la afila. La usarás para generar texto en la Sesión 3.)
 
