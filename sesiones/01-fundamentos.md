@@ -484,11 +484,12 @@ flowchart LR
     R -->|"error = −3"| Q(("(·)²"))
     Q -->|"L = 9"| L["loss"]
 
-    L -.->|"∂L/∂error = −6"| Q
-    Q -.->|"∂L/∂ŷ = −6"| R
-    R -.->|"∂L/∂b = −6"| b
-    R -.->|"∂L/∂(wx) = −6"| S
-    S -.->|"∂L/∂w = −6·x = −12"| w
+    L -.->|"∂L/∂L = 1 (la semilla)"| Q
+    Q -.->|"∂L/∂error = 2·error = −6"| R
+    R -.->|"∂L/∂ŷ = −6"| S
+    S -.->|"∂L/∂b = −6"| b
+    S -.->|"∂L/∂(wx) = −6"| M
+    M -.->|"∂L/∂w = −6·x = −12"| w
 
     style w fill:#E69F00,color:#000
     style b fill:#E69F00,color:#000
@@ -590,11 +591,15 @@ mantiene la señal estable:
 
 | Regla | Tamaño típico del peso | Para qué activación |
 |---|---|---|
-| **Xavier** (Glorot, 2010) | ≈ 1/√d_in | tanh, sigmoid |
-| **He** (He et al., 2015) | ≈ √(2/d_in) | ReLU — el ×2 compensa la mitad que ReLU apaga |
+| **Xavier** (Glorot & Bengio, 2010) | ≈ √(2/(d_in+d_out)) | tanh, sigmoid |
+| **He** (He et al., 2015, *Delving Deep into Rectifiers* — mismo grupo que ResNet, otro paper) | ≈ √(2/d_in) | ReLU — el ×2 compensa la mitad que ReLU apaga |
 
-Con números: para una capa que recibe d_in = 100 entradas, Xavier propone pesos
-típicos de ±1/√100 = ±0.1.
+(d_in y d_out = cuántas entradas recibe y cuántas salidas produce la capa; Xavier
+promedia ambos lados para que la señal sea estable en el forward Y en el backward —
+cuando d_in = d_out, se reduce al 1/√d_in que verás citado por ahí.)
+
+Con números: para una capa de 100 entradas y 100 salidas, Xavier propone pesos
+típicos de ±√(2/200) = ±0.1.
 
 En la práctica **PyTorch ya inicializa `nn.Linear` y `nn.Conv2d` con variantes
 razonables de estas reglas** — por eso no lo hicimos a mano en ningún lab. Solo se

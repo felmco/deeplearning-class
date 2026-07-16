@@ -456,7 +456,7 @@ def fig_paralelismo() -> None:
                                  mutation_scale=14, color=GRIS,
                                  linewidth=1.8))
     ax.text(5.5, 1.5, "miles de núcleos simples → TODO el batch de golpe\n"
-            "(la misma operación sobre todos los datos: SIMD)",
+            "(la misma operación sobre todos los datos: SIMD/SIMT)",
             ha="center", fontsize=9.5)
     ax.set_title("GPU: miles de núcleos, muy simples", fontsize=11.5)
 
@@ -2138,7 +2138,7 @@ def fig_lstm_compuertas() -> None:
 
     # ── Compuerta 1: olvidar ──
     valvula(6, "⊗", ROJO)
-    caja(4.4, 5.4, 3.2, 1.15, "#F6D9CE", "fₜ = σ( W·[xₜ, hₜ₋₁] )")
+    caja(4.4, 5.4, 3.2, 1.15, "#F6D9CE", "fₜ = σ(W_f·[xₜ, hₜ₋₁])")
     flecha((6, 6.55), (6, 7.9), ROJO)
     ax.text(6, 4.85, "OLVIDAR: ¿qué borro?", ha="center",
             fontsize=9, color=ROJO, fontweight="bold")
@@ -2158,7 +2158,7 @@ def fig_lstm_compuertas() -> None:
                             edgecolor=NARANJA, linewidth=2.6, zorder=5))
     ax.text(16, 4.6, "⊗", ha="center", va="center", fontsize=15,
             color=NARANJA, fontweight="bold", zorder=6)
-    caja(17.6, 4.15, 2.4, 0.9, "#F9E3C8", "oₜ = σ(...)")
+    caja(17.6, 4.15, 2.9, 0.9, "#F9E3C8", "oₜ = σ(W_o·[…])")
     flecha((17.55, 4.6), (16.5, 4.6), NARANJA)
     flecha((16, 4.1), (16, 2.9), NARANJA)
     ax.text(16, 2.35, "hₜ — lo que ve el resto de la red",

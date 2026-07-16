@@ -22,6 +22,12 @@ Lleva un promedio móvil del gradiente (hacia dónde ir) y de su magnitud (cuán
 por parámetro. Con la corrección de AdamW
 (weight decay desacoplado), es el optimizador por defecto del curso. *(Sesión 2)*
 
+### Decoupled Weight Decay Regularization (AdamW)
+**Loshchilov & Hutter (2019)** · <https://arxiv.org/abs/1711.05101>
+Demuestra que el weight decay dentro de Adam NO equivale a regularización L2 y lo
+desacopla de la actualización adaptativa. El "W" de AdamW — el default de este curso
+y del fine-tuning de Transformers. *(Sesiones 2 y 4)*
+
 ### Batch Normalization
 **Ioffe & Szegedy (2015)** · <https://arxiv.org/abs/1502.03167>
 Normalizar activaciones por mini-batch estabiliza y acelera el entrenamiento. Ojo con la
@@ -66,6 +72,12 @@ límites. La plantilla del proyecto final deriva de aquí. *(Sesión 4 y proyect
 **Cho et al. (2024)** · <https://arxiv.org/abs/2408.04619>
 La herramienta del laboratorio visual de la Sesión 3: GPT-2 small ejecutándose en el navegador
 con cada matriz inspeccionable.
+
+### Why do tree-based models still outperform deep learning on tabular data?
+**Grinsztajn, Oyallon & Varoquaux (2022)** · <https://arxiv.org/abs/2207.08815>
+La evidencia detrás del "momento honestidad" de la Sesión 0: en datos tabulares
+medianos, los ensambles de árboles siguen ganándole al Deep Learning. Elegir la
+herramienta por evidencia, no por moda. *(Sesión 0)*
 
 ---
 

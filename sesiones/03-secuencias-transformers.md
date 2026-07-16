@@ -51,7 +51,7 @@ Un modelo no ve palabras: ve **IDs enteros**. El tokenizer parte el texto en uni
 |---|---|---|
 | Por palabra | `[transformadores]` | vocabulario enorme, palabras raras = `<unk>` |
 | Por carácter | `[t,r,a,n,s,...]` | vocabulario mínimo, secuencias larguísimas |
-| **Subword** (BPE/WordPiece) | `[transform, ادores]`* | equilibrio: lo raro se descompone |
+| **Subword** (BPE/WordPiece) | `[transform, ##adores]`* | equilibrio: lo raro se descompone |
 
 \* *ilustrativo; los cortes reales dependen del corpus de entrenamiento del tokenizer
 (el **corpus**: la colección de textos con la que se entrenó). BPE (*Byte-Pair

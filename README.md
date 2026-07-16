@@ -2,7 +2,7 @@
 
 # 🧠 Deep Learning: de los fundamentos a los Transformers
 
-### Curso completo de 32 horas — aula virtual en GitHub
+### Curso completo de 32 horas + nivelación de ML (4 h) — aula virtual en GitHub
 
 **[🌐 Portal interactivo del aula](https://felmco.github.io/deeplearning-class/)** ·
 **[📖 Programa académico completo](Programa_Completo_Deep_Learning_Transformers_32h.md)** ·
@@ -89,7 +89,7 @@ deeplearning-class/
 ├── README.md                  ← estás aquí (portada del aula)
 ├── Programa_Completo_...md    ← programa académico completo (32 h)
 ├── sesiones/                  ← las sesiones del curso, 0–4 (el contenido del aula)
-├── notebooks/                 ← 7 laboratorios ejecutables
+├── notebooks/                 ← 8 laboratorios ejecutables
 ├── src/                       ← código fuente comentado (data, models, train, evaluate, utils)
 ├── tests/                     ← pruebas de shapes y smoke tests
 ├── configs/                   ← configuraciones YAML de experimentos (mlp, cnn, transformer)
@@ -151,6 +151,10 @@ python -m src.utils
 | Participación / revisión de pares | 5% | Pull request y feedback técnico |
 
 **Criterio de aprobación:** 70/100 y entrega reproducible del proyecto.
+
+> 🏛️ Para la ponderación **institucional** (taller teórico, [ensayo](proyecto/ensayo.md)
+> y avances del proyecto con exposiciones), ver la
+> [alineación con el syllabus oficial](docs/alineacion-syllabus.md).
 
 ## 📚 Recursos
 

@@ -95,7 +95,7 @@ salida = tokenizer('Deep learning is fascinating!')
 
 | Concepto | Qué es |
 |---|---|
-| **Subwords** | palabras raras se parten: `fascinating → fascin + ##ating` |
+| **Subwords** | palabras raras se parten: `fascinating → fascin + ##ating` (corte ilustrativo — el real depende del vocabulario del checkpoint; verifícalo en el notebook) |
 | **Tokens especiales** | `[CLS]` (resumen), `[SEP]` (separador), `[PAD]`, o `BOS/EOS` según arquitectura |
 | **attention_mask** | máscara de padding (≠ máscara causal de la Sesión 3) |
 | **truncation** | cortar secuencias al máximo del modelo |

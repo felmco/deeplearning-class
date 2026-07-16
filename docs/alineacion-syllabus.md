@@ -49,6 +49,10 @@ amplia").*
 | Avance 1 del proyecto de aula + exposición | 25% + 10% | Milestones [M0–M3](../proyecto/README.md) (repo, datos, baseline, modelo propio) + presentación de avance |
 | Avance 2 del proyecto de aula + exposición | 15% + 15% | Milestones M4–M6 (Transformer, evaluación, entrega) + demo day |
 
+> ⚠️ Los porcentajes del syllabus fuente suman **90%** (10+15+25+10+15+15): confirmar
+> con la coordinación del programa la asignación del 10% restante antes de aplicar la
+> ponderación en una cohorte.
+
 ## Mapeo de las 6 semanas del syllabus
 
 | Semana | Eje del syllabus | Material del repo |

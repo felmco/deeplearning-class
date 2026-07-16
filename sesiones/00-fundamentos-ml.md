@@ -94,7 +94,7 @@ contra un baseline, regla de oro del curso).
 | Regresión lineal | $\hat{y} = wx + b$ | $\hat{y}$ = la predicción (un número) · $x$ = la feature de entrada · $w$ = la pendiente: cuánto cambia $\hat{y}$ por cada unidad de $x$ · $b$ = el intercepto: el valor base cuando $x=0$. Entrenar = encontrar la $w$ y la $b$ que minimizan el MSE de los residuos. |
 | Regresión logística | $p = \sigma(wx + b)$ | $p$ = probabilidad de la clase positiva · $\sigma$ = la sigmoide: aplasta cualquier número al rango (0, 1) · $w, b$ = los mismos pesos y bias de la lineal. Frontera de decisión donde $p = 0.5$ (es decir, donde $wx+b=0$). |
 | k-NN | $d(a,b)=\sqrt{\sum_i (a_i-b_i)^2}$ | $d(a,b)$ = distancia euclidiana entre los puntos $a$ y $b$ (Pitágoras generalizado) · $a_i, b_i$ = la feature i-ésima de cada punto · $k$ = cuántos vecinos votan. Predicción = el voto mayoritario de los $k$ puntos con menor $d$. |
-| Árbol de decisión | $G = 1 - \sum_k p_k^2$ | $G$ = impureza Gini del nodo: 0 si es puro (una sola clase), 0.5 si está 50/50 · $p_k$ = proporción de ejemplos de la clase $k$ en el nodo. Cada pregunta del árbol se elige para BAJAR $G$ lo más posible. |
+| Árbol de decisión | $G = 1 - \sum_k p_k^2$ | $G$ = impureza Gini del nodo: 0 si es puro (una sola clase), 0.5 si está 50/50 con dos clases (con K clases el máximo es 1−1/K) · $p_k$ = proporción de ejemplos de la clase $k$ en el nodo. Cada pregunta del árbol se elige para BAJAR $G$ lo más posible. |
 | Random forest | voto de $B$ árboles | $B$ = número de árboles (el `n_estimators`) · cada árbol se entrena con una muestra *bootstrap* distinta (muestrear con reemplazo) y features al azar. Predicción = el voto mayoritario: los errores individuales se cancelan. |
 | Gradient boosting | $F_m = F_{m-1} + \eta h_m$ | $F_m$ = el modelo acumulado tras $m$ árboles · $h_m$ = el árbol nuevo, entrenado sobre los RESIDUOS (errores) de $F_{m-1}$ · $\eta$ = learning rate: cuánto confiar en cada corrección (el mismo concepto de la Sesión 1). |
 | SVM | margen $= 2/\Vert w \Vert$ | margen = el ancho de la "calle" entre las dos clases · $w$ = los pesos que definen la frontera · $\Vert w \Vert$ = el tamaño (norma) de $w$. Maximizar el margen = encontrar la $w$ más pequeña que aún separa; solo los puntos que tocan la calle (vectores de soporte) la definen. |
@@ -108,9 +108,11 @@ contra un baseline, regla de oro del curso).
 > vectores de soporte).
 
 > ⚠️ **Momento honestidad:** para datos **tabulares** (filas y columnas), gradient
-> boosting sigue ganándole al Deep Learning la mayoría de las veces. El DL domina
-> cuando los datos son **no estructurados**: imágenes, texto, audio. Elegir la
-> herramienta por evidencia — no por moda — es una competencia central de este curso.
+> boosting sigue ganándole al Deep Learning la mayoría de las veces — la evidencia
+> sistemática está en [Grinsztajn et al., 2022](https://arxiv.org/abs/2207.08815)
+> (comentado en [papers.md](../recursos/papers.md)). El DL domina cuando los datos son
+> **no estructurados**: imágenes, texto, audio. Elegir la herramienta por evidencia —
+> no por moda — es una competencia central de este curso.
 
 ---
 

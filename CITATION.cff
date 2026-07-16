@@ -16,8 +16,9 @@ keywords:
   - educación
   - español
 abstract: >
-  Curso completo de Deep Learning en español (32 horas) que cubre desde
+  Curso completo de Deep Learning en español (32 horas más una sesión de
+  nivelación de Machine Learning) que cubre desde los paradigmas del ML,
   tensores, backpropagation y MLP hasta CNN, RNN/LSTM, attention,
   arquitectura Transformer y fine-tuning con Hugging Face. Incluye
-  laboratorios en PyTorch, simuladores interactivos, animaciones y un
-  proyecto final reproducible.
+  laboratorios en PyTorch y scikit-learn, simuladores interactivos,
+  animaciones y un proyecto final reproducible.

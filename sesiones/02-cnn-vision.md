@@ -94,6 +94,12 @@ Una ventana del tamaño del kernel se coloca sobre la imagen, se multiplica **el
 elemento** con el kernel, se suma todo y ese número es UNA celda del **feature map**. Luego
 la ventana se desliza y se repite. En una CNN real se suman además los canales de entrada.
 
+> 📐 **Nota de rigor:** la operación tal como está escrita (sin "voltear" el kernel) es,
+> matemáticamente, una **correlación cruzada**; la convolución estricta del análisis de
+> señales voltea el kernel primero. Los frameworks de Deep Learning calculan la
+> correlación y la llaman convolución — y como el kernel se *aprende*, la distinción no
+> cambia absolutamente nada en la práctica.
+
 ![Kernel deslizándose y construyendo el feature map](../docs/assets/figuras/convolucion.gif)
 
 🕹️ **Simulador:** [Convolución 2D interactiva](https://felmco.github.io/deeplearning-class/interactivos/convolucion.html) — elige el kernel, el stride y el padding, y avanza paso a paso.
@@ -277,7 +283,8 @@ bandeja:
 
 - **CPU:** pocos núcleos (4–16) muy potentes y flexibles — procesa el batch en tandas.
 - **GPU:** miles de núcleos simples que ejecutan **la misma instrucción sobre muchos
-  datos a la vez** (el término técnico: *SIMD*, Single Instruction Multiple Data) —
+  datos a la vez** (los términos técnicos: *SIMD*, Single Instruction Multiple Data,
+  y su variante en GPUs modernas, *SIMT* — la misma instrucción sobre muchos *hilos*) —
   el batch completo pasa de un solo golpe. Es la misma razón por la que en la Sesión 1
   **vectorizamos** en vez de usar `for`.
 

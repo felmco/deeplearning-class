@@ -1,7 +1,7 @@
 
 # Programa completo de Deep Learning con capítulo de Transformers
 
-**Duración:** 4 sesiones de 8 horas — 32 horas totales  
+**Duración:** 4 sesiones de 8 horas — 32 horas totales — más una Sesión 0 de nivelación de ML (4 h sugeridas)  
 **Modalidad sugerida:** presencial o sincrónica, con exposición breve, demostración, práctica guiada y trabajo por equipos  
 **Stack principal:** Python, PyTorch, Jupyter en VS Code, Git/GitHub y Hugging Face  
 **Fecha de actualización de la guía:** 16 de julio de 2026  
@@ -140,12 +140,13 @@ Distribución recomendada del tiempo total:
 
 **Criterio de aprobación sugerido:** 70/100 y entrega reproducible del proyecto.
 
-## 7. Agenda maestra de las cuatro sesiones
+## 7. Agenda maestra de la nivelación y las cuatro sesiones
 
-> Cada sesión contempla 480 minutos. La propuesta incluye 60 minutos de pausas, para 420 minutos efectivos de aprendizaje y práctica. Puede adaptarse a la política de la institución.
+> Cada sesión (1–4) contempla 480 minutos. La propuesta incluye 60 minutos de pausas, para 420 minutos efectivos de aprendizaje y práctica. Puede adaptarse a la política de la institución. La Sesión 0 es una nivelación corta (4 h) previa al curso.
 
 | Sesión | Eje | Conceptos | Laboratorio principal | Producto del día |
 |---|---|---|---|---|
+| 0 | Nivelación de ML | Los tres paradigmas, modelos clásicos, k-means/PCA, Q-learning conceptual | Modelos de scikit-learn + gridworld | Tabla comparativa vs baseline y política del agente |
 | 1 | Fundamentos | Tensores, MLP, activaciones, loss, gradientes, backprop, training loop | MLP sobre `make_moons` | Notebook con frontera, métricas y curvas |
 | 2 | Visión y entrenamiento robusto | CNN, convolución, regularización, optimizadores, ResNet, transfer learning | CNN sobre FashionMNIST | Comparación controlada de dos runs |
 | 3 | Secuencias y Transformers | Embeddings, RNN/LSTM, atención, multi-head, positional encoding, Transformer | Atención y bloque Transformer desde cero | Heatmap, pruebas y reflexión |
