@@ -305,7 +305,7 @@ $$
 La nota sube de 0.50 a 0.57. Nada más: miles de correcciones pequeñas como esa
 producen la política de la figura.
 
-![Q-learning en un gridworld 4×4: la política aprendida esquiva el pozo y llega a la meta, y la curva de recompensa por episodio sube con la experiencia](../docs/assets/figuras/refuerzo_qlearning.png)
+![Q-learning en un gridworld 4×4: la política aprendida con la ruta greedy resaltada en naranja — esquiva el pozo y llega a la meta — y la curva de recompensa por episodio subiendo con la experiencia](../docs/assets/figuras/refuerzo_qlearning.png)
 
 El dilema central del paradigma es **explorar vs explotar**: probar acciones nuevas
 (que podrían ser mejores) o repetir la que ya funciona. El Lab 0 lo implementa con

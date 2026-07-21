@@ -305,7 +305,8 @@ def fig_kmeans_pca() -> None:
 
 def fig_refuerzo_qlearning() -> None:
     """Q-learning de verdad (el mismo del Lab 0) sobre un gridworld 4×4:
-    la política aprendida (flechas hacia la meta esquivando el pozo) y la
+    la política aprendida con la RUTA GREEDY resaltada (las casillas que el
+    agente pisa desde el inicio hasta la meta, esquivando el pozo) y la
     curva de recompensa por episodio subiendo a medida que aprende."""
     from matplotlib.patches import Rectangle
 
@@ -344,12 +345,25 @@ def fig_refuerzo_qlearning() -> None:
                 break
         recompensas.append(total)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.5, 4.6),
+    # La ruta greedy: seguir siempre la mejor nota desde el inicio
+    # (el mismo "camino greedy" que imprime el Lab 0)
+    fila, col = 0, 0
+    camino = [(0, 0)]
+    for _ in range(20):
+        if (fila, col) in (META, POZO):
+            break
+        df, dc = ACCIONES[int(np.argmax(Q[fila, col]))]
+        fila = min(max(fila + df, 0), N - 1)
+        col = min(max(col + dc, 0), N - 1)
+        camino.append((fila, col))
+    en_ruta = set(camino)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.5, 4.8),
                                    gridspec_kw={"width_ratios": [1, 1.4]})
 
     # ── El mundo y la política aprendida ──
     ax1.set_xlim(-0.2, N + 0.2)
-    ax1.set_ylim(-0.2, N + 0.2)
+    ax1.set_ylim(-1.0, N + 0.2)
     ax1.set_aspect("equal")
     ax1.axis("off")
     ax1.grid(False)
@@ -360,21 +374,32 @@ def fig_refuerzo_qlearning() -> None:
             elif (f, c) == POZO:
                 color, texto = "#F6D9CE", "POZO\n−1"
             else:
-                color, texto = "#FAFAFA", None
+                # Las casillas que el agente pisa quedan resaltadas
+                color = "#FDF3D0" if (f, c) in en_ruta else "#FAFAFA"
+                texto = None
             ax1.add_patch(Rectangle((c, N - 1 - f), 1, 1, facecolor=color,
                                     edgecolor="#999", linewidth=1.2))
             if texto:
                 ax1.text(c + 0.5, N - 1 - f + 0.5, texto, ha="center",
-                         va="center", fontsize=9, fontweight="bold")
+                         va="center", fontsize=9, fontweight="bold", zorder=5)
             elif Q[f, c].any():
                 ax1.text(c + 0.5, N - 1 - f + 0.5,
                          FLECHAS[int(np.argmax(Q[f, c]))], ha="center",
-                         va="center", fontsize=17, color=AZUL,
-                         fontweight="bold")
+                         va="center", fontsize=17,
+                         color=AZUL if (f, c) in en_ruta else "#9DB4C8",
+                         fontweight="bold", zorder=5)
+    # La ruta, conectada casilla a casilla por sus centros
+    xs_ruta = [c + 0.5 for _, c in camino]
+    ys_ruta = [N - 1 - f + 0.5 for f, _ in camino]
+    ax1.plot(xs_ruta, ys_ruta, color=NARANJA, linewidth=3.5, alpha=0.65,
+             solid_capstyle="round", zorder=3)
     ax1.add_patch(Rectangle((0, N - 1), 1, 1, facecolor="none",
                             edgecolor=NARANJA, linewidth=3))
     ax1.text(0.5, N - 0.82, "inicio", ha="center", fontsize=8,
-             color=NARANJA, fontweight="bold")
+             color=NARANJA, fontweight="bold", zorder=6)
+    ax1.text(N / 2, -0.55, "la ruta greedy (naranja): seguir siempre la\n"
+             "mejor nota esquiva el pozo y llega a la meta",
+             ha="center", fontsize=9, color="#B96D00", fontweight="bold")
     ax1.set_title("La política aprendida: en cada casilla,\nla mejor acción "
                   "según la tabla Q", fontsize=10.5)
 
