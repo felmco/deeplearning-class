@@ -282,10 +282,25 @@ $$
 - **En palabras:** *"ajusta tu apunte hacia lo que viviste: la recompensa
   inmediata más lo mejor que promete el siguiente estado"*.
 
-Con los números del gridworld: doy un paso a una casilla normal ($r = -0.02$)
-cuya mejor nota es 0.9. Lo vivido "vale" $-0.02 + 0.95 \cdot 0.9 \approx 0.84$,
-y mi apunte viejo se corre un 20% ($\alpha = 0.2$) hacia ese 0.84. Nada más:
-miles de correcciones pequeñas como esa producen la política de la figura.
+Con los números del gridworld, paso a paso: mi apunte viejo para esa jugada es
+$Q(s,a) = 0.50$; doy el paso, cobro $r = -0.02$ y caigo en una casilla cuya
+mejor nota es $0.9$. La misma fórmula, con cada símbolo reemplazado por su
+número:
+
+$$
+Q(s,a) \leftarrow \underbrace{0.50}_{\text{nota vieja}} +
+\underbrace{0.2}_{\alpha}\big[\underbrace{-0.02}_{r} +
+\underbrace{0.95}_{\gamma} \cdot \underbrace{0.9}_{\text{mejor nota de } s'} -
+\underbrace{0.50}_{\text{nota vieja}}\big]
+$$
+
+$$
+Q(s,a) \leftarrow 0.50 + 0.2 \cdot 0.335 \approx 0.57
+$$
+
+La nota sube de 0.50 a 0.57: se corrió un 20% ($\alpha = 0.2$) hacia lo que
+acabo de vivir ($-0.02 + 0.95 \cdot 0.9 \approx 0.84$). Nada más: miles de
+correcciones pequeñas como esa producen la política de la figura.
 
 ![Q-learning en un gridworld 4×4: la política aprendida esquiva el pozo y llega a la meta, y la curva de recompensa por episodio sube con la experiencia](../docs/assets/figuras/refuerzo_qlearning.png)
 
