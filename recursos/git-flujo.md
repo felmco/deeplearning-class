@@ -60,5 +60,6 @@ solo por el estilo.
 
 ## Issues y milestones
 
-En el proyecto final: **un issue por milestone (M0–M6)**, asignado a un responsable, cerrado
-desde el PR que lo completa (`Closes #4`). El tablero de issues ES el estado del proyecto.
+En el proyecto final: **un issue por checkpoint (1–3)** — o más granular si el equipo
+quiere —, asignado a un responsable, cerrado desde el PR que lo completa (`Closes #4`).
+El tablero de issues ES el estado del proyecto.

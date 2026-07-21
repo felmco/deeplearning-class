@@ -1,7 +1,7 @@
 # Baseline del proyecto: TF-IDF + Logistic Regression
 
 **Regla del curso: sin baseline no hay evidencia de valor.** Este es el código de partida
-del milestone M2 — completo, ejecutable y deliberadamente simple.
+del Checkpoint 1 — completo, ejecutable y deliberadamente simple.
 
 Las dos piezas, en una frase cada una:
 

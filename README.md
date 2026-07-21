@@ -98,7 +98,7 @@ deeplearning-class/
 │   ├── interactivos/          ← simuladores HTML/JS
 │   └── assets/figuras/        ← visualizaciones y animaciones generadas con Python
 ├── remotion/                  ← proyecto Remotion: animaciones de video renderizables
-├── proyecto/                  ← brief, milestones, rúbrica y model card del proyecto final
+├── proyecto/                  ← brief, checkpoints, rúbrica y model card del proyecto final
 ├── recursos/                  ← simuladores externos, papers, librerías y plataformas
 ├── app/                       ← demo Gradio del clasificador final
 └── .github/                   ← CI (smoke test) y plantilla de pull request

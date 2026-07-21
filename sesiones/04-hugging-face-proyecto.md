@@ -346,8 +346,9 @@ métricas agregadas.
 
 El resto de la sesión se dedica al [**proyecto final**](../proyecto/README.md):
 clasificador de texto reproducible con baseline, red propia y Transformer fine-tuned,
-comparados bajo el mismo contrato. Ahí están el brief completo, los milestones M0–M6,
-la rúbrica de 100 puntos y la plantilla de model card.
+comparados bajo el mismo contrato. Ahí están el brief completo con sus dos rutas
+(guiada o propuesta propia), los tres checkpoints, la rúbrica de 100 puntos y la
+plantilla de model card.
 
 ---
 
