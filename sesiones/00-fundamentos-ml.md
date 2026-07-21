@@ -89,15 +89,90 @@ contra un baseline, regla de oro del curso).
 
 ### La fórmula esencial de cada modelo
 
-| Modelo | La fórmula | Variables y cómo leerla |
-|---|---|---|
-| Regresión lineal | $\hat{y} = wx + b$ | $\hat{y}$ = la predicción (un número) · $x$ = la feature de entrada · $w$ = la pendiente: cuánto cambia $\hat{y}$ por cada unidad de $x$ · $b$ = el intercepto: el valor base cuando $x=0$. Entrenar = encontrar la $w$ y la $b$ que minimizan el MSE de los residuos. |
-| Regresión logística | $p = \sigma(wx + b)$ | $p$ = probabilidad de la clase positiva · $\sigma$ = la sigmoide: aplasta cualquier número al rango (0, 1) · $w, b$ = los mismos pesos y bias de la lineal. Frontera de decisión donde $p = 0.5$ (es decir, donde $wx+b=0$). |
-| k-NN | $d(a,b)=\sqrt{\sum_i (a_i-b_i)^2}$ | $d(a,b)$ = distancia euclidiana entre los puntos $a$ y $b$ (Pitágoras generalizado) · $a_i, b_i$ = la feature i-ésima de cada punto · $k$ = cuántos vecinos votan. Predicción = el voto mayoritario de los $k$ puntos con menor $d$. |
-| Árbol de decisión | $G = 1 - \sum_k p_k^2$ | $G$ = impureza Gini del nodo: 0 si es puro (una sola clase), 0.5 si está 50/50 con dos clases (con K clases el máximo es 1−1/K) · $p_k$ = proporción de ejemplos de la clase $k$ en el nodo. Cada pregunta del árbol se elige para BAJAR $G$ lo más posible. |
-| Random forest | voto de $B$ árboles | $B$ = número de árboles (el `n_estimators`) · cada árbol se entrena con una muestra *bootstrap* distinta (muestrear con reemplazo) y features al azar. Predicción = el voto mayoritario: los errores individuales se cancelan. |
-| Gradient boosting | $F_m = F_{m-1} + \eta h_m$ | $F_m$ = el modelo acumulado tras $m$ árboles · $h_m$ = el árbol nuevo, entrenado sobre los RESIDUOS (errores) de $F_{m-1}$ · $\eta$ = learning rate: cuánto confiar en cada corrección (el mismo concepto de la Sesión 1). |
-| SVM | margen $= 2/\Vert w \Vert$ | margen = el ancho de la "calle" entre las dos clases · $w$ = los pesos que definen la frontera · $\Vert w \Vert$ = el tamaño (norma) de $w$. Maximizar el margen = encontrar la $w$ más pequeña que aún separa; solo los puntos que tocan la calle (vectores de soporte) la definen. |
+Cada modelo cabe en una fórmula, y cada fórmula se entiende mejor dibujada:
+primero las variables, luego el comentario, y la imagen como evidencia.
+
+#### Regresión lineal
+
+$$\hat{y} = wx + b$$
+
+- $\hat{y}$ = la predicción (un número)
+- $x$ = la feature de entrada
+- $w$ = la pendiente: cuánto cambia $\hat{y}$ por cada unidad de $x$
+- $b$ = el intercepto: el valor base cuando $x=0$
+- **Cómo se entrena:** encontrar la $w$ y la $b$ que minimizan el MSE de los
+  residuos — los segmentos grises de la figura.
+
+![La recta aprendida sobre los datos: los residuos como segmentos grises, la pendiente w como triángulo y el intercepto b donde la recta corta x=0](../docs/assets/figuras/formula_regresion_lineal.png)
+
+#### Regresión logística
+
+$$p = \sigma(wx + b)$$
+
+- $p$ = probabilidad de la clase positiva
+- $\sigma$ = la sigmoide: aplasta cualquier número al rango (0, 1)
+- $w, b$ = los mismos pesos y bias de la lineal
+- **Frontera de decisión:** donde $p = 0.5$ — es decir, donde $wx+b=0$.
+
+![Los datos 0/1, la curva sigmoide que convierte la recta en probabilidad y la frontera de decisión vertical donde p=0.5](../docs/assets/figuras/formula_regresion_logistica.png)
+
+#### k-NN
+
+$$d(a,b)=\sqrt{\sum_i (a_i-b_i)^2}$$
+
+- $d(a,b)$ = distancia euclidiana entre los puntos $a$ y $b$ (Pitágoras generalizado)
+- $a_i, b_i$ = la feature i-ésima de cada punto
+- $k$ = cuántos vecinos votan
+- **Predicción:** el voto mayoritario de los $k$ puntos con menor $d$.
+
+![Un punto nuevo (estrella), el círculo de sus 7 vecinos más cercanos, un segmento de distancia euclidiana anotado y el resultado del voto](../docs/assets/figuras/formula_knn.png)
+
+#### Árbol de decisión
+
+$$G = 1 - \sum_k p_k^2$$
+
+- $G$ = impureza Gini del nodo: 0 si es puro (una sola clase), 0.5 si está
+  50/50 con dos clases (con K clases el máximo es 1−1/K)
+- $p_k$ = proporción de ejemplos de la clase $k$ en el nodo
+- **Cómo se entrena:** cada pregunta del árbol se elige para BAJAR $G$ lo más
+  posible.
+
+![Las regiones rectangulares que crean los cortes paralelos a los ejes, y el árbol de preguntas dibujado con la impureza Gini de cada nodo](../docs/assets/figuras/formula_arbol_decision.png)
+
+#### Random forest
+
+$$\hat{y} = \mathrm{voto}\left(\mathrm{arbol}_1(x),\ \dots,\ \mathrm{arbol}_B(x)\right)$$
+
+- $B$ = número de árboles (el `n_estimators`)
+- cada árbol se entrena con una muestra *bootstrap* distinta (muestrear con
+  reemplazo) y features al azar
+- **Predicción:** el voto mayoritario — los errores individuales se cancelan.
+
+![Tres árboles individuales, cada uno errático a su manera, y la frontera suave que produce el voto de los 100](../docs/assets/figuras/formula_random_forest.png)
+
+#### Gradient boosting
+
+$$F_m = F_{m-1} + \eta h_m$$
+
+- $F_m$ = el modelo acumulado tras $m$ árboles
+- $h_m$ = el árbol nuevo, entrenado sobre los RESIDUOS (errores) de $F_{m-1}$
+- $\eta$ = learning rate: cuánto confiar en cada corrección (el mismo concepto
+  de la Sesión 1)
+
+![La predicción acumulada mejorando etapa a etapa: tras 1 árbol escalones burdos, tras 5 la forma general, tras 100 la curva completa](../docs/assets/figuras/formula_gradient_boosting.png)
+
+#### SVM
+
+$$\mathrm{margen} = 2/\Vert w \Vert$$
+
+- margen = el ancho de la "calle" entre las dos clases
+- $w$ = los pesos que definen la frontera
+- $\Vert w \Vert$ = el tamaño (norma) de $w$
+- **Cómo se entrena:** maximizar el margen = encontrar la $w$ más pequeña que
+  aún separa; solo los puntos que tocan la calle (los **vectores de soporte**)
+  la definen.
+
+![La frontera de la SVM con su calle: el margen 2/‖w‖ medido en perpendicular y los dos vectores de soporte resaltados en dorado](../docs/assets/figuras/formula_svm.png)
 
 > 🧑‍🏫 **Para la clase — la guía de campo:** cada uno de estos modelos tiene su
 > sección en el [**notebook 00b**](../notebooks/00b_guia_modelos_clasicos.ipynb), con
@@ -134,18 +209,26 @@ Las dos tareas estrella:
   y proyecta sobre ellas: en la figura, los 64 píxeles de cada dígito quedan reducidos
   a **2 números** — y los dígitos iguales siguen cayendo juntos.
 
-Las fórmulas de ambos, leídas en palabras:
+Las fórmulas de ambos, leídas en palabras.
 
-- **k-means** minimiza $J = \sum_i \min_k \Vert x_i - \mu_k \Vert^2$ — variables:
-  $J$ = el costo total a minimizar · $x_i$ = cada punto de los datos · $\mu_k$ = el
-  centroide (centro de gravedad) del grupo $k$ · $\min_k$ = "elige el centroide más
-  cercano" · $\Vert \cdot \Vert^2$ = la distancia al cuadrado. **En palabras:** *"la
-  suma, para cada punto, del cuadrado de su distancia al centroide más cercano"* —
-  buenos grupos = puntos pegados a su centroide.
-- **PCA** no necesita fórmula nueva: la componente 1 es *la dirección donde los datos
-  más varían*; la 2, la perpendicular que más varía de lo que queda. El número a
-  reportar es la **varianza explicada**: "con 2 de 64 dimensiones conservo el X% de
-  la información".
+**k-means** minimiza:
+
+$$J = \sum_i \min_k \Vert x_i - \mu_k \Vert^2$$
+
+- $J$ = el costo total a minimizar
+- $x_i$ = cada punto de los datos
+- $\mu_k$ = el centroide (centro de gravedad) del grupo $k$
+- $\min_k$ = "elige el centroide más cercano"
+- $\Vert \cdot \Vert^2$ = la distancia al cuadrado
+- **En palabras:** *"la suma, para cada punto, del cuadrado de su distancia al
+  centroide más cercano"* — buenos grupos = puntos pegados a su centroide.
+
+**PCA** no necesita fórmula nueva:
+
+- la componente 1 es *la dirección donde los datos más varían*; la 2, la
+  perpendicular que más varía de lo que queda
+- el número a reportar es la **varianza explicada**: "con 2 de 64 dimensiones
+  conservo el X% de la información".
 
 > 🧑‍🏫 **Para la clase:** en la [guía de campo (notebook 00b)](../notebooks/00b_guia_modelos_clasicos.ipynb),
 > k-means está implementado **a mano en numpy** (~10 líneas) con los centroides
@@ -185,11 +268,14 @@ $$
 Q(s,a) \leftarrow Q(s,a) + \alpha\left[r + \gamma \max_{a'} Q(s',a') - Q(s,a)\right]
 $$
 
-**Cómo leerla:** $\alpha$ = learning rate (¿te suena? el mismo concepto de la Sesión 1)
-· $r$ = la recompensa que acabo de cobrar · $\gamma$ (gamma, ≈0.95) = cuánto valoro el
-futuro frente al presente · el $\max_{a'} Q(s',a')$ = "lo mejor que puedo esperar desde
-donde caí". **En palabras:** *"ajusta tu estimación hacia lo que viviste: la recompensa
-inmediata más lo mejor que promete el siguiente estado"*.
+**Cómo leerla:**
+
+- $\alpha$ = learning rate (¿te suena? el mismo concepto de la Sesión 1)
+- $r$ = la recompensa que acabo de cobrar
+- $\gamma$ (gamma, ≈0.95) = cuánto valoro el futuro frente al presente
+- $\max_{a'} Q(s',a')$ = "lo mejor que puedo esperar desde donde caí"
+- **En palabras:** *"ajusta tu estimación hacia lo que viviste: la recompensa
+  inmediata más lo mejor que promete el siguiente estado"*.
 
 ![Q-learning en un gridworld 4×4: la política aprendida esquiva el pozo y llega a la meta, y la curva de recompensa por episodio sube con la experiencia](../docs/assets/figuras/refuerzo_qlearning.png)
 

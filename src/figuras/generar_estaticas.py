@@ -398,6 +398,329 @@ def fig_refuerzo_qlearning() -> None:
     plt.close(fig)
 
 
+def fig_formula_lineal() -> None:
+    """La fórmula ŷ = w·x + b dibujada: la recta sobre los datos, los
+    residuos que el entrenamiento minimiza, la pendiente w como triángulo
+    y el intercepto b como el punto donde la recta corta x = 0."""
+    rng = np.random.default_rng(7)
+    metros = rng.uniform(40, 120, 55)
+    precio = 2.5 * metros + 30 + rng.normal(0, 24, 55)
+
+    # Ajuste por mínimos cuadrados (sin sklearn: es una recta)
+    w, b = np.polyfit(metros, precio, 1)
+    prediccion = w * metros + b
+
+    fig, ax = plt.subplots(figsize=(9, 5.2))
+    ax.scatter(metros, precio, s=28, color=AZUL, alpha=0.8, zorder=3,
+               label="datos")
+    xs = np.linspace(0, 128, 2)
+    ax.plot(xs, w * xs + b, color=ROJO, linewidth=2.4, zorder=4,
+            label="recta aprendida  ŷ = w·x + b")
+    # Los residuos: lo que el entrenamiento minimiza (al cuadrado)
+    for m, real, pred in zip(metros, precio, prediccion):
+        ax.plot([m, m], [real, pred], color=GRIS, linewidth=0.8,
+                alpha=0.55, zorder=2)
+
+    # b: el intercepto, literal — donde la recta corta x = 0
+    ax.scatter([0], [b], s=90, color=VERDE, zorder=5, edgecolor="white",
+               linewidth=1.5)
+    ax.annotate(f"b = {b:.0f}\n(el valor base cuando x = 0)",
+                xy=(0, b), xytext=(8, 262), fontsize=9.5, color=VERDE,
+                fontweight="bold",
+                arrowprops=dict(arrowstyle="->", color=VERDE))
+    # w: la pendiente, como triángulo sobre la recta
+    x0, dx = 78, 22
+    ax.plot([x0, x0 + dx], [w * x0 + b, w * x0 + b], color=NARANJA,
+            linewidth=2, zorder=4)
+    ax.plot([x0 + dx, x0 + dx], [w * x0 + b, w * (x0 + dx) + b],
+            color=NARANJA, linewidth=2, zorder=4)
+    ax.annotate(f"w = {w:.1f}: por cada metro extra,\nel precio sube {w:.1f}",
+                xy=(x0 + dx, w * x0 + b + w * dx / 2), xytext=(96, 160),
+                fontsize=9.5, color="#B96D00", fontweight="bold",
+                arrowprops=dict(arrowstyle="->", color=NARANJA))
+    # Nota en la esquina superior izquierda: la zona sin datos (x < 40)
+    ax.text(0.02, 0.98, "los segmentos grises son los RESIDUOS:\nentrenar = "
+            "elegir la recta que minimiza\nsus cuadrados (MSE)",
+            transform=ax.transAxes, va="top", fontsize=9, color=GRIS,
+            style="italic")
+
+    ax.set(xlabel="x — metros cuadrados (la feature)",
+           ylabel="ŷ — precio en millones (la predicción)",
+           title="Regresión lineal: ŷ = w·x + b, la recta que mejor pasa "
+                 "por los puntos")
+    ax.legend(loc="lower right", fontsize=9)
+    fig.savefig(DESTINO / "formula_regresion_lineal.png")
+    plt.close(fig)
+
+
+def fig_formula_logistica() -> None:
+    """La fórmula p = σ(w·x + b) dibujada: los datos 0/1, la sigmoide que
+    aplasta la recta al rango (0, 1) y la frontera de decisión donde
+    p = 0.5 (es decir, donde w·x + b = 0)."""
+    from sklearn.linear_model import LogisticRegression
+
+    rng = np.random.default_rng(3)
+    horas = rng.uniform(0, 10, 90)
+    p_real = 1 / (1 + np.exp(-1.4 * (horas - 5)))
+    aprueba = (rng.random(90) < p_real).astype(int)
+
+    modelo = LogisticRegression().fit(horas.reshape(-1, 1), aprueba)
+    xs = np.linspace(0, 10, 300)
+    probs = modelo.predict_proba(xs.reshape(-1, 1))[:, 1]
+    frontera = xs[np.argmin(np.abs(probs - 0.5))]
+
+    fig, ax = plt.subplots(figsize=(9, 5.2))
+    ax.scatter(horas, aprueba + rng.normal(0, 0.012, 90), s=26, color=AZUL,
+               alpha=0.6, zorder=3, label="datos (0 = pierde, 1 = aprueba)")
+    ax.plot(xs, probs, color=ROJO, linewidth=2.6, zorder=4,
+            label="p = σ(w·x + b)")
+    ax.axhline(0.5, color=GRIS, linestyle=":", linewidth=1)
+    ax.axvline(frontera, color=TINTA_LINEA, linestyle="--", linewidth=1.6)
+
+    ax.annotate("σ aplasta cualquier número\nal rango (0, 1):\nla recta se "
+                "vuelve probabilidad", xy=(7.4, probs[222]),
+                xytext=(6.9, 0.30), fontsize=9.5, color=ROJO,
+                arrowprops=dict(arrowstyle="->", color=ROJO))
+    ax.annotate(f"frontera de decisión: x = {frontera:.1f}\naquí w·x + b = 0 "
+                "y p = 0.5", xy=(frontera, 0.5), xytext=(0.4, 0.72),
+                fontsize=9.5, color="#1a2332", fontweight="bold",
+                arrowprops=dict(arrowstyle="->", color=TINTA_LINEA))
+    ax.text(0.08, 0.535, "p = 0.5", fontsize=8.5, color=GRIS)
+
+    ax.set(xlabel="x — horas de estudio (la feature)",
+           ylabel="p — probabilidad de la clase positiva",
+           title="Regresión logística: p = σ(w·x + b) — la neurona de la "
+                 "Sesión 1")
+    # Leyenda en la franja vacía de la izquierda (los datos viven en y≈0 y y≈1)
+    ax.legend(loc="center left", bbox_to_anchor=(0.02, 0.30), fontsize=9)
+    fig.savefig(DESTINO / "formula_regresion_logistica.png")
+    plt.close(fig)
+
+
+def fig_formula_knn() -> None:
+    """La fórmula d(a,b) = √Σ(aᵢ−bᵢ)² dibujada: un punto nuevo, el círculo
+    de sus k vecinos más cercanos, un segmento de distancia euclidiana
+    anotado y el voto mayoritario que decide la clase."""
+    from sklearn.datasets import make_moons
+    from sklearn.neighbors import KNeighborsClassifier
+
+    X, y = make_moons(n_samples=300, noise=0.25, random_state=42)
+    K = 7
+    consulta = np.array([[0.4, 0.35]])
+    knn = KNeighborsClassifier(n_neighbors=K).fit(X, y)
+    dist, idx = knn.kneighbors(consulta)
+    votos = np.bincount(y[idx[0]], minlength=2)
+
+    fig, ax = plt.subplots(figsize=(8.5, 5.6))
+    for clase, color in [(0, NARANJA), (1, AZUL)]:
+        ax.scatter(*X[y == clase].T, s=18, color=color, alpha=0.45,
+                   label=f"clase {clase}")
+    ax.scatter(X[idx[0], 0], X[idx[0], 1], facecolor="none", edgecolor="k",
+               s=130, linewidths=1.6, zorder=4,
+               label=f"los k = {K} vecinos que votan")
+    ax.scatter(*consulta[0], marker="*", s=420, color="#f5c400",
+               edgecolor="k", zorder=5, label="punto nuevo a clasificar")
+    ax.add_patch(plt.Circle(consulta[0], dist[0].max(), fill=False,
+                            linestyle="--", color=GRIS, linewidth=1.4))
+
+    # Un segmento de distancia, anotado con la fórmula que lo mide
+    vecino_lejano = X[idx[0][np.argmax(dist[0])]]
+    ax.plot([consulta[0, 0], vecino_lejano[0]],
+            [consulta[0, 1], vecino_lejano[1]], color=VERDE, linewidth=2.2,
+            zorder=4)
+    medio = (consulta[0] + vecino_lejano) / 2
+    ax.annotate("d(a, b) = √Σ(aᵢ − bᵢ)²\nla distancia euclidiana\n(Pitágoras "
+                "generalizado)", xy=medio, xytext=(-1.45, 1.25),
+                fontsize=9.5, color=VERDE, fontweight="bold",
+                arrowprops=dict(arrowstyle="->", color=VERDE))
+    ax.text(0.03, 0.03,
+            f"votan {votos[1]} azules vs {votos[0]} naranjas → "
+            f"clase {votos.argmax()}\n(k-NN no entrena nada: memoriza y "
+            "deja votar)", transform=ax.transAxes, fontsize=9.5,
+            fontweight="bold",
+            bbox=dict(boxstyle="round,pad=0.4", facecolor="#FDF3D0",
+                      edgecolor=NARANJA, linewidth=1.2))
+
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.grid(False)
+    ax.set_title("k-NN: los k puntos con menor distancia d votan la clase")
+    ax.legend(loc="upper right", fontsize=8.5)
+    fig.savefig(DESTINO / "formula_knn.png")
+    plt.close(fig)
+
+
+def fig_formula_arbol() -> None:
+    """La fórmula G = 1 − Σpₖ² dibujada: el árbol de preguntas con la
+    impureza Gini de cada nodo visible, y las regiones rectangulares que
+    sus cortes (paralelos a los ejes) crean sobre los datos."""
+    from sklearn.datasets import load_iris
+    from sklearn.tree import DecisionTreeClassifier, plot_tree
+
+    iris = load_iris()
+    X_iris = iris.data[:, 2:]          # largo y ancho del pétalo: dibujable
+    nombres = ["largo pétalo (cm)", "ancho pétalo (cm)"]
+
+    arbol = DecisionTreeClassifier(max_depth=2, random_state=0)
+    arbol.fit(X_iris, iris.target)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.5, 5.2))
+
+    xx, yy = np.meshgrid(np.linspace(0.5, 7.5, 200), np.linspace(0, 3, 200))
+    Z = arbol.predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
+    ax1.contourf(xx, yy, Z, alpha=0.25, cmap="viridis")
+    ax1.scatter(X_iris[:, 0], X_iris[:, 1], c=iris.target, cmap="viridis",
+                s=20, edgecolors="k", linewidths=0.3)
+    ax1.set_xlabel(nombres[0])
+    ax1.set_ylabel(nombres[1])
+    ax1.grid(False)
+    ax1.set_title("Cada pregunta corta paralelo a un eje:\nlas regiones son "
+                  "rectángulos", fontsize=11)
+
+    plot_tree(arbol, ax=ax2, feature_names=nombres,
+              class_names=list(iris.target_names), filled=True, fontsize=9)
+    ax2.set_title("El árbol de preguntas — 'gini' es G = 1 − Σpₖ²:\n0 = nodo "
+                  "puro; cada pregunta se elige para BAJARLO", fontsize=11)
+
+    fig.suptitle("Árbol de decisión: preguntas si/no que reducen la impureza "
+                 "Gini", fontweight="bold", y=1.02)
+    fig.savefig(DESTINO / "formula_arbol_decision.png")
+    plt.close(fig)
+
+
+def fig_formula_random_forest() -> None:
+    """El 'voto de B árboles' dibujado: tres árboles individuales — cada
+    uno errático a su manera por su muestra bootstrap — y la frontera
+    suave que produce el voto mayoritario de los 100."""
+    from sklearn.datasets import make_moons
+    from sklearn.ensemble import RandomForestClassifier
+
+    X, y = make_moons(n_samples=300, noise=0.25, random_state=42)
+    bosque = RandomForestClassifier(n_estimators=100, random_state=0).fit(X, y)
+
+    xx, yy = np.meshgrid(np.linspace(-1.6, 2.6, 200),
+                         np.linspace(-1.2, 1.8, 200))
+    malla = np.c_[xx.ravel(), yy.ravel()]
+
+    fig, axes = plt.subplots(1, 4, figsize=(14, 3.9))
+    for ax, arbol_i in zip(axes[:3], bosque.estimators_[:3]):
+        Z = arbol_i.predict(malla).reshape(xx.shape)
+        ax.contourf(xx, yy, Z, alpha=0.3, cmap="RdBu_r")
+        ax.scatter(X[:, 0], X[:, 1], c=y, cmap="RdBu_r", s=8)
+        ax.set_title("un árbol individual\n(su propia muestra bootstrap)",
+                     fontsize=9.5)
+
+    Z_voto = bosque.predict_proba(malla)[:, 1].reshape(xx.shape)
+    axes[3].contourf(xx, yy, Z_voto, levels=16, alpha=0.5, cmap="RdBu_r")
+    axes[3].contour(xx, yy, Z_voto, levels=[0.5], colors="k", linewidths=1.6)
+    axes[3].scatter(X[:, 0], X[:, 1], c=y, cmap="RdBu_r", s=8)
+    axes[3].set_title("el VOTO de los B = 100 árboles\n(los errores se "
+                      "cancelan)", fontsize=9.5)
+    for ax in axes:
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.grid(False)
+
+    fig.suptitle("Random forest: B árboles deliberadamente distintos, una "
+                 "predicción por voto mayoritario", fontweight="bold", y=1.03)
+    fig.savefig(DESTINO / "formula_random_forest.png")
+    plt.close(fig)
+
+
+def fig_formula_boosting() -> None:
+    """La fórmula Fₘ = Fₘ₋₁ + η·hₘ dibujada: la predicción acumulada tras
+    1, 5 y 100 árboles — cada árbol nuevo hₘ corrige los residuos del
+    modelo anterior, ponderado por el learning rate η."""
+    from sklearn.ensemble import GradientBoostingRegressor
+
+    rng = np.random.default_rng(42)
+    x_gb = np.sort(rng.uniform(0, 6, 120))
+    y_gb = np.sin(x_gb) + rng.normal(0, 0.25, 120)
+
+    gb = GradientBoostingRegressor(n_estimators=100, learning_rate=0.2,
+                                   max_depth=2, random_state=0)
+    gb.fit(x_gb.reshape(-1, 1), y_gb)
+
+    xs = np.linspace(0, 6, 300).reshape(-1, 1)
+    etapas = list(gb.staged_predict(xs))
+
+    fig, axes = plt.subplots(1, 3, figsize=(13, 4.1), sharey=True)
+    for ax, m in zip(axes, (1, 5, 100)):
+        ax.scatter(x_gb, y_gb, s=12, color=AZUL, alpha=0.45)
+        ax.plot(xs, etapas[m - 1], color=ROJO, linewidth=2.5)
+        ax.set_title(f"F_{m}: tras {m} árbol{'es' if m > 1 else ''}",
+                     fontsize=11)
+        ax.set_ylim(-1.8, 1.8)
+    axes[0].text(0.15, -1.6, "un árbol solo: escalones burdos",
+                 fontsize=8.5, color=GRIS, style="italic")
+    axes[2].text(0.15, -1.6, "100 correcciones pequeñas (η = 0.2)\nsiguen "
+                 "la curva", fontsize=8.5, color=GRIS, style="italic")
+
+    fig.suptitle("Gradient boosting: Fₘ = Fₘ₋₁ + η·hₘ — cada árbol nuevo "
+                 "corrige los residuos del acumulado", fontweight="bold",
+                 y=1.03)
+    fig.savefig(DESTINO / "formula_gradient_boosting.png")
+    plt.close(fig)
+
+
+def fig_formula_svm() -> None:
+    """La fórmula margen = 2/‖w‖ dibujada: la frontera, la 'calle' entre
+    las clases con su ancho anotado, y los vectores de soporte — los
+    únicos puntos que la definen."""
+    from sklearn.datasets import make_blobs
+    from sklearn.svm import SVC
+
+    X, y = make_blobs(n_samples=80, centers=2, cluster_std=1.1,
+                      random_state=6)
+    svm = SVC(kernel="linear", C=1.0).fit(X, y)
+    w = svm.coef_[0]
+    norma_w = np.linalg.norm(w)
+
+    gx, gy = np.meshgrid(
+        np.linspace(X[:, 0].min() - 1, X[:, 0].max() + 1, 200),
+        np.linspace(X[:, 1].min() - 1, X[:, 1].max() + 1, 200))
+    Z = svm.decision_function(np.c_[gx.ravel(), gy.ravel()]).reshape(gx.shape)
+
+    fig, ax = plt.subplots(figsize=(8.5, 5.8))
+    for clase, color in [(0, NARANJA), (1, AZUL)]:
+        ax.scatter(*X[y == clase].T, s=30, color=color, alpha=0.8,
+                   label=f"clase {clase}")
+    ax.contour(gx, gy, Z, levels=[-1, 0, 1], colors="k",
+               linestyles=["--", "-", "--"], linewidths=[1, 2.2, 1])
+    ax.scatter(svm.support_vectors_[:, 0], svm.support_vectors_[:, 1],
+               s=240, facecolor="none", edgecolor="#f5c400", linewidths=2.6,
+               zorder=4,
+               label=f"vectores de soporte ({len(svm.support_vectors_)})")
+
+    # El margen, medido perpendicular a la frontera: 2/‖w‖
+    centro = svm.support_vectors_.mean(axis=0)
+    unit = w / norma_w
+    # proyectar el centro sobre la frontera (decision_function = 0)
+    centro = centro - (svm.decision_function([centro])[0] / norma_w) * unit
+    p1 = centro - unit / norma_w
+    p2 = centro + unit / norma_w
+    ax.annotate("", xy=tuple(p2), xytext=tuple(p1),
+                arrowprops=dict(arrowstyle="<->", color=ROJO, linewidth=2.2))
+    ax.annotate(f"margen = 2/‖w‖ = {2 / norma_w:.2f}\nmaximizarlo = la w más "
+                "pequeña\nque aún separa las clases",
+                xy=tuple(centro), xytext=(0.03, 0.82),
+                textcoords="axes fraction", fontsize=9.5, color=ROJO,
+                fontweight="bold",
+                arrowprops=dict(arrowstyle="->", color=ROJO))
+    ax.text(0.03, 0.03, "solo los puntos dorados definen la calle:\nel resto "
+            "podría desaparecer sin cambiar nada", transform=ax.transAxes,
+            fontsize=9, color=GRIS, style="italic")
+
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.grid(False)
+    ax.set_title("SVM: la frontera que deja la calle más ancha entre las "
+                 "clases")
+    ax.legend(loc="upper right", fontsize=8.5)
+    fig.savefig(DESTINO / "formula_svm.png")
+    plt.close(fig)
+
+
 # ────────────────────────────────────────────────────────────────────
 # Sesión 2 — Cómputo
 # ────────────────────────────────────────────────────────────────────
@@ -2757,7 +3080,11 @@ def main() -> None:
     DESTINO.mkdir(parents=True, exist_ok=True)
     tareas = [
         fig_mapa_ml, fig_paradigmas_ml, fig_fronteras_clasicas,
-        fig_kmeans_pca, fig_refuerzo_qlearning, fig_paralelismo,
+        fig_kmeans_pca, fig_refuerzo_qlearning,
+        fig_formula_lineal, fig_formula_logistica, fig_formula_knn,
+        fig_formula_arbol, fig_formula_random_forest, fig_formula_boosting,
+        fig_formula_svm,
+        fig_paralelismo,
         fig_tensores, fig_neurona_frontera, fig_xor, fig_capa_densa,
         fig_softmax_pasos, fig_losses, fig_paisaje_perdida,
         fig_matriz_confusion, fig_lora,
