@@ -67,11 +67,13 @@ $$
 e_i=E[i]\in\mathbb{R}^{d}
 $$
 
-**Cómo leerla:** $|V|$ = tamaño del vocabulario (cuántos tokens distintos conoce el
-modelo) · $d$ = dimensión del embedding (cuántos números describen a cada token) ·
-la notación $E\in\mathbb{R}^{|V|\times d}$ se lee *"E es una tabla de |V| filas por
-d columnas de números reales"* · $E[i]$ = tomar la fila $i$ — por eso se llama
-**lookup** (consulta en tabla).
+**Cómo leerla:**
+
+- $|V|$ = tamaño del vocabulario (cuántos tokens distintos conoce el modelo)
+- $d$ = dimensión del embedding (cuántos números describen a cada token)
+- la notación $E\in\mathbb{R}^{|V|\times d}$ se lee *"E es una tabla de |V|
+  filas por d columnas de números reales"*
+- $E[i]$ = tomar la fila $i$ — por eso se llama **lookup** (consulta en tabla).
 
 Un **lookup diferenciable**: cada token es una fila de una matriz *entrenable*. Con el
 entrenamiento, tokens de uso similar terminan geométricamente cerca — la **semántica
@@ -110,11 +112,14 @@ $$
 h_t=\tanh(W_{xh}x_t+W_{hh}h_{t-1}+b_h) \qquad y_t=W_{hy}h_t+b_y
 $$
 
-**Cómo leerla:** $x_t$ = el embedding del token del paso $t$ · $h_{t-1}$ = el estado
-anterior (la memoria) · los subíndices de cada $W$ dicen "de dónde → hacia dónde":
-$W_{xh}$ lee la entrada, $W_{hh}$ recicla el estado y $W_{hy}$ produce la salida
-$y_t$ · $b_h, b_y$ = biases. La tanh aplasta el estado a (−1, 1) para que no crezca
-sin control.
+**Cómo leerla:**
+
+- $x_t$ = el embedding del token del paso $t$
+- $h_{t-1}$ = el estado anterior (la memoria)
+- los subíndices de cada $W$ dicen "de dónde → hacia dónde": $W_{xh}$ lee la
+  entrada, $W_{hh}$ recicla el estado y $W_{hy}$ produce la salida $y_t$
+- $b_h, b_y$ = biases
+- la tanh aplasta el estado a (−1, 1) para que no crezca sin control.
 
 ```mermaid
 flowchart LR
@@ -312,10 +317,14 @@ $$
 \mathrm{MHA}(Q,K,V)=\mathrm{Concat}(\mathrm{head}_1,\dots,\mathrm{head}_h)W^O
 $$
 
-**Cómo leerla:** $h$ = número de heads · $W_i^Q, W_i^K, W_i^V$ = las proyecciones
-PROPIAS de la head $i$ — matrices aprendidas que traducen la entrada a las
-preguntas/ofertas/contenidos de esa mirada · Concat = pegar las salidas una tras
-otra · $W^O$ = la proyección final que mezcla lo que vieron todas las heads.
+**Cómo leerla:**
+
+- $h$ = número de heads
+- $W_i^Q, W_i^K, W_i^V$ = las proyecciones PROPIAS de la head $i$ — matrices
+  aprendidas que traducen la entrada a las preguntas/ofertas/contenidos de esa
+  mirada
+- Concat = pegar las salidas una tras otra
+- $W^O$ = la proyección final que mezcla lo que vieron todas las heads.
 
 En lugar de una atención de dimensión $d_{model}$, se ejecutan $h$ atenciones de dimensión
 $d_{model}/h$: cada head puede especializarse en relaciones distintas (sintaxis cercana,

@@ -84,11 +84,16 @@ $$
 Y[i,j]=\sum_m\sum_n X[i+m, j+n] K[m,n]+b
 $$
 
-**Cómo leerla:** $X$ = la imagen de entrada, como matriz de píxeles · $K$ = el kernel ·
-$Y[i,j]$ = la celda del feature map en la fila $i$, columna $j$ · $m, n$ = recorren la
-ventana — para un kernel 3×3 van de 0 a 2 · $b$ = el bias del filtro. **En palabras:**
-*"parado en la posición (i, j), multiplica la ventana por el kernel celda a celda,
-suma todo y agrega el bias — ese número es una celda de la salida"*.
+**Cómo leerla:**
+
+- $X$ = la imagen de entrada, como matriz de píxeles
+- $K$ = el kernel
+- $Y[i,j]$ = la celda del feature map en la fila $i$, columna $j$
+- $m, n$ = recorren la ventana — para un kernel 3×3 van de 0 a 2
+- $b$ = el bias del filtro
+- **En palabras:** *"parado en la posición (i, j), multiplica la ventana por el
+  kernel celda a celda, suma todo y agrega el bias — ese número es una celda de
+  la salida"*.
 
 Una ventana del tamaño del kernel se coloca sobre la imagen, se multiplica **elemento a
 elemento** con el kernel, se suma todo y ese número es UNA celda del **feature map**. Luego
@@ -151,11 +156,17 @@ $$
 N_\theta=C_{out}(C_{in}K_hK_w+1)
 $$
 
-**Cómo leerla:** $N_\theta$ = número de parámetros de la capa · $C_{in}, C_{out}$ =
-canales de entrada y de salida (C_out = cuántos filtros tiene la capa) · $K_h, K_w$ =
-alto y ancho del kernel · el `+1` es el bias por canal de salida. **En palabras:**
-*cada uno de los $C_{out}$ filtros necesita $C_{in}\cdot K_h\cdot K_w$ pesos, más su
-bias*. Comparación que lo dice todo, para una imagen 28×28:
+**Cómo leerla:**
+
+- $N_\theta$ = número de parámetros de la capa
+- $C_{in}, C_{out}$ = canales de entrada y de salida (C_out = cuántos filtros
+  tiene la capa)
+- $K_h, K_w$ = alto y ancho del kernel
+- el `+1` es el bias por canal de salida
+- **En palabras:** *cada uno de los $C_{out}$ filtros necesita
+  $C_{in}\cdot K_h\cdot K_w$ pesos, más su bias*.
+
+Comparación que lo dice todo, para una imagen 28×28:
 
 | Capa | Parámetros |
 |---|---:|
