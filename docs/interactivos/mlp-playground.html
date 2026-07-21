@@ -15,6 +15,19 @@
 </header>
 
 <main>
+<div class="formula" style="text-align:left;">
+  <div><b>① Forward:</b> &nbsp;h = tanh(W·x + b) por capa oculta &nbsp;→&nbsp; p = σ(w·h + b)</div>
+  <div style="margin-top:.4rem;"><b>② Loss:</b> &nbsp;BCE = −[ y·log(p) + (1−y)·log(1−p) ], promediada sobre todos los puntos</div>
+  <div style="margin-top:.4rem;"><b>③ Update:</b> &nbsp;θ ← θ − η·∇L, una vez por epoch</div>
+  <ul style="font-family:inherit; font-size:.8rem; color:var(--texto-suave); margin:.6rem 0 0; padding-left:1.2rem; line-height:1.7; columns:2; column-gap:2rem;">
+    <li>x = las 2 coordenadas del punto; y = su clase real (0 o 1)</li>
+    <li>W, b = pesos y biases (el contador de "parámetros")</li>
+    <li>p = la probabilidad de clase 1 — el color del fondo</li>
+    <li>η = el learning rate del control de abajo</li>
+  </ul>
+  <div style="font-size:.8rem; color:var(--texto-suave); margin-top:.4rem;">Cada frame de la animación ejecuta este ciclo ①→②→③ seis veces; la tabla muestra la loss y el accuracy en vivo.</div>
+</div>
+
 <div class="panel">
   <div class="controles">
     <div class="control">

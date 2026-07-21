@@ -15,7 +15,15 @@
 </header>
 
 <main>
-<div class="formula">p_k = exp(z_k / T) / Σ_j exp(z_j / T)</div>
+<div class="formula" style="text-align:left;">
+  <div style="text-align:center; font-size:1.05rem;">p_k = e^(z_k / T) / Σ_j e^(z_j / T)</div>
+  <ul style="font-family:inherit; font-size:.8rem; color:var(--texto-suave); margin:.6rem 0 0; padding-left:1.2rem; line-height:1.7;">
+    <li>z_k = el logit del token k (los sliders de arriba)</li>
+    <li>T = la temperatura: divide TODOS los logits antes de exponenciar — T&lt;1 agranda las diferencias, T&gt;1 las achica</li>
+    <li>Σ_j = la suma sobre todos los tokens: reparte el total en porciones que suman 1</li>
+  </ul>
+  <div style="font-size:.8rem; color:var(--texto-suave); margin-top:.4rem;">Bajo el gráfico verás esta fórmula calculada con tus números para el token más probable.</div>
+</div>
 
 <div class="panel">
   <div class="controles" id="logitSliders"></div>
@@ -46,6 +54,7 @@
 
 <div class="panel">
   <canvas id="lienzo" class="lienzo" width="980" height="380"></canvas>
+  <div id="calculoSoftmax" style="margin-top:.8rem; font-family:var(--mono); font-size:.9rem; background:#f1f5f9; border-radius:10px; padding:.7rem 1rem; overflow-x:auto;"></div>
   <div id="muestras" style="margin-top:.8rem; font-family:var(--mono); font-size:.85rem; color:var(--texto-suave); line-height:1.9;"></div>
 </div>
 
@@ -144,6 +153,18 @@ function dibujar(){
   }
   ctx.font = '12px sans-serif'; ctx.fillStyle = '#64748b';
   ctx.fillText('barra gris = softmax(z/T) antes del recorte · barra de color = tras top-k/top-p + renormalización', 20, 22);
+
+  // ── La fórmula con TUS números, para el token más probable ──
+  const T = parseFloat(document.getElementById('temp').value);
+  const fmtE = v => v >= 1000 ? v.toExponential(1).replace('-', '−') : v.toFixed(2);
+  const idx = bruta.indexOf(Math.max(...bruta));
+  const expos = logits.map(z => Math.exp(z / T));
+  const den = expos.reduce((a, b) => a + b, 0);
+  document.getElementById('calculoSoftmax').innerHTML =
+    `p(«${TOKENS[idx]}») = e^(${logits[idx].toFixed(1)} / ${T.toFixed(2)}) / Σ ` +
+    `= ${fmtE(expos[idx])} / (${expos.map(fmtE).join(' + ')}) ` +
+    `= ${fmtE(expos[idx])} / ${fmtE(den)} = <b>${bruta[idx].toFixed(3)}</b>` +
+    ` <span style="color:var(--texto-suave)">— la barra gris; el recorte top-k/top-p viene después</span>`;
 }
 
 // ── Muestreo empírico ────────────────────────────────────────────────

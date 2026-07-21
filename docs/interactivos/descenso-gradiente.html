@@ -15,7 +15,17 @@
 </header>
 
 <main>
-<div class="formula">θ ← θ − η·∇L(θ) &nbsp;&nbsp;(con momentum: v ← β·v + ∇L; θ ← θ − η·v)</div>
+<div class="formula" style="text-align:left;">
+  <div><b>① Acumular velocidad:</b> &nbsp;v ← β·v + ∇L(θ)</div>
+  <div style="margin-top:.4rem;"><b>② Dar el paso:</b> &nbsp;θ ← θ − η·v &nbsp;&nbsp;<small>(con β = 0 no hay memoria y queda el descenso puro: θ ← θ − η·∇L)</small></div>
+  <ul style="font-family:inherit; font-size:.8rem; color:var(--texto-suave); margin:.6rem 0 0; padding-left:1.2rem; line-height:1.7; columns:2; column-gap:2rem;">
+    <li>θ = (θ₁, θ₂): la posición de la bolita (los "parámetros")</li>
+    <li>∇L = el gradiente: la dirección donde la loss SUBE</li>
+    <li>η = learning rate: el tamaño del paso</li>
+    <li>β = momentum: cuánta velocidad anterior se conserva</li>
+  </ul>
+  <div style="font-size:.8rem; color:var(--texto-suave); margin-top:.4rem;">Bajo el mapa verás ① y ② calculados con los números reales de cada paso.</div>
+</div>
 
 <div class="panel">
   <div class="controles">
@@ -56,6 +66,7 @@
       <tr><th>‖∇L‖ (magnitud del gradiente)</th><td id="outGrad">—</td></tr>
     </table>
   </div>
+  <div id="calculoGD" style="grid-column:1/-1; font-family:var(--mono); font-size:.88rem; background:#f1f5f9; border-radius:10px; padding:.7rem 1rem; white-space:pre; overflow-x:auto; line-height:1.8;"></div>
 </div>
 
 <div class="explica">
@@ -98,6 +109,7 @@ const cv = document.getElementById('lienzo'), ctx = cv.getContext('2d');
 const lcv = document.getElementById('lossCanvas'), lctx = lcv.getContext('2d');
 const cv3 = document.getElementById('lienzo3d'), ctx3 = cv3.getContext('2d');
 let sup = SUP.valle, pos = [-3.4, 1.7], vel = [0, 0], ruta = [], losses = [], animando = null;
+let ultimo = null;   // los números del último paso, para mostrarlos en #calculoGD
 
 const aPx = (x,y) => [ (x/sup.dom/2 + .5) * cv.width, (.5 - y/sup.dom/2) * cv.height ];
 const aMath = (px,py) => [ (px/cv.width - .5) * 2*sup.dom, (.5 - py/cv.height) * 2*sup.dom ];
@@ -274,17 +286,34 @@ function dibujar(){
   document.getElementById('outPaso').textContent = ruta.length - 1;
   document.getElementById('outLoss').textContent = sup.f(...pos).toFixed(4);
   document.getElementById('outGrad').textContent = Math.hypot(...sup.g(...pos)).toFixed(4);
+
+  // ── Las fórmulas ① y ② con los números del último paso ──
+  const calc = document.getElementById('calculoGD');
+  const f2 = v => v.toFixed(2).replace('-', '−');
+  const par = p => `(${f2(p[0])}, ${f2(p[1])})`;
+  if (ultimo){
+    calc.textContent =
+      `① v = β·v + ∇L  =  ${ultimo.beta.toFixed(2)}·${par(ultimo.vPrev)} + ${par(ultimo.g)}  =  ${par(ultimo.vNueva)}\n` +
+      `② θ = θ − η·v   =  ${par(ultimo.pAntes)} − ${ultimo.lr.toFixed(3)}·${par(ultimo.vNueva)}  =  ${par(ultimo.pDespues)}`;
+  } else {
+    calc.textContent =
+      'Pulsa "Paso a paso" para ver ① y ② calculados con los números reales de cada paso.';
+  }
 }
 
 // ── Un paso de (momentum) gradient descent ───────────────────────────
 function paso(){
   const lr = Math.pow(10, parseFloat(document.getElementById('lr').value));
   const beta = parseFloat(document.getElementById('beta').value);
+  const pAntes = [...pos], vPrev = [...vel];
   const [gx, gy] = sup.g(pos[0], pos[1]);
   vel = [beta*vel[0] + gx, beta*vel[1] + gy];        // acumular velocidad
   pos = [pos[0] - lr*vel[0], pos[1] - lr*vel[1]];    // actualizar parámetros
   // mantener en el lienzo aunque diverja
   pos = pos.map(v => Math.max(-sup.dom, Math.min(sup.dom, v)));
+  // guardar los números del paso para la lectura bajo el mapa
+  ultimo = { pAntes, vPrev, g: [gx, gy], vNueva: [...vel],
+             pDespues: [...pos], lr, beta };
   ruta.push([...pos]);
   losses.push(sup.f(...pos));
   dibujar();
@@ -292,7 +321,7 @@ function paso(){
 
 function reset(desde){
   if (animando){ clearInterval(animando); animando = null; document.getElementById('btnPlay').textContent = '▶ Correr'; }
-  pos = desde || [-3.4, 1.7]; vel = [0,0];
+  pos = desde || [-3.4, 1.7]; vel = [0,0]; ultimo = null;
   ruta = [[...pos]]; losses = [sup.f(...pos)];
   dibujar();
 }

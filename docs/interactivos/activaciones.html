@@ -46,7 +46,15 @@
   GELU es la versión suave que usan los Transformers.
 </div>
 
-<div class="formula">σ(z) = 1/(1+e⁻ᶻ) &nbsp;|&nbsp; tanh(z) &nbsp;|&nbsp; ReLU(z) = max(0, z) &nbsp;|&nbsp; GELU(z) ≈ z·Φ(z), donde Φ = probabilidad acumulada de la normal estándar</div>
+<div class="formula" style="text-align:left;">
+  <ul style="font-family:inherit; margin:0; padding-left:1.2rem; line-height:1.9; columns:2; column-gap:2rem;">
+    <li><b style="color:#0072B2">sigmoid</b>: σ(z) = 1/(1+e⁻ᶻ) — aplasta a (0, 1)</li>
+    <li><b style="color:#E69F00">tanh</b>: (eᶻ−e⁻ᶻ)/(eᶻ+e⁻ᶻ) — aplasta a (−1, 1)</li>
+    <li><b style="color:#009E73">ReLU</b>: max(0, z) — pasa lo positivo, anula lo negativo</li>
+    <li><b style="color:#CC79A7">GELU</b>: ≈ z·Φ(z) — la versión suave de ReLU</li>
+  </ul>
+  <div style="font-size:.8rem; color:var(--texto-suave); margin-top:.4rem;">Φ = probabilidad acumulada de la normal estándar. La tabla de arriba evalúa cada función y su derivada en tu z actual: ese ES el cálculo en vivo.</div>
+</div>
 </main>
 
 <footer class="aula">© 2026 Future Tales, LLC · <a href="../index.html">Volver al aula</a></footer>

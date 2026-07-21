@@ -15,7 +15,18 @@
 </header>
 
 <main>
-<div class="formula">Attention(Q, K, V) = softmax( QKᵀ / √d_k + M ) · V</div>
+<div class="formula" style="text-align:left;">
+  <div style="text-align:center; font-size:1.05rem;">Attention(Q, K, V) = softmax( QKᵀ / √d_k + M ) · V</div>
+  <ul style="font-family:inherit; font-size:.8rem; color:var(--texto-suave); margin:.6rem 0 0; padding-left:1.2rem; line-height:1.7; columns:2; column-gap:2rem;">
+    <li>Q (query) = lo que cada token busca</li>
+    <li>K (key) = lo que cada token ofrece para ser encontrado</li>
+    <li>V (value) = la información que transporta</li>
+    <li>QKᵀ = todas las compatibilidades query–key a la vez</li>
+    <li>√d_k = la escala que evita saturar el softmax</li>
+    <li>M = la máscara: 0 permitido, −∞ bloqueado (el futuro)</li>
+  </ul>
+  <div style="font-size:.8rem; color:var(--texto-suave); margin-top:.4rem;"><b>Las matrices de abajo SON esta fórmula</b>, calculada con tus números: cada panel (1 → 5) es un paso de la ecuación.</div>
+</div>
 
 <div class="panel">
   <div class="controles">
@@ -35,7 +46,7 @@
 </div>
 
 <div class="panel">
-  <div id="matrices" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1.2rem;"></div>
+  <div id="matrices" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:1.2rem;"></div>
 </div>
 
 <div class="panel">
@@ -108,7 +119,7 @@ function colorCelda(v, vmax, esPeso){
 
 function tablaHTML(titulo, M, esPeso, conHover){
   const vmax = Math.max(...M.flat().filter(v => v > -1e8).map(Math.abs), 1e-9);
-  let html = `<div><h4 style="margin:.2rem 0 .5rem; font-size:.92rem;">${titulo}</h4>` +
+  let html = `<div style="overflow-x:auto;"><h4 style="margin:.2rem 0 .5rem; font-size:.92rem;">${titulo}</h4>` +
     '<table class="metrica" style="width:100%;"><tr><th></th>' +
     TOKENS.map(t => `<th>${t}</th>`).join('') + '</tr>';
   M.forEach((fila, i) => {

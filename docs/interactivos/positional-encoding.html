@@ -15,7 +15,16 @@
 </header>
 
 <main>
-<div class="formula">PE(pos, 2i) = sin(pos / 10000^(2i/d)) &nbsp;·&nbsp; PE(pos, 2i+1) = cos(pos / 10000^(2i/d))</div>
+<div class="formula" style="text-align:left;">
+  <div><b>Dimensiones pares:</b> &nbsp;PE(pos, 2i) = sin( pos / 10000^(2i/d) )</div>
+  <div style="margin-top:.4rem;"><b>Dimensiones impares:</b> &nbsp;PE(pos, 2i+1) = cos( pos / 10000^(2i/d) )</div>
+  <ul style="font-family:inherit; font-size:.8rem; color:var(--texto-suave); margin:.6rem 0 0; padding-left:1.2rem; line-height:1.7; columns:2; column-gap:2rem;">
+    <li>pos = la posición del token (la fila del mapa)</li>
+    <li>d = d_model: cuántos números tiene cada embedding</li>
+    <li>i = el índice del par sin/cos: cada par es una "manecilla" del reloj</li>
+    <li>10000^(2i/d) = gradúa la frecuencia: i bajo oscila rápido (los "segundos"), i alto lento (las "horas")</li>
+  </ul>
+</div>
 
 <div class="panel">
   <div class="controles">
@@ -45,6 +54,7 @@
   <div>
     <h4 style="margin:.2rem 0 .5rem;">Firma de la posición seleccionada</h4>
     <canvas id="firma" class="lienzo" width="380" height="190"></canvas>
+    <div id="calculoPE" style="font-family:var(--mono); font-size:.78rem; background:#f1f5f9; border-radius:10px; padding:.6rem .8rem; margin-top:.6rem; white-space:pre; overflow-x:auto; line-height:1.8;"></div>
     <h4 style="margin:.9rem 0 .5rem;">Tres dimensiones a lo largo de la secuencia</h4>
     <canvas id="ondas" class="lienzo" width="380" height="190"></canvas>
   </div>
@@ -138,6 +148,18 @@ function dibujar(){
   const xs = sel/(L-1) * (ondas.width-16) + 8;
   octx.beginPath(); octx.moveTo(xs, 20); octx.lineTo(xs, ondas.height-8); octx.stroke();
   octx.setLineDash([]);
+
+  // ── La fórmula con TUS números: tres "manecillas" de la posición sel ──
+  const f2 = v => v.toFixed(2).replace('-', '−');
+  const kLento = Math.floor(d/4) * 2;              // una dimensión de giro lento
+  const lineas = [[0, 'sin', '← oscila rápido'], [1, 'cos', ''],
+                  [kLento, 'sin', '← mucho más lento']].map(([k, fn, nota]) => {
+    const i = Math.floor(k/2);
+    const freq = Math.pow(10000, -2*i/d);
+    const valor = fn === 'sin' ? Math.sin(sel*freq) : Math.cos(sel*freq);
+    return `PE(${sel}, ${k}) = ${fn}(${sel} / 10000^(${2*i}/${d})) = ${fn}(${f2(sel*freq)}) = ${f2(valor)}  ${nota}`;
+  });
+  document.getElementById('calculoPE').textContent = lineas.join('\n');
 }
 
 ['dmodel','maxlen','posSel'].forEach(id =>
