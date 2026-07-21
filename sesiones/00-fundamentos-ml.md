@@ -294,13 +294,16 @@ Q(s,a) \leftarrow \underbrace{0.50}_{\text{nota vieja}} +
 \underbrace{0.50}_{\text{nota vieja}}\big]
 $$
 
-$$
-Q(s,a) \leftarrow 0.50 + 0.2 \cdot 0.335 \approx 0.57
-$$
+**El cálculo, en tres pasos:**
 
-La nota sube de 0.50 a 0.57: se corrió un 20% ($\alpha = 0.2$) hacia lo que
-acabo de vivir ($-0.02 + 0.95 \cdot 0.9 \approx 0.84$). Nada más: miles de
-correcciones pequeñas como esa producen la política de la figura.
+1. Lo que acabo de vivir vale $-0.02 + 0.95 \cdot 0.9 = 0.835$ — la recompensa
+   del paso más lo que promete la casilla donde caí.
+2. La distancia entre eso y mi apunte viejo: $0.835 - 0.50 = 0.335$.
+3. Corrijo solo el 20% de esa distancia ($\alpha = 0.2$):
+   $Q(s,a) \leftarrow 0.50 + 0.2 \cdot 0.335 \approx 0.57$.
+
+La nota sube de 0.50 a 0.57. Nada más: miles de correcciones pequeñas como esa
+producen la política de la figura.
 
 ![Q-learning en un gridworld 4×4: la política aprendida esquiva el pozo y llega a la meta, y la curva de recompensa por episodio sube con la experiencia](../docs/assets/figuras/refuerzo_qlearning.png)
 
