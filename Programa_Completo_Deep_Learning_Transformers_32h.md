@@ -1870,7 +1870,7 @@ model_name = 'distilbert/distilbert-base-uncased'
 output_dir = Path('artifacts/distilbert-rotten-tomatoes')
 output_dir.mkdir(parents=True, exist_ok=True)
 
-raw = load_dataset('rotten_tomatoes')
+raw = load_dataset('cornell-movie-review-data/rotten_tomatoes')
 
 # Para demo rápida, activar estas líneas:
 # raw['train'] = raw['train'].shuffle(seed=42).select(range(2500))

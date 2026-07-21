@@ -1,6 +1,6 @@
 # ══════════════════════════════════════════════════════════════════
 # Configuración del fine-tuning (Laboratorio 4 — Sesión 4)
-# Modelo: DistilBERT · Dataset: rotten_tomatoes (sentimiento binario)
+# Modelo: DistilBERT · Dataset: cornell-movie-review-data/rotten_tomatoes (sentimiento binario)
 # ══════════════════════════════════════════════════════════════════
 
 experiment_name: distilbert_rotten_tomatoes
@@ -12,7 +12,7 @@ model:
   id2label: {0: NEGATIVE, 1: POSITIVE}
 
 data:
-  dataset: rotten_tomatoes
+  dataset: cornell-movie-review-data/rotten_tomatoes
   max_length: 256           # truncation de secuencias largas
   # Para una demo rápida en clase, activar el subconjunto:
   quick_demo: false

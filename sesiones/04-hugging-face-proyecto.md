@@ -124,7 +124,8 @@ De ahí sale el hiperparámetro más importante de la sesión: el **learning rat
 complacer a una cabeza recién nacida.
 
 Flujo completo del laboratorio ([notebook 06](../notebooks/06_hf_finetuning.ipynb),
-[config](../configs/transformer.yaml)) sobre **rotten_tomatoes** (reseñas de cine, binario):
+[config](../configs/transformer.yaml)) sobre **rotten_tomatoes** (reseñas de cine, binario;
+ID canónico en el Hub: `cornell-movie-review-data/rotten_tomatoes`):
 
 ```python
 from datasets import load_dataset
@@ -132,7 +133,7 @@ from transformers import (AutoModelForSequenceClassification, AutoTokenizer,
                           DataCollatorWithPadding, EarlyStoppingCallback,
                           Trainer, TrainingArguments)
 
-raw = load_dataset('rotten_tomatoes')
+raw = load_dataset('cornell-movie-review-data/rotten_tomatoes')
 tokenizer = AutoTokenizer.from_pretrained('distilbert/distilbert-base-uncased')
 
 def tokenize_batch(batch):

@@ -64,7 +64,8 @@ demo = gr.Interface(
     title="Clasificador de sentimiento — demo educativa",
     description=(
         "Prototipo del curso Deep Learning (Future Tales, LLC). "
-        "Entrenado sobre rotten_tomatoes. Validar antes de cualquier "
+        "Entrenado sobre cornell-movie-review-data/rotten_tomatoes. "
+        "Validar antes de cualquier "
         "uso real: ver la model card del proyecto."
     ),
 )

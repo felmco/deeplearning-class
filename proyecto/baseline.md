@@ -26,7 +26,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, f1_score
 
-raw = load_dataset('rotten_tomatoes')
+raw = load_dataset('cornell-movie-review-data/rotten_tomatoes')
 
 # ── Representación: TF-IDF de unigramas y bigramas ──────────────────
 # sublinear_tf suaviza frecuencias; min_df=2 descarta rarezas;
