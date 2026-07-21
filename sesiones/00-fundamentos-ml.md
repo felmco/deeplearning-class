@@ -89,9 +89,6 @@ contra un baseline, regla de oro del curso).
 
 ### La fórmula esencial de cada modelo
 
-Cada modelo cabe en una fórmula, y cada fórmula se entiende mejor dibujada:
-primero las variables, luego el comentario, y la imagen como evidencia.
-
 #### Regresión lineal
 
 $$\hat{y} = wx + b$$
@@ -156,8 +153,8 @@ $$F_m = F_{m-1} + \eta h_m$$
 
 - $F_m$ = el modelo acumulado tras $m$ árboles
 - $h_m$ = el árbol nuevo, entrenado sobre los RESIDUOS (errores) de $F_{m-1}$
-- $\eta$ = learning rate: cuánto confiar en cada corrección (el mismo concepto
-  de la Sesión 1)
+- $\eta$ = learning rate: cuánto confiar en cada corrección (un concepto que
+  reencontrarás en la Sesión 1)
 
 ![La predicción acumulada mejorando etapa a etapa: tras 1 árbol escalones burdos, tras 5 la forma general, tras 100 la curva completa](../docs/assets/figuras/formula_gradient_boosting.png)
 
@@ -260,9 +257,14 @@ flowchart LR
 | **Recompensa** (r) | el puntaje inmediato | meta +1, pozo −1, paso −0.02 |
 | **Política** | la estrategia: qué acción tomar en cada estado | las flechas de la figura |
 
-El algoritmo más didáctico es **Q-learning**: una tabla `Q[estado, acción]` que estima
-*"¿cuánta recompensa futura me espera si hago esta acción aquí?"*, actualizada tras
-cada paso:
+El algoritmo más didáctico es **Q-learning**. La idea, antes de la fórmula: el
+agente lleva una **libreta de apuntes** — la tabla `Q[casilla, acción]` — con una
+nota por cada jugada posible: *"hacer esto aquí, ¿qué tan bien me ha resultado?"*.
+Tras cada paso corrige la nota de la jugada que acaba de hacer, y con suficientes
+partidas la libreta se llena de buenos consejos: seguir siempre la mejor nota ES
+la política (las flechas de la figura).
+
+La corrección de cada nota es esta fórmula:
 
 $$
 Q(s,a) \leftarrow Q(s,a) + \alpha\left[r + \gamma \max_{a'} Q(s',a') - Q(s,a)\right]
@@ -270,12 +272,20 @@ $$
 
 **Cómo leerla:**
 
-- $\alpha$ = learning rate (¿te suena? el mismo concepto de la Sesión 1)
-- $r$ = la recompensa que acabo de cobrar
-- $\gamma$ (gamma, ≈0.95) = cuánto valoro el futuro frente al presente
-- $\max_{a'} Q(s',a')$ = "lo mejor que puedo esperar desde donde caí"
-- **En palabras:** *"ajusta tu estimación hacia lo que viviste: la recompensa
+- $Q(s,a)$ = la nota apuntada para "hacer la acción $a$ en la casilla $s$"
+- $r$ = la recompensa que acabo de cobrar por ese paso
+- $\max_{a'} Q(s',a')$ = la mejor nota de la casilla donde caí: lo que promete
+  el futuro desde ahí
+- $\gamma$ (gamma, ≈0.95) = cuánto pesa ese futuro frente a lo inmediato
+- $\alpha$ = el tamaño de la corrección: cuánto muevo la nota vieja hacia lo que
+  acabo de vivir (en la Sesión 1 reaparecerá con su nombre técnico: *learning rate*)
+- **En palabras:** *"ajusta tu apunte hacia lo que viviste: la recompensa
   inmediata más lo mejor que promete el siguiente estado"*.
+
+Con los números del gridworld: doy un paso a una casilla normal ($r = -0.02$)
+cuya mejor nota es 0.9. Lo vivido "vale" $-0.02 + 0.95 \cdot 0.9 \approx 0.84$,
+y mi apunte viejo se corre un 20% ($\alpha = 0.2$) hacia ese 0.84. Nada más:
+miles de correcciones pequeñas como esa producen la política de la figura.
 
 ![Q-learning en un gridworld 4×4: la política aprendida esquiva el pozo y llega a la meta, y la curva de recompensa por episodio sube con la experiencia](../docs/assets/figuras/refuerzo_qlearning.png)
 
