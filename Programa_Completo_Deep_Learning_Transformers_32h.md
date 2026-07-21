@@ -2079,330 +2079,36 @@ demo.launch()
 
 # PROYECTO FINAL EN CLASE
 
-## Nombre
+**Clasificador de texto reproducible** · **40% de la nota** · equipos de 3–4 · entrega: repo GitHub + demo + model card + pitch de 7 minutos.
 
-**Clasificador de texto reproducible: baseline, red neuronal y Transformer**
+> **Fuente de verdad para estudiantes y docente:** [proyecto/README.md](proyecto/README.md) (brief, checkpoints y rúbrica completa) · [proyecto/propuesta-template.md](proyecto/propuesta-template.md) · [proyecto/baseline.md](proyecto/baseline.md) (código de partida) · [proyecto/model-card-template.md](proyecto/model-card-template.md). Esta sección es solo el resumen docente.
 
-## Contexto
+## Dos rutas
 
-Una organización necesita clasificar mensajes o reseñas para priorizar análisis y respuesta. El equipo debe demostrar que una solución basada en Deep Learning aporta valor frente a un baseline, y debe documentar límites, errores y condiciones de uso.
+- **Ruta guiada (recomendada):** clasificación binaria de sentimiento con [`cornell-movie-review-data/rotten_tomatoes`](https://huggingface.co/datasets/cornell-movie-review-data/rotten_tomatoes) — tamaño manejable, splits listos, clases balanceadas, compatible con todo el material del curso.
+- **Propuesta propia:** el equipo propone problema y dataset con la plantilla de propuesta y la **aprobación del docente antes del Checkpoint 1**; sin aprobación, sigue la ruta guiada.
 
-## Dataset principal recomendado
+## Contrato mínimo (ambas rutas): tres modelos
 
-`rotten_tomatoes` de Hugging Face para clasificación binaria de sentimiento.
+Baseline no neuronal (TF-IDF + Logistic Regression) → modelo neuronal propio (Embedding + mean pooling + MLP, o LSTM pequeña) → DistilBERT fine-tuned. Toda iteración contra validation; test se usa UNA sola vez.
 
-Ventajas didácticas:
+## Checkpoints
 
-- tamaño manejable;
-- splits disponibles;
-- dos clases relativamente balanceadas;
-- compatible con el ejemplo oficial de Transformers;
-- permite comparar modelos bajo un mismo contrato.
+1. **Datos y baseline** — repo con smoke test, problema/labels/splits/licencia, EDA, hipótesis previas, majority + TF-IDF+LR en validation (ruta propia: propuesta aprobada commiteada).
+2. **Modelos neuronales** — modelo propio con curvas y una ablación; Transformer fine-tuned elegido en validation; tabla preliminar solo con validation.
+3. **Entrega final** — evaluación única en test, tabla definitiva, diez errores de alta confianza con taxonomía, demo, model card, PR revisado por otro equipo.
 
-### Alternativas
+## Rúbrica — 100 puntos (detalle y condiciones limitantes en proyecto/README.md)
 
-- `ag_news`: clasificación multiclase de noticias, si la cohorte tiene más cómputo.
-- `mteb/amazon_reviews_multi` o un subconjunto español, después de verificar disponibilidad, licencia, schema y costo de descarga.
-- Dataset institucional anonimizado, solo si existe autorización, documentación de origen y control de privacidad.
+| Dimensión | Puntos |
+|---|---:|
+| Datos y diseño experimental | 20 |
+| Modelos (los tres obligatorios) | 30 |
+| Evaluación y análisis de errores | 25 |
+| Reproducibilidad y entrega | 15 |
+| Demo y comunicación | 10 |
 
-## Pregunta central
-
-> ¿Qué combinación de representación, arquitectura y estrategia de entrenamiento ofrece el mejor equilibrio entre desempeño, costo, reproducibilidad e interpretabilidad para el problema?
-
-## Modelos mínimos
-
-1. **Baseline no neuronal:** TF-IDF + Logistic Regression.
-2. **Modelo neuronal propio:** Embedding + mean pooling + MLP, o una pequeña LSTM.
-3. **Transformer:** DistilBERT fine-tuned para sequence classification.
-
-## Hipótesis sugeridas
-
-- El Transformer superará al baseline en macro-F1, especialmente en frases contextuales.
-- El baseline será mucho más barato y puede ser competitivo en ejemplos lexicalmente simples.
-- El Transformer cometerá errores de alta confianza en ironía, ambigüedad o frases fuera de dominio.
-- Dynamic padding reducirá tokens procesados frente a padding global.
-
-## Organización de equipos
-
-Equipos de 3–4 estudiantes:
-
-- **Data/experiment lead:** splits, EDA (*Exploratory Data Analysis*), baseline y reproducibilidad.
-- **Model lead:** arquitectura neuronal y Transformer.
-- **Evaluation lead:** métricas, errores, visualizaciones y riesgos.
-- **Delivery lead:** GitHub, README, app, pitch y model card.
-
-En equipos de tres, combinar evaluación y entrega.
-
-## Milestones
-
-### M0 — Repositorio listo
-
-- README inicial.
-- Entorno documentado.
-- Branch por integrante.
-- Issue por milestone.
-- Smoke test de imports.
-
-### M1 — Problema y datos
-
-- Definición de entrada/salida.
-- Descripción de dataset, licencia y splits.
-- Distribución de labels y longitudes.
-- Riesgos de leakage y representatividad.
-
-### M2 — Baseline
-
-- Majority-class baseline.
-- TF-IDF + Logistic Regression.
-- Accuracy, macro-F1 y matriz de confusión.
-- Tiempo aproximado de entrenamiento/inferencia.
-
-### M3 — Modelo neuronal propio
-
-- Tokenización/vocabulario o estrategia elegida.
-- Embedding + pooling/MLP o LSTM.
-- Curvas train/validation.
-- Ablación sencilla: hidden size, dropout o LR.
-
-### M4 — Transformer
-
-- Justificación del checkpoint.
-- Tokenizer y padding dinámico.
-- Fine-tuning reproducible.
-- Mejor checkpoint seleccionado con validation.
-
-### M5 — Evaluación y error analysis
-
-- Tabla comparativa de tres modelos.
-- Confusion matrices.
-- Diez errores de alta confianza.
-- Taxonomía de errores y acción recomendada.
-- Discusión de costo y latencia.
-
-### M6 — Entrega
-
-- App Gradio local o notebook de inferencia.
-- README completo.
-- Model card.
-- Slides de demo.
-- Pull request final revisado por otro equipo.
-
-## Baseline TF-IDF + Logistic Regression
-
-```python
-from datasets import load_dataset
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report, f1_score
-
-raw = load_dataset('rotten_tomatoes')
-
-vectorizer = TfidfVectorizer(
-    ngram_range=(1, 2),
-    min_df=2,
-    max_features=30_000,
-    sublinear_tf=True,
-)
-
-X_train = vectorizer.fit_transform(raw['train']['text'])
-X_val = vectorizer.transform(raw['validation']['text'])
-X_test = vectorizer.transform(raw['test']['text'])
-
-y_train = raw['train']['label']
-y_val = raw['validation']['label']
-y_test = raw['test']['label']
-
-baseline = LogisticRegression(max_iter=1000, random_state=42)
-baseline.fit(X_train, y_train)
-
-val_pred = baseline.predict(X_val)
-test_pred = baseline.predict(X_test)
-
-print('Validation macro-F1:', f1_score(y_val, val_pred, average='macro'))
-print('Test accuracy:', accuracy_score(y_test, test_pred))
-print(classification_report(y_test, test_pred, digits=3))
-```
-
-## Modelo neuronal propio: Embedding + mean pooling + MLP
-
-Este modelo permite demostrar padding masks y pooling sin depender de una arquitectura preentrenada.
-
-```python
-from __future__ import annotations
-
-from collections import Counter
-import re
-
-import torch
-from torch import nn
-from torch.utils.data import DataLoader, Dataset
-
-
-def basic_tokenize(text: str) -> list[str]:
-    return re.findall(r"[A-Za-z']+|[.,!?;]", text.lower())
-
-
-counter = Counter()
-for text in raw['train']['text']:
-    counter.update(basic_tokenize(text))
-
-itos = ['<pad>', '<unk>'] + [token for token, count in counter.items() if count >= 2]
-stoi = {token: index for index, token in enumerate(itos)}
-PAD_ID = stoi['<pad>']
-UNK_ID = stoi['<unk>']
-
-
-class TextDataset(Dataset):
-    def __init__(self, split, max_length: int = 128) -> None:
-        self.texts = split['text']
-        self.labels = split['label']
-        self.max_length = max_length
-
-    def __len__(self) -> int:
-        return len(self.labels)
-
-    def __getitem__(self, index: int):
-        tokens = basic_tokenize(self.texts[index])[: self.max_length]
-        ids = [stoi.get(token, UNK_ID) for token in tokens]
-        return torch.tensor(ids, dtype=torch.long), int(self.labels[index])
-
-
-def collate_batch(batch):
-    sequences, labels = zip(*batch)
-    lengths = torch.tensor([len(sequence) for sequence in sequences])
-    max_len = max(int(length.max()) if length.ndim else len(sequence) for length, sequence in zip(lengths, sequences))
-    padded = torch.full((len(sequences), max_len), PAD_ID, dtype=torch.long)
-    mask = torch.zeros((len(sequences), max_len), dtype=torch.bool)
-
-    for row, sequence in enumerate(sequences):
-        padded[row, : len(sequence)] = sequence
-        mask[row, : len(sequence)] = True
-
-    return padded, mask, torch.tensor(labels, dtype=torch.long)
-
-
-class MeanEmbeddingClassifier(nn.Module):
-    def __init__(self, vocab_size: int, embedding_dim: int = 128, hidden_dim: int = 64) -> None:
-        super().__init__()
-        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=PAD_ID)
-        self.classifier = nn.Sequential(
-            nn.Linear(embedding_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(hidden_dim, 2),
-        )
-
-    def forward(self, input_ids: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        embeddings = self.embedding(input_ids)
-        masked = embeddings * mask.unsqueeze(-1)
-        pooled = masked.sum(dim=1) / mask.sum(dim=1, keepdim=True).clamp_min(1)
-        return self.classifier(pooled)
-```
-
-Los equipos completan training loop, validación, checkpoint y evaluación reutilizando los patrones de sesiones 1 y 2.
-
-## Tabla comparativa obligatoria
-
-| Modelo | Parámetros entrenables | Tiempo de entrenamiento | Accuracy test | Macro-F1 test | Latencia aproximada | Fortalezas | Limitaciones |
-|---|---:|---:|---:|---:|---:|---|---|
-| Majority | — | — | | | | | |
-| TF-IDF + LR | | | | | | | |
-| Embedding + MLP/LSTM | | | | | | | |
-| DistilBERT fine-tuned | | | | | | | |
-
-No comparar tiempos obtenidos en hardware diferente sin declararlo.
-
-## Rúbrica del proyecto — 100 puntos
-
-| Dimensión | Puntos | Criterios |
-|---|---:|---|
-| Definición del problema y datos | 10 | Objetivo, labels, splits, licencia, EDA, leakage |
-| Baseline y diseño experimental | 12 | Baseline válido, hipótesis y variables controladas |
-| Modelo neuronal propio | 13 | Implementación correcta, training loop, curvas y ablation |
-| Transformer y fine-tuning | 15 | Selección justificada, tokenización, configuración y checkpoint |
-| Evaluación | 15 | Métricas adecuadas, comparación justa y test protegido |
-| Análisis de errores | 10 | Taxonomía, ejemplos, causas probables y acciones |
-| Reproducibilidad y GitHub | 10 | README, entorno, config, commits, PR y ejecución clara |
-| Riesgos y model card | 7 | Sesgo, privacidad, licencia, usos y límites |
-| Demo y comunicación | 8 | Narrativa, visuales, evidencia, respuestas técnicas |
-
-### Penalizaciones sugeridas
-
-- −10: usar test para seleccionar hiperparámetros.
-- −10: no incluir baseline.
-- −10: repositorio no ejecutable o sin instrucciones.
-- −5: reportar solo accuracy en un caso desbalanceado.
-- −5: subir secretos, datos sensibles o artifacts sin autorización.
-- Hasta −15: resultados no reproducibles o inventados.
-
-## Model card mínima
-
-```markdown
-# Model Card — <nombre>
-
-## Model details
-- Arquitectura/checkpoint:
-- Tarea:
-- Idioma:
-- Versión/commit:
-
-## Intended use
-- Uso previsto:
-- Usuarios previstos:
-- Fuera de alcance:
-
-## Training data
-- Dataset y versión:
-- Licencia:
-- Splits:
-- Preprocesamiento:
-
-## Training procedure
-- Seed:
-- Hiperparámetros:
-- Hardware:
-- Criterio de selección:
-
-## Evaluation
-- Métricas:
-- Resultados:
-- Baselines:
-- Subgrupos o slices:
-
-## Limitations
-- Errores conocidos:
-- Fuera de distribución:
-- Idioma/dominio:
-
-## Risks and mitigations
-- Sesgo:
-- Privacidad:
-- Uso indebido:
-- Monitoreo:
-```
-
-## Presentación final — 7 minutos
-
-1. **Problema y decisión** — 45 s.
-2. **Datos y riesgos** — 45 s.
-3. **Baseline** — 45 s.
-4. **Modelos y experimento** — 90 s.
-5. **Resultados comparativos** — 75 s.
-6. **Errores y limitaciones** — 60 s.
-7. **Demo y recomendación** — 60 s.
-
-Preguntas del jurado: 3 minutos.
-
-## Definición de terminado
-
-El proyecto está terminado cuando otra persona puede:
-
-1. clonar el repositorio;
-2. crear el entorno;
-3. ejecutar un smoke test;
-4. reproducir al menos el baseline y la inferencia del mejor modelo;
-5. encontrar las configuraciones y métricas;
-6. comprender usos y limitaciones sin hablar con el equipo.
+Faltas graves integradas como condiciones limitantes (test mal usado, sin baseline, repo no ejecutable, solo accuracy); resultados fabricados anulan el proyecto.
 
 ---
 
