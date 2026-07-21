@@ -175,7 +175,7 @@ Plan alternativo:
 - VS Code.
 - Extensiones Python y Jupyter.
 - Git.
-- Python 3.11 o 3.12.
+- Python 3.11+ (validado con 3.11 y 3.12).
 - Cuenta GitHub.
 - Cuenta Hugging Face opcional; necesaria solo para repositorios privados o `push_to_hub`.
 
@@ -183,36 +183,33 @@ VS Code permite trabajar con notebooks, seleccionar kernels, inspeccionar variab
 
 ### 8.3 Creación del entorno
 
+> **Fuente de verdad para el estudiante:** la sección "Preparación del entorno" del
+> [README.md](README.md). Los comandos de abajo son los mismos; ante cualquier
+> discrepancia futura, manda el README.
+
 ```bash
-# Crear repositorio y entorno
-mkdir deep-learning-course
-cd deep-learning-course
-git init
+# 1. Clonar el repositorio del curso (el repositorio ES el aula)
+git clone https://github.com/felmco/deeplearning-class.git
+cd deeplearning-class
+
+# 2. Crear y activar el entorno virtual
 python -m venv .venv
-
-# Activar
-# macOS/Linux
-source .venv/bin/activate
-
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
+source .venv/bin/activate        # macOS / Linux
+# .venv\Scripts\Activate.ps1     # Windows PowerShell
 
 python -m pip install --upgrade pip
 ```
 
-Instalar PyTorch desde el selector oficial según CPU/CUDA. Después:
+Instalar PyTorch desde el selector oficial según el hardware (CPU / CUDA / MPS):
+<https://pytorch.org/get-started/locally/>. Después:
 
 ```bash
-pip install \
-  torchvision \
-  numpy pandas matplotlib scikit-learn \
-  jupyter ipykernel tqdm pillow \
-  transformers datasets evaluate accelerate peft \
-  gradio tensorboard \
-  ruff pytest
+# 3. Instalar el resto de dependencias (la lista canónica vive en requirements.txt)
+pip install -r requirements.txt
 
+# 4. Registrar el kernel de Jupyter
 python -m ipykernel install --user \
-  --name deep-learning-course \
+  --name deeplearning-class \
   --display-name "Deep Learning Course"
 ```
 
@@ -220,17 +217,11 @@ Para una cohorte, el instructor debe congelar una combinación validada de versi
 
 ### 8.4 Verificación del entorno
 
-```python
-import sys
-import torch
-import transformers
-
-print('Python:', sys.version)
-print('PyTorch:', torch.__version__)
-print('Transformers:', transformers.__version__)
-print('CUDA:', torch.cuda.is_available())
-print('MPS:', hasattr(torch.backends, 'mps') and torch.backends.mps.is_available())
+```bash
+python -m src.utils
 ```
+
+Ejecuta `verificar_entorno()` de [`src/utils.py`](src/utils.py): imprime las versiones de Python, PyTorch y Transformers, la disponibilidad de CUDA/MPS y el dispositivo detectado. Si este comando corre sin errores, el entorno está listo.
 
 ### 8.5 Selección de dispositivo
 
@@ -247,56 +238,32 @@ else:
 print(f'Using device: {device}')
 ```
 
-### 8.6 Estructura recomendada del repositorio
+En el material del curso esta lógica ya está encapsulada en [`src/utils.py → detectar_dispositivo()`](src/utils.py); los laboratorios la importan en vez de repetirla.
+
+### 8.6 Estructura recomendada — el repositorio del EQUIPO (proyecto final)
+
+Los estudiantes **no crean un repositorio para cursar**: clonan este (§8.3). Donde sí crean uno desde cero (`git init`) es en el [proyecto final](proyecto/README.md), por equipo. Estructura mínima recomendada para ese repositorio:
 
 ```text
-deep-learning-course/
-├── README.md
+proyecto-equipo/
+├── README.md                  ← problema, comandos exactos, resultados
 ├── requirements.txt
 ├── .gitignore
-├── configs/
-│   ├── mlp.yaml
-│   ├── cnn.yaml
-│   └── transformer.yaml
-├── notebooks/
-│   ├── 01_tensors_autograd.ipynb
-│   ├── 02_mlp_training.ipynb
-│   ├── 03_cnn_fashionmnist.ipynb
-│   ├── 04_sequences_rnn.ipynb
-│   ├── 05_attention_from_scratch.ipynb
-│   └── 06_hf_finetuning.ipynb
-├── src/
-│   ├── data.py
-│   ├── models.py
-│   ├── train.py
-│   ├── evaluate.py
-│   └── utils.py
-├── tests/
-│   ├── test_shapes.py
-│   └── test_smoke.py
-├── reports/
-│   ├── figures/
-│   └── final_report.md
-└── app/
-    └── gradio_app.py
+├── propuesta.md               ← solo ruta propia (propuesta aprobada)
+├── configs/                   ← hiperparámetros de cada experimento
+├── notebooks/                 ← EDA, entrenamiento y evaluación
+├── src/                       ← código reutilizable (puede partir de src/ del curso)
+├── tests/                     ← smoke test del Checkpoint 1
+├── reports/figures/           ← curvas, matrices y tablas
+├── model_card.md
+└── app/                       ← demo Gradio
 ```
 
-### 8.7 `.gitignore` mínimo
+Los detalles del contrato (checkpoints, rúbrica, model card) están en [proyecto/README.md](proyecto/README.md).
 
-```gitignore
-.venv/
-__pycache__/
-.ipynb_checkpoints/
-.env
-*.pyc
-runs/
-checkpoints/
-models/
-data/raw/
-.DS_Store
-```
+### 8.7 `.gitignore` del repositorio del equipo
 
-No subir tokens, credenciales, datos personales ni checkpoints grandes directamente al repositorio. Usar variables de entorno, Git LFS o repositorios especializados cuando corresponda.
+Partir del [`.gitignore` de este repositorio](.gitignore) (cubre `.venv/`, caches de Python, checkpoints `*.pt`/`*.safetensors`, `artifacts/`, `data/` y secretos). Regla innegociable: no subir tokens, credenciales, datos personales ni checkpoints grandes directamente al repositorio. Usar variables de entorno, Git LFS o repositorios especializados cuando corresponda.
 
 ---
 
@@ -2348,25 +2315,7 @@ def test_imports():
 
 ## J. GitHub Actions mínimo
 
-```yaml
-name: smoke-test
-
-on:
-  push:
-  pull_request:
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: python -m pip install --upgrade pip
-      - run: pip install torch transformers pytest
-      - run: pytest -q
-```
+La CI real del curso vive en [`.github/workflows/smoke-test.yml`](.github/workflows/smoke-test.yml) y es la referencia a imitar en el repositorio del equipo: instala PyTorch CPU (`pip install torch --index-url https://download.pytorch.org/whl/cpu`) más `numpy pyyaml pytest ruff`, corre `ruff check src/ tests/` y ejecuta `pytest tests/ -q -k "not transformers"` para no descargar modelos pesados.
 
 No descargar datasets/modelos pesados en CI básica. Las pruebas deben ser rápidas y determinísticas.
 
