@@ -15,7 +15,19 @@
 </header>
 
 <main>
-<div class="formula">H_out = ⌊(H + 2P − k) / S⌋ + 1 &nbsp;|&nbsp; Y[i,j] = Σₘ Σₙ X[i·S+m, j·S+n] · K[m,n] &nbsp;&nbsp;<small>(k = tamaño del kernel; K = la matriz kernel; ⌊⌋ = redondear hacia abajo; ⊙ = multiplicar celda a celda)</small></div>
+<div class="formula" style="text-align:left;">
+  <div><b>① Tamaño de salida:</b> &nbsp;H_out = ⌊(H + 2P − K) / S⌋ + 1</div>
+  <div style="margin-top:.5rem;"><b>② Valor de cada celda:</b> &nbsp;Y[i,j] = Σₘ Σₙ X[i·S+m, j·S+n] × K[m,n]</div>
+  <ul style="font-family:inherit; font-size:.8rem; color:var(--texto-suave); margin:.6rem 0 0; padding-left:1.2rem; line-height:1.7; columns:2; column-gap:2rem;">
+    <li>H = lado de la imagen de entrada (aquí 8)</li>
+    <li>H_out = lado del feature map de salida</li>
+    <li>K = lado del kernel (aquí 3)</li>
+    <li>P = padding (anillo de ceros alrededor)</li>
+    <li>S = stride (el salto de la ventana)</li>
+    <li>⌊ ⌋ = redondear hacia abajo</li>
+  </ul>
+  <div style="font-family:inherit; font-size:.8rem; color:var(--texto-suave); margin-top:.5rem;"><b>② en palabras:</b> parado en (i, j), multiplica la ventana por el kernel celda a celda (el símbolo ⊙) y suma los 9 productos — ese cálculo, con los números reales de cada paso, aparece bajo el lienzo.</div>
+</div>
 
 <div class="panel">
   <div class="controles">
@@ -56,14 +68,18 @@
 </div>
 
 <div class="panel">
-  <div id="info" style="text-align:center; font-family:var(--mono); font-size:1rem; margin-bottom:.8rem; color:var(--tinta);"></div>
+  <div id="info" style="text-align:center; font-family:var(--mono); font-size:1rem; margin-bottom:.3rem; color:var(--tinta);"></div>
+  <div id="tamano" style="text-align:center; font-family:var(--mono); font-size:.95rem; margin-bottom:.8rem; color:var(--azul);"></div>
   <canvas id="lienzo" class="lienzo" width="980" height="430"></canvas>
+  <div id="calculo" style="font-family:var(--mono); font-size:.92rem; background:#f1f5f9; border-radius:10px; padding:.8rem 1rem; margin-top:.8rem; overflow-x:auto; white-space:pre; line-height:1.7;"></div>
 </div>
 
 <div class="explica">
-  <strong>Verifica la fórmula:</strong> con H=8, K=3, P=0, S=1 la salida es 6×6. Sube el padding a 1:
-  ahora es 8×8 ("same"). Sube el stride a 2: ⌊(8+2−3)/2⌋+1 = 4. La celda amarilla del feature map es
-  la que se está calculando: su valor es la suma de los productos que ves en el centro.
+  <strong>Verifica la fórmula ①:</strong> con P=0 y S=1 la salida es 6×6. Sube el padding a 1:
+  ahora es 8×8 ("same"). Sube el stride a 2: ⌊(8+2−3)/2⌋+1 = 4 — y mira cómo la línea azul
+  sobre el lienzo recalcula el resultado con tus números. <strong>Y la fórmula ②:</strong> la celda
+  amarilla del feature map es la que se está calculando; su suma, producto por producto y fila
+  por fila, aparece bajo el lienzo y cambia en cada paso.
   <br><strong>Idea clave:</strong> estos kernels los eliges tú aquí; en una CNN, sus 9 números son
   <em>parámetros entrenables</em> que backpropagation ajusta.
 </div>
@@ -198,8 +214,41 @@ function dibujar(){
   }
 
   document.getElementById('info').textContent = enCurso
-    ? `posición ${pos+1} de ${dims.out*dims.out} — Y[${oi},${oj}]`
-    : `✅ feature map completo (${dims.out}×${dims.out}) — H_out = ⌊(8+${2*P}−3)/${S}⌋+1 = ${dims.out}`;
+    ? `posición ${pos+1} de ${dims.out*dims.out} — calculando Y[${oi},${oj}]`
+    : `✅ feature map completo (${dims.out}×${dims.out})`;
+
+  // ── La fórmula ① con los números ACTUALES de los controles ──
+  document.getElementById('tamano').innerHTML =
+    `① H_out = ⌊(8 + 2·${P} − 3) / ${S}⌋ + 1 = ⌊${8 + 2*P - 3}/${S}⌋ + 1 = ` +
+    `<b>${dims.out}</b> → salida ${dims.out}×${dims.out}`;
+
+  // ── La fórmula ② con los números de la ventana actual, fila por fila ──
+  const fmt = v => (Number.isInteger(v) ? String(v) : v.toFixed(2)).replace('-', '−');
+  const calc = document.getElementById('calculo');
+  if (enCurso){
+    let suma = 0;
+    const filas = [];
+    for (let m = 0; m < 3; m++){
+      const productos = [];
+      for (let n = 0; n < 3; n++){
+        const v = pixel(oi*S + m, oj*S + n);
+        productos.push(`${fmt(v)}×${fmt(K[m][n])}`);
+        suma += v * K[m][n];
+      }
+      filas.push(productos.join(' + '));
+    }
+    const cabeza = `② Y[${oi},${oj}] = `;
+    const sangria = ' '.repeat(cabeza.length - 2);
+    calc.textContent =
+      `${cabeza}(${filas[0]})   ← fila 1: píxel × kernel\n` +
+      `${sangria}+ (${filas[1]})   ← fila 2\n` +
+      `${sangria}+ (${filas[2]})   ← fila 3\n` +
+      `${sangria}= ${fmt(Math.round(suma * 100) / 100)}`;
+  } else {
+    calc.textContent =
+      '✅ Cada celda del feature map salió de una suma como la que viste aquí.\n' +
+      'Cambia el kernel, el stride o el padding y reinicia para verlo de nuevo.';
+  }
 }
 
 function paso(){
